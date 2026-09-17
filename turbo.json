@@ -1,23 +1,25 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["!node_modules/**", "!src/**", "*/**", ".medusa/**"]
+      "outputs": ["dist/**", ".next/**"]
     },
-    "build:plugin": {
-      "dependsOn": ["^build", "@medusajs/medusa#build"],
-      "outputs": ["!node_modules/**", "!src/**", ".medusa/**"]
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "outputs": []
     },
     "test": {
       "outputs": []
     },
-    "test:integration": {
-      "outputs": []
-    },
-    "test:integration:chunk": {
+    "seed": {
       "outputs": []
     }
-  },
-  "globalDependencies": ["turbo.json"]
+  }
 }

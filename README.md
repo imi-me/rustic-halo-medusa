@@ -1,73 +1,72 @@
-<p align="center">
-  <a href="https://www.medusajs.com">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
-    </picture>
-  </a>
-</p>
-<h1 align="center">
-  Medusa
-</h1>
+# Rustic Halo Commerce
 
-<h4 align="center">
-  <a href="https://docs.medusajs.com">Documentation</a> |
-  <a href="https://www.medusajs.com">Website</a>
-</h4>
+Production commerce application for Rustic Halo, built on Medusa 2 and the official Medusa DTC storefront.
 
-<p align="center">
-  Building blocks for digital commerce
-</p>
-<p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/develop/LICENSE">
-    <img src="https://img.shields.io/badge/license-open--core-blue.svg" alt="Medusa uses an open-core licensing model." />
-  </a>
-  <a href="https://github.com/medusajs/medusa/blob/develop/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
- <p align="center">
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
-  <a href="https://discord.gg/medusajs">
-    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-</p>
+## Repository layout
 
-## Getting Started
+```text
+apps/
+  backend/       Medusa server, Admin, workflows, and commerce customizations
+  storefront/    Next.js customer storefront
+  kiosk/         Copper Mill personalization kiosk boundary and future client
+docs/             Architecture decisions and operating flows
+integrations/
+  etsy/           Etsy catalog, order, and inventory synchronization boundary
+  marketsuite/    MarketSuite POS, barcode, payment-confirmation, and production boundary
+```
 
-The fastest way to get started is with [Medusa Cloud](https://medusajs.com/cloud/). It provides a managed environment optimized for Medusa applications, with automated deployments, scaling, and maintenance. [Get started on Medusa Cloud](https://cloud.medusajs.com)
+The kiosk and integration directories intentionally contain contracts and implementation plans, not speculative production code. New behavior should be implemented against those documented boundaries as credentials and vendor API details become available.
 
-To set up a Medusa application locally, visit the [Documentation](https://docs.medusajs.com/learn).
+## Prerequisites
 
-## About Medusa
+- Node.js 20.19+ or 22.12+ LTS. Node 25+ is not supported by the current storefront.
+- pnpm 10.11.1, enabled with Corepack
+- PostgreSQL 15+
+- Redis for production and recommended for local integration work
 
-Medusa is a commerce platform with a built-in framework for customization that allows you to build custom commerce applications without reinventing core commerce logic. The framework and modules can be used to support advanced B2B or DTC commerce stores, marketplaces, distributor platforms, PoS systems, service businesses, or similar solutions that need foundational commerce primitives. Medusa's core commerce modules are open-source and freely available on npm. Enterprise Edition features are identified separately in the repository.
+## Local setup
 
-Learn more about [Medusa’s architecture](https://docs.medusajs.com/learn/advanced-development/architecture/overview) and [commerce modules](https://docs.medusajs.com/resources/commerce-modules) in the Docs.
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+cp apps/backend/.env.template apps/backend/.env
+cp apps/storefront/.env.template apps/storefront/.env.local
+```
 
-## Upgrades & Integrations
+Create a PostgreSQL database named `rustic_halo`, then set `DATABASE_URL` in `apps/backend/.env`. Replace all example secrets before using any shared environment.
 
-Follow the [Release Notes](https://github.com/medusajs/medusa/releases) to keep your Medusa project up-to-date.
+```bash
+pnpm --dir apps/backend medusa db:migrate
+pnpm --dir apps/backend medusa user -e admin@example.com -p 'replace-this-password'
+pnpm dev
+```
 
-Check out all [available Medusa integrations](https://medusajs.com/integrations/).
+The Medusa API and Admin run at `http://localhost:9000` and `http://localhost:9000/app`. The storefront runs at `http://localhost:8000`.
 
-## Community & Contributions
+After signing in to Admin, create a publishable API key and put it in `apps/storefront/.env.local` as `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY`.
 
-The core team is available in [GitHub Discussions](https://github.com/medusajs/medusa/discussions), where you can create issues, share ideas, and discuss roadmap.
+## Commands
 
-Our [Contribution Guide](https://github.com/medusajs/medusa/blob/develop/CONTRIBUTING.md) describes how to contribute to the codebase and Docs.
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Run backend and storefront in development mode |
+| `pnpm backend:dev` | Run only Medusa and Admin |
+| `pnpm storefront:dev` | Run only the storefront |
+| `pnpm build` | Build every implemented workspace |
+| `pnpm lint` | Lint every implemented workspace |
+| `pnpm test` | Run workspace tests |
+| `pnpm backend:seed` | Load the starter development catalog |
 
-Join our [Discord server](https://discord.gg/medusajs) to meet and discuss with more than 14,000 other community members.
+## Architecture
 
-## Other channels
+Read [docs/architecture.md](docs/architecture.md) before implementing inventory, POS, Etsy, kiosk, personalization, or production workflows. It records the business invariants that integrations must preserve.
 
-- [GitHub Issues](https://github.com/medusajs/medusa/issues)
-- [Community Discord](https://discord.gg/medusajs)
-- [Twitter](https://twitter.com/medusajs)
-- [LinkedIn](https://www.linkedin.com/company/medusajs)
-- [Medusa Blog](https://medusajs.com/blog/)
+## Delivery workflow
 
-## License
+`develop` remains the protected integration/default branch. Work in short-lived branches, require the CI checks in `.github/workflows/ci.yml`, review the preview environment, and merge through a pull request. Production deployments should be promoted from a reviewed long-lived branch rather than from an unreviewed local push.
 
-Medusa uses an open-core model. The core is licensed under the [MIT License](https://github.com/medusajs/medusa/blob/develop/LICENSE). The RBAC-based Enterprise Edition materials identified in [ENTERPRISE-LICENSE.md](https://github.com/medusajs/medusa/blob/develop/ENTERPRISE-LICENSE.md) require a commercial agreement with MedusaJS, Inc.
+## Deployment
+
+The monorepo layout is compatible with Medusa Cloud. Configure the backend root as `apps/backend` and the storefront root as `apps/storefront`. For self-hosting, deploy the backend/Admin with PostgreSQL and Redis first, then deploy the storefront with the backend URL and publishable API key.
+
+Never commit `.env` files, API credentials, payment data, or customer data.

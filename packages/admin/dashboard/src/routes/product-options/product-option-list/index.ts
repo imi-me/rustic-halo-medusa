@@ -1,1 +1,0 @@
-export { ProductOptionList as Component } from "./product-option-list"
