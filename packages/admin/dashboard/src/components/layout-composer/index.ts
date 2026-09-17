@@ -1,6 +1,0 @@
-export * from "./layout-composer"
-export * from "./customizer-menu"
-export * from "./types"
-export * from "./constants"
-export * from "./entry"
-export { detailPageDefaultEntries } from "./detail-page-defaults"

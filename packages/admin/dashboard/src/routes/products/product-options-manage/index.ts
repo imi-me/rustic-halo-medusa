@@ -1,1 +1,0 @@
-export { ProductOptionsManage as Component } from "./product-options-manage"

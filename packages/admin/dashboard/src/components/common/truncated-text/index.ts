@@ -1,1 +1,0 @@
-export * from "./truncated-text"
