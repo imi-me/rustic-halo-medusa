@@ -12,22 +12,14 @@ import LanguageSelect from "../language-select"
 import { Locale } from "@lib/data/locales"
 
 
-const SideMenuItems = {
-  Home: "/",
-  "Shop all": "/store",
-  Collections: "/#collections",
-  "Our story": "/#our-story",
-  Account: "/account",
-  Cart: "/cart",
-}
-
 type SideMenuProps = {
   regions: HttpTypes.StoreRegion[] | null
   locales: Locale[] | null
   currentLocale: string | null
+  links: { name: string; href: string }[]
 }
 
-const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
+const SideMenu = ({ regions, locales, currentLocale, links }: SideMenuProps) => {
   const countryToggleState = useToggleState()
   const languageToggleState = useToggleState()
 
@@ -76,7 +68,7 @@ const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
                       </button>
                     </div>
                     <ul className="rh-menu-links">
-                      {Object.entries(SideMenuItems).map(([name, href]) => {
+                      {links.map(({ name, href }) => {
                         return (
                           <li key={name}>
                             <LocalizedClientLink

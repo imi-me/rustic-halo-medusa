@@ -43,3 +43,30 @@ The owner approved the policy pages and current storefront appearance for the
 initial launch on September 22, 2026. This closes the policy and appearance
 portion of Gate 1. The approval does not authorize deployment, a public launch,
 live payments, DNS changes, or inventory synchronization.
+
+## Local homepage refinement (subsequent milestone)
+
+The homepage has a new local, brand-preserving layout: one announcement bar,
+category-led navigation, split hero, four Medusa collection cards, a six-product
+Medusa grid, compact value strip, personalization feature, and factual trust
+content. The product grid uses a `best-sellers` Medusa collection if one is
+created; until then it uses six existing product handles as an editorial
+selection. It is not calculated from sales. No review quotes were invented.
+
+The 1:1 product cards show base-color swatches only for hair claws with a real
+Color option. Selection links to the matching Medusa variant and uses its
+associated image when present. Staging's Seashell Hair Claw has twelve color
+variants, but most currently share the same image association. Distinct
+color-specific photos must be attached to those variants in Medusa before the
+card can show every color accurately; the engraving/design should remain the
+same across those photos.
+
+Verified locally: the real Medusa collection/product requests, mobile menu,
+swatch selection, 375px and 390px overflow checks, tablet layout, storefront
+type check, focused ESLint, 16 storefront tests, and a production build against
+the staging backend. The changes are local only and need an owner visual review
+before any staging deployment. Files: `apps/storefront/src/app/[countryCode]/(main)/page.tsx`,
+`apps/storefront/src/modules/home/components/hero/`,
+`apps/storefront/src/modules/home/components/product-card/`,
+`apps/storefront/src/modules/layout/`, `apps/storefront/src/lib/brand/home-collections.ts`,
+and `apps/storefront/src/styles/globals.css`.
