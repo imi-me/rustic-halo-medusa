@@ -1,5 +1,9 @@
 # Rustic Halo staging
 
+Local-network storefront review is documented in `docs/staging-lan-access.md`.
+It publishes only the storefront on the VM's VLAN address; Admin, PostgreSQL,
+and Redis remain private.
+
 ## Verified host
 
 - Proxmox VM 102, `rustic-halo-staging`, on `pve-0`.

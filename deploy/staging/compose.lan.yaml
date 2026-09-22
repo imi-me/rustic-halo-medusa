@@ -1,0 +1,6 @@
+# Optional local-network storefront access for staging.
+# Backend/Admin, PostgreSQL, and Redis remain bound to loopback or unpublished.
+services:
+  storefront:
+    ports:
+      - '${LAN_STOREFRONT_IP:-10.20.69.159}:18000:8000'

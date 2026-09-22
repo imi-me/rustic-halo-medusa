@@ -9,8 +9,12 @@ umask 077
 exec > deployment.log 2>&1
 trap 'echo "Deployment stopped; review deployment.log"' 0
 compose() {
-  if [ -f compose.preview.yaml ]; then
+  if [ -f compose.preview.yaml ] && [ -f compose.lan.yaml ]; then
+    docker compose -f compose.yaml -f compose.apps.yaml -f compose.preview.yaml -f compose.lan.yaml "$@"
+  elif [ -f compose.preview.yaml ]; then
     docker compose -f compose.yaml -f compose.apps.yaml -f compose.preview.yaml "$@"
+  elif [ -f compose.lan.yaml ]; then
+    docker compose -f compose.yaml -f compose.apps.yaml -f compose.lan.yaml "$@"
   else
     docker compose -f compose.yaml -f compose.apps.yaml "$@"
   fi
