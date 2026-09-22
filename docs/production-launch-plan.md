@@ -113,6 +113,20 @@ flags leave publication, Etsy writes and inventory synchronization unauthorized.
 A validator rejects readiness, SKU, variant-count, duplicate-identity, or safety
 flag drift before the manifest can be used.
 
+### Gate 1 policy and appearance review — September 22
+
+Final-review Privacy Policy and Store Terms pages are implemented locally and
+linked from the storefront footer. The policies identify Ebenstone Co LLC,
+preserve the approved US-only, 3–5-business-day, and circumstance-based return
+rules, and state the customer's delay or cancellation/refund choice when an
+order cannot ship on time. Unverified production-provider and fixed-retention
+claims were removed. The current logo, palette, typography, tagline, and
+made-to-order announcement remain unchanged after the completed desktop and
+phone browser pass. See `docs/policy-and-appearance-review.md`.
+
+The owner still needs to approve this concrete policy and appearance review.
+No staging or production deployment was made.
+
 ## Gate 2 — create production beside staging
 
 1. Create a separate production VM and production database. Do not convert VM
@@ -193,7 +207,8 @@ milestone.
 
 - Opening catalog approved: all 24 products in
   `deploy/production/opening-catalog.json` (19 core and five seasonal).
-- Approve the policy drafts and current storefront appearance for launch.
+- Approve the final-review policy pages and current storefront appearance for
+  launch; see `docs/policy-and-appearance-review.md`.
 - Decide whether launch waits for stable fiber or uses a temporary cloud VM.
 - Provide the original Turkey Football Round Door Hanger studio SKU when found;
   otherwise leave that product unpublished.
