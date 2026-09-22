@@ -21,12 +21,13 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
+    qualities: [50, 75],
     unoptimized: true,
     remotePatterns: [
+      { protocol: "https", hostname: "cdn.rustichalo.com", pathname: "/**" },
+      { protocol: "https", hostname: "cdn.shopify.com", pathname: "/s/files/**" },
+      { protocol: "https", hostname: "rustichalo.com", pathname: "/cdn/shop/**" },
       {
         protocol: "http",
         hostname: "localhost",

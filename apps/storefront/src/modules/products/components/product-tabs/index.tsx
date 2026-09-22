@@ -1,8 +1,10 @@
 "use client"
 
-import Back from "@modules/common/icons/back"
-import FastDelivery from "@modules/common/icons/fast-delivery"
-import Refresh from "@modules/common/icons/refresh"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+
+
+
+
 
 import Accordion from "./accordion"
 import { HttpTypes } from "@medusajs/types"
@@ -78,44 +80,12 @@ const ProductInfoTab = ({ product }: ProductTabsProps) => {
   )
 }
 
-const ShippingInfoTab = () => {
-  return (
-    <div className="text-small-regular py-8">
-      <div className="grid grid-cols-1 gap-y-8">
-        <div className="flex items-start gap-x-2">
-          <FastDelivery />
-          <div>
-            <span className="font-semibold">Fast delivery</span>
-            <p className="max-w-sm">
-              Your package will arrive in 3-5 business days at your pick up
-              location or in the comfort of your home.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-x-2">
-          <Refresh />
-          <div>
-            <span className="font-semibold">Simple exchanges</span>
-            <p className="max-w-sm">
-              Is the fit not quite right? No worries - we&apos;ll exchange your
-              product for a new one.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-x-2">
-          <Back />
-          <div>
-            <span className="font-semibold">Easy returns</span>
-            <p className="max-w-sm">
-              Just return your product and we&apos;ll refund your money. No
-              questions asked – we&apos;ll do our best to make sure your return
-              is hassle-free.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+const ShippingInfoTab = () => (
+  <div className="text-small-regular py-8">
+    <p className="mb-3">Online orders are made to order and ship in 3–5 business days. Transit time is additional.</p>
+    <p className="mb-3">Returns are reviewed based on the circumstances. <LocalizedClientLink className="underline" href="/customer-service#returns">Read our return guidelines</LocalizedClientLink>.</p>
+    <p>For shipping or return questions, <a className="underline" href="mailto:contact@rustichalo.com">contact Rustic Halo</a>.</p>
+  </div>
+)
 
 export default ProductTabs

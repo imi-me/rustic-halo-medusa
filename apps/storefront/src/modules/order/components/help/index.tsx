@@ -1,6 +1,6 @@
 import { Heading } from "@modules/common/components/ui"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import React from "react"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 const Help = () => {
   return (
@@ -9,11 +9,11 @@ const Help = () => {
       <div className="text-base-regular my-2">
         <ul className="gap-y-2 flex flex-col">
           <li>
-            <LocalizedClientLink href="/contact">Contact</LocalizedClientLink>
+            <a href="mailto:contact@rustichalo.com">Contact Rustic Halo</a>
           </li>
           <li>
-            <LocalizedClientLink href="/contact">
-              Returns & Exchanges
+            <LocalizedClientLink href="/customer-service">
+              Shipping and order help
             </LocalizedClientLink>
           </li>
         </ul>

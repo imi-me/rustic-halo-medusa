@@ -9,6 +9,10 @@ import OptionSelect from "@modules/products/components/product-actions/option-se
 import { isEqual } from "lodash"
 import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
+import {
+  defaultTitleSelections,
+  visibleProductOptions,
+} from "@lib/util/product-options"
 import ProductPrice from "../product-price"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
@@ -39,14 +43,25 @@ export default function ProductActions({
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
   const countryCode = useParams().countryCode as string
+  const displayOptions = useMemo(
+    () => visibleProductOptions(product.options),
+    [product.options]
+  )
+  const hiddenDefaultSelections = useMemo(
+    () => defaultTitleSelections(product.options),
+    [product.options]
+  )
 
-  // If there is only 1 variant, preselect the options
+  // Preselect a sole variant and imported "Default Title" placeholders. The
+  // placeholder remains part of variant matching but is not a customer choice.
   useEffect(() => {
     if (product.variants?.length === 1) {
       const variantOptions = optionsAsKeymap(product.variants[0].options)
       setOptions(variantOptions ?? {})
+    } else {
+      setOptions(hiddenDefaultSelections)
     }
-  }, [product.variants])
+  }, [product.id, product.variants, hiddenDefaultSelections])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -90,7 +105,7 @@ export default function ProductActions({
     }
 
     router.replace(pathname + "?" + params.toString())
-  }, [selectedVariant, isValidVariant])
+  }, [selectedVariant, isValidVariant, pathname, router, searchParams])
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
@@ -141,7 +156,7 @@ export default function ProductActions({
         <div>
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
-              {(product.options || []).map((option) => {
+              {displayOptions.map((option) => {
                 return (
                   <div key={option.id}>
                     <OptionSelect
@@ -186,6 +201,7 @@ export default function ProductActions({
           product={product}
           variant={selectedVariant}
           options={options}
+          optionsToDisplay={displayOptions}
           updateOptions={setOptionValue}
           inStock={inStock}
           handleAddToCart={handleAddToCart}

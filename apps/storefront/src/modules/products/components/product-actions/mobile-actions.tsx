@@ -15,6 +15,7 @@ type MobileActionsProps = {
   product: HttpTypes.StoreProduct
   variant?: HttpTypes.StoreProductVariant
   options: Record<string, string | undefined>
+  optionsToDisplay: HttpTypes.StoreProductOption[]
   updateOptions: (title: string, value: string) => void
   inStock?: boolean
   handleAddToCart: () => void
@@ -27,6 +28,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   product,
   variant,
   options,
+  optionsToDisplay,
   updateOptions,
   inStock,
   handleAddToCart,
@@ -51,6 +53,9 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   }, [price])
 
   const isSimple = isSimpleProduct(product)
+  const visibleOptionValues = optionsToDisplay
+    .map((option) => options[option.id])
+    .filter(Boolean)
 
   return (
     <>
@@ -110,7 +115,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                 <div className="flex items-center justify-between w-full">
                   <span>
                     {variant
-                      ? Object.values(options).join(" / ")
+                      ? visibleOptionValues.join(" / ")
                       : "Select Options"}
                   </span>
                   <ChevronDown />
@@ -174,7 +179,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   <div className="bg-white px-6 py-12">
                     {(product.variants?.length ?? 0) > 1 && (
                       <div className="flex flex-col gap-y-6">
-                        {(product.options || []).map((option) => {
+                        {optionsToDisplay.map((option) => {
                           return (
                             <div key={option.id}>
                               <OptionSelect

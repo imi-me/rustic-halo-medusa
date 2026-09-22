@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "optionName": "Color",
+  "description": "Base hair-claw color beneath the decorative wood veneer.",
+  "inventoryPolicy": "Made to order. Color child variants do not receive Copper Mill stock levels and inventory synchronization remains disabled.",
+  "skuPolicy": "Append the color suffix to the existing design or size SKU.",
+  "colors": [
+    { "name": "CREAM", "suffix": "CREAM" },
+    { "name": "SKY BLUE", "suffix": "SKY-BL" },
+    { "name": "OCEAN BLUE", "suffix": "OCEAN-BL" },
+    { "name": "MINT", "suffix": "MINT" },
+    { "name": "SAGE", "suffix": "SAGE" },
+    { "name": "BLUSH", "suffix": "BLUSH" },
+    { "name": "TAUPE", "suffix": "TAUPE" },
+    { "name": "TERRACOTTA", "suffix": "TERRACOTTA" },
+    { "name": "ESPRESSO", "suffix": "ESPRESSO" },
+    { "name": "SLATE", "suffix": "SLATE" },
+    { "name": "NAVY", "suffix": "NAVY" },
+    { "name": "Black", "suffix": "BLK" }
+  ]
+}

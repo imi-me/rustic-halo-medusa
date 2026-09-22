@@ -30,6 +30,7 @@ export default async function StorePage(props: Params) {
 
   return (
     <StoreTemplate
+      query={typeof searchParams.q === "string" ? searchParams.q.trim().slice(0, 160) : undefined}
       sortBy={sortBy}
       page={page}
       countryCode={params.countryCode}

@@ -29,7 +29,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 small:grid-cols-2 gap-4">
         <Input
           label="First name"
           name="billing_address.first_name"
@@ -82,6 +82,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           onChange={handleChange}
         />
         <CountrySelect
+          aria-label="Billing country"
           name="billing_address.country_code"
           autoComplete="country"
           region={cart?.region}
@@ -102,6 +103,7 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           label="Phone"
           name="billing_address.phone"
           autoComplete="tel"
+          type="tel"
           value={formData["billing_address.phone"]}
           onChange={handleChange}
           data-testid="billing-phone-input"

@@ -4,7 +4,7 @@ import * as Accordion from "@radix-ui/react-accordion"
 import { useEffect, useState } from "react"
 
 import { ChevronDownMini } from "@medusajs/icons"
-import { sdk } from "@lib/config"
+import { listProductOptions } from "@lib/data/product-options"
 import { HttpTypes } from "@medusajs/types"
 import clsx from "clsx"
 
@@ -23,19 +23,7 @@ const OptionsPicker = ({
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await sdk.client.fetch<{
-          product_options?: HttpTypes.StoreProductOption[]
-        }>("/store/product-options", {
-          method: "GET",
-          query: {
-            is_exclusive: false,
-            fields: "*values",
-          },
-        })
-
-        if (response?.product_options) {
-          setOptions(response.product_options)
-        }
+        setOptions(await listProductOptions())
       } catch (error) {
         console.error("Failed to fetch product options", error)
       }

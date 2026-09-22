@@ -1,0 +1,16 @@
+# Only the storefront joins the tunnel network. Backend/admin stay private.
+services:
+  storefront:
+    build:
+      args:
+        NEXT_PUBLIC_BASE_URL: https://staging.rustichalo.com
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://staging.rustichalo.com
+    networks:
+      default: {}
+      preview:
+        aliases: [rustic-halo-storefront]
+
+networks:
+  preview:
+    external: true
+    name: rustic-halo-preview_default

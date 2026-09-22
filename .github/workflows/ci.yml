@@ -24,4 +24,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm --dir apps/storefront typecheck
+      - run: pnpm --dir apps/storefront test
       - run: pnpm build

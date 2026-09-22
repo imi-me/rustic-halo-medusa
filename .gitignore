@@ -1,5 +1,7 @@
 # Dependencies
+/.local/
 node_modules
+.pnpm-store/
 .pnp
 .pnp.js
 
@@ -15,6 +17,10 @@ node_modules
 
 # Testing
 coverage
+**/*.tsbuildinfo
+*.tgz
+__pycache__/
+*.py[cod]
 
 # Next.js
 **/.next/

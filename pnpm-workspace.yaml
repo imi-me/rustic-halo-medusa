@@ -1,3 +1,7 @@
 packages:
   - "apps/**"
   - "!apps/backend/.medusa/**"
+
+overrides:
+  "@types/react": "19.0.5"
+  "@types/react-dom": "19.0.5"

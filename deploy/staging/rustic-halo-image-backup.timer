@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Rustic Halo image export before the NAS backup
+
+[Timer]
+OnCalendar=*-*-* 20:00:00 America/New_York
+Persistent=true
+AccuracySec=1min
+Unit=rustic-halo-image-backup.service
+
+[Install]
+WantedBy=timers.target

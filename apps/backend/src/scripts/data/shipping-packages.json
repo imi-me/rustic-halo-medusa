@@ -1,0 +1,59 @@
+{
+  "distance_unit": "in",
+  "mass_unit": "oz",
+  "weight_basis": "empty packaging; add actual item weights",
+  "packages": [
+    {
+      "id": "hair-claw-box",
+      "category": "hair claws",
+      "capacity": 3,
+      "length": 6,
+      "width": 4,
+      "height": 3,
+      "packaging_weight": 1.6
+    },
+    {
+      "id": "earring-box",
+      "category": "earrings",
+      "capacity": 4,
+      "length": 6,
+      "width": 4,
+      "height": 1.5,
+      "packaging_weight": 1.3
+    },
+    {
+      "id": "14-inch-sign-box",
+      "category": "14-inch signs",
+      "capacity": 1,
+      "length": 14,
+      "width": 14,
+      "height": 2,
+      "packaging_weight": 7
+    }
+  ],
+  "pending": [
+    "mapping confirmed weights to catalog variants",
+    "coaster packaging",
+    "other product packaging"
+  ],
+  "status": "packing preview configured; not connected to checkout rates",
+  "standard_accessory_package": "hair-claw-box",
+  "accessory_box_limits": [
+    {
+      "hair_claws": 3,
+      "earring_pairs": 0
+    },
+    {
+      "hair_claws": 2,
+      "earring_pairs": 4
+    },
+    {
+      "hair_claws": 1,
+      "earring_pairs": 6
+    },
+    {
+      "hair_claws": 0,
+      "earring_pairs": 8
+    }
+  ]
+}

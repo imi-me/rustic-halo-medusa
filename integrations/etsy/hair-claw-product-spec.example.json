@@ -1,0 +1,25 @@
+{
+  "title": "Example Hair Claw",
+  "handle": "example-hair-claw",
+  "description": "Replace with reviewed product copy.",
+  "shipping_profile_id": "sp_REPLACE_WITH_STAGING_PROFILE",
+  "metadata": {
+    "catalog_source": "studio_review"
+  },
+  "baseVariants": [
+    {
+      "baseSku": "REPLACE-4IN",
+      "title": "4 inch",
+      "options": {
+        "Size": "4 inch"
+      },
+      "prices": [
+        {
+          "currency_code": "usd",
+          "amount": 18
+        }
+      ],
+      "weight": 64
+    }
+  ]
+}

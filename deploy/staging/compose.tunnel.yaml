@@ -1,0 +1,14 @@
+name: rustic-halo-preview
+services:
+  tunnel:
+    image: ${CLOUDFLARED_IMAGE:?Pinned image required}
+    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/tunnel-token]
+    user: '65532:65532'
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./.tunnel-secrets/token:/run/secrets/tunnel-token:ro
+    logging:
+      options: {max-size: 5m, max-file: '3'}

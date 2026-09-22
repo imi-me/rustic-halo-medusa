@@ -1,0 +1,383 @@
+{
+  "source": "rustichalo.com",
+  "capturedAt": "2026-09-19T19:33:55.507Z",
+  "products": [
+    {
+      "id": "gid://shopify/Product/7789799604420",
+      "title": "Top Down Hair Claws",
+      "vendor": "Rustic Halo",
+      "status": "ACTIVE",
+      "productType": "Hair Claw",
+      "descriptionHtml": "<p>Unleash your wild side with these 4\" Jeeper hair claws! Perfect for securing your locks on off-roading adventures or adding a touch of rugged style to your everyday look. Embrace the Jeep life and keep your hair in check with these fun and functional accessories.</p>",
+      "tags": [
+        "4\u201d hair claw",
+        "Hair Claw",
+        "Hair Clip",
+        "Handcrafted Hair Claw",
+        "INV08887236",
+        "It\u2019s a Jeep Thing",
+        "Jeep Life",
+        "Jeeper",
+        "Laser Cut Hair Clip",
+        "Natural. Wood Clip",
+        "Rustic Hair Claw",
+        "Unique Hair gift",
+        "Wood Hair Accessory",
+        "Wooden Hair Claw"
+      ],
+      "totalInventory": 12,
+      "featuredImageUrl": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250916_171035.jpg?v=1765067645",
+      "images": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250916_171035.jpg?v=1765067645",
+          "altText": "Jeeper Hair Claws Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/36157049405636"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20251014_001412.png?v=1765067646",
+          "altText": "Jeeper Hair Claws Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/36439282090180"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250721_163829.jpg?v=1765067646",
+          "altText": "Jeeper Hair Claws Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/35564290474180"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/IMG_6206.png?v=1765067646",
+          "altText": "Jeeper Hair Claws Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/35564263080132"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250916_170931.jpg?v=1765067645",
+          "altText": "Jeeper Hair Claws Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/36157049438404"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250916_171110.jpg?v=1765067645",
+          "altText": "Jeeper Hair Claws Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/36157049372868"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/jeeper-hair-claws-1387189.jpg?v=1778342886",
+          "altText": "Jeeper Hair Claws - Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/38326908813508"
+        }
+      ],
+      "totalVariants": 2,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/46129682546884",
+          "title": "4\"",
+          "sku": "38462-4",
+          "price": "12.00",
+          "inventoryQuantity": 8
+        },
+        {
+          "id": "gid://shopify/ProductVariant/46129682579652",
+          "title": "2\"",
+          "sku": "38462-2",
+          "price": "10.00",
+          "inventoryQuantity": 4
+        }
+      ],
+      "currencyCode": "USD",
+      "handle": "jeep-hair-claws",
+      "inventory": [
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/48302476263620",
+          "locationId": "gid://shopify/Location/79837790404",
+          "variantTitle": "4\"",
+          "sku": "38462-4",
+          "locationName": "Copper Mill @ Greenvillle",
+          "available": 2,
+          "committed": 0,
+          "onHand": 2
+        },
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/48302476263620",
+          "locationId": "gid://shopify/Location/68049862852",
+          "variantTitle": "4\"",
+          "sku": "38462-4",
+          "locationName": "Shopify On-line Store",
+          "available": 6,
+          "committed": 0,
+          "onHand": 6
+        },
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/48302476296388",
+          "locationId": "gid://shopify/Location/79837790404",
+          "variantTitle": "2\"",
+          "sku": "38462-2",
+          "locationName": "Copper Mill @ Greenvillle",
+          "available": 2,
+          "committed": 0,
+          "onHand": 2
+        },
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/48302476296388",
+          "locationId": "gid://shopify/Location/68049862852",
+          "variantTitle": "2\"",
+          "sku": "38462-2",
+          "locationName": "Shopify On-line Store",
+          "available": 2,
+          "committed": 0,
+          "onHand": 2
+        }
+      ]
+    },
+    {
+      "id": "gid://shopify/Product/8234730062020",
+      "title": "Floral Cross Dangle Earrings",
+      "vendor": "Rustic Halo",
+      "status": "ACTIVE",
+      "productType": "Dangle Earrings",
+      "descriptionHtml": "<p>Add a touch of elegance to your outfit with our Floral Cross Dangle Earrings! The intricate design and delicate floral details create a beautiful and unique accessory. Perfect for day or evening wear, you'll feel confident and stylish with these earrings. Make a statement with every step!</p>\n<p>Stainless Steel.</p>",
+      "tags": [
+        "Christian",
+        "church",
+        "Cross",
+        "Dangle",
+        "Dangle earrings",
+        "Earrings",
+        "Easter",
+        "Faith",
+        "Floral",
+        "Jesus",
+        "scripture",
+        "worship"
+      ],
+      "totalInventory": 4,
+      "featuredImageUrl": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/floral-cross-dangle-earrings-5173151.jpg?v=1773702666",
+      "images": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/floral-cross-dangle-earrings-5173151.jpg?v=1773702666",
+          "altText": "Floral Cross Dangle Earrings - Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/37712897540292"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250410_105520.jpg?v=1773620651",
+          "altText": "Floral Cross Dangle Earrings",
+          "mediaId": "gid://shopify/MediaImage/34562195357892"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/floral-cross-dangle-earrings-5824628.jpg?v=1773702666",
+          "altText": "Floral Cross Dangle Earrings - Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/37712897507524"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/highland-cow-dangle-earrings-4790371.jpg?v=1773774176",
+          "altText": "Highland Cow Dangle Earrings - Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/37712542990532"
+        }
+      ],
+      "totalVariants": 1,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/44767529337028",
+          "title": "Default Title",
+          "sku": "38425",
+          "price": "15.00",
+          "inventoryQuantity": 4
+        }
+      ],
+      "currencyCode": "USD",
+      "handle": "floral-cross-dangle-earrings",
+      "inventory": [
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/46890918641860",
+          "locationId": "gid://shopify/Location/68049862852",
+          "variantTitle": "Default Title",
+          "sku": "38425",
+          "locationName": "Shopify On-line Store",
+          "available": 2,
+          "committed": 0,
+          "onHand": 2
+        },
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/46890918641860",
+          "locationId": "gid://shopify/Location/79837790404",
+          "variantTitle": "Default Title",
+          "sku": "38425",
+          "locationName": "Copper Mill @ Greenvillle",
+          "available": 2,
+          "committed": 0,
+          "onHand": 2
+        }
+      ]
+    },
+    {
+      "id": "gid://shopify/Product/8261423661252",
+      "title": "Round Medallion Cutout Earring",
+      "vendor": "Rustic Halo",
+      "status": "ACTIVE",
+      "productType": "Dangle Earrings",
+      "descriptionHtml": "<p>Round Medallion Cutout Dangle Earring made of wood</p>\n<p>Elevate your style with our Round Medallion Cutout Earrings! These stunning earrings feature a sleek and modern round design that will add a touch of elegance to any outfit. Show off your unique sense of fashion and make a statement with these eye-catching earrings.</p>",
+      "tags": [
+        "Dangle",
+        "Dangle earrings",
+        "Earrings",
+        "INV49881284"
+      ],
+      "totalInventory": 3,
+      "featuredImageUrl": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/round-medallion-cutout-earrings.jpg?v=1765067884",
+      "images": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/round-medallion-cutout-earrings.jpg?v=1765067884",
+          "altText": "Round Medallion Cutout Earring",
+          "mediaId": "gid://shopify/MediaImage/34858061037764"
+        }
+      ],
+      "totalVariants": 1,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/44848049881284",
+          "title": "Default Title",
+          "sku": "37119",
+          "price": "15.00",
+          "inventoryQuantity": 3
+        }
+      ],
+      "currencyCode": "USD",
+      "handle": "round-medallion-cutout-earring",
+      "inventory": [
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/46972012101828",
+          "locationId": "gid://shopify/Location/68049862852",
+          "variantTitle": "Default Title",
+          "sku": "37119",
+          "locationName": "Shopify On-line Store",
+          "available": 3,
+          "committed": 0,
+          "onHand": 3
+        }
+      ]
+    },
+    {
+      "id": "gid://shopify/Product/8216372281540",
+      "title": "Goat Hi",
+      "vendor": "Rustic Halo",
+      "status": "ACTIVE",
+      "productType": "Round Wood Sign",
+      "descriptionHtml": "<p>Say HI to your guests in a fun and playful way with our Goat Hi sign. This quirky and eye-catching sign will add a touch of humor to any space. Perfect for homes or businesses, our goat sign is sure to make everyone smile. No kidding!</p>\n<p>\u00a0</p>",
+      "tags": [
+        "Daffodil",
+        "Door Hanger",
+        "Door Hangers",
+        "Hi",
+        "INV92191172",
+        "Round Sign",
+        "Spring"
+      ],
+      "totalInventory": 1,
+      "featuredImageUrl": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250324_144446.jpg?v=1765067584",
+      "images": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250324_144446.jpg?v=1765067584",
+          "altText": "Goat Hi",
+          "mediaId": "gid://shopify/MediaImage/34535597637828"
+        }
+      ],
+      "totalVariants": 1,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/44714392191172",
+          "title": "Default Title",
+          "sku": "38409",
+          "price": "48.00",
+          "inventoryQuantity": 1
+        }
+      ],
+      "currencyCode": "USD",
+      "inventory": [
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/46837394735300",
+          "locationId": "gid://shopify/Location/68049862852",
+          "variantTitle": "Default Title",
+          "sku": "38409",
+          "locationName": "Shopify On-line Store",
+          "available": 1,
+          "committed": 0,
+          "onHand": 1
+        }
+      ],
+      "handle": "daffodil-hi-round-sign-copy",
+      "capturedAt": "2026-09-19T19:39:54.801Z"
+    },
+    {
+      "id": "gid://shopify/Product/8231870529732",
+      "title": "Welcome Succas Door Hanger Sign",
+      "vendor": "Rustic Halo",
+      "status": "ACTIVE",
+      "productType": "Round Wood Sign",
+      "descriptionHtml": "<p>Welcome your guests with a touch of humor with our Welcome Succas Novelty Sign! This 14\" sign is the perfect addition to any home, adding a fun and playful touch to any room. Show off your quirky side and make your guests feel right at home with this unique and entertaining sign.</p>",
+      "tags": [
+        "14\u201d",
+        "INV04932548",
+        "Novelty Sign",
+        "Succulents",
+        "Welcome",
+        "Welcome Sign"
+      ],
+      "totalInventory": 1,
+      "featuredImageUrl": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250408_150821.jpg?v=1765067526",
+      "images": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250408_150821.jpg?v=1765067526",
+          "altText": "welcome ",
+          "mediaId": "gid://shopify/MediaImage/34536701919428"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20250408_150600.jpg?v=1765067526",
+          "altText": "welcome succas",
+          "mediaId": "gid://shopify/MediaImage/34536701952196"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/welcome-succas-door-hanger-sign-8741990.jpg?v=1774531266",
+          "altText": "Welcome Succas Door Hanger Sign - Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/37794225750212"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0627/2018/0420/files/Photoroom_20251016_171019_b79b317b-1855-4bc3-9545-775a09702a8f.jpg?v=1774466602",
+          "altText": "Welcome Succas Rustic Halo",
+          "mediaId": "gid://shopify/MediaImage/36465718493380"
+        }
+      ],
+      "totalVariants": 1,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/44758104932548",
+          "title": "Default Title",
+          "sku": "38432",
+          "price": "48.00",
+          "inventoryQuantity": 1
+        }
+      ],
+      "currencyCode": "USD",
+      "inventory": [
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/46881457537220",
+          "locationId": "gid://shopify/Location/68049862852",
+          "variantTitle": "Default Title",
+          "sku": "38432",
+          "locationName": "Shopify On-line Store",
+          "available": 0,
+          "committed": 0,
+          "onHand": 0
+        },
+        {
+          "inventoryItemId": "gid://shopify/InventoryItem/46881457537220",
+          "locationId": "gid://shopify/Location/79837790404",
+          "variantTitle": "Default Title",
+          "sku": "38432",
+          "locationName": "Copper Mill @ Greenvillle",
+          "available": 1,
+          "committed": 0,
+          "onHand": 1
+        }
+      ],
+      "handle": "welcome-succas-novelty-sign",
+      "capturedAt": "2026-09-19T19:39:54.801Z"
+    }
+  ]
+}

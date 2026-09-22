@@ -1,0 +1,13 @@
+[Unit]
+Description=Export and verify Rustic Halo CDN images
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/shawnhouse/rustic-halo-staging
+ExecStart=/usr/bin/flock -n /run/rustic-halo-image-backup.lock /bin/sh /home/shawnhouse/rustic-halo-staging/backup-r2.sh
+UMask=0077
+TimeoutStartSec=45min
+Nice=10

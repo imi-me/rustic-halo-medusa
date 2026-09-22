@@ -10,7 +10,7 @@ import { retrieveCustomer } from "@lib/data/customer"
 
 export const metadata: Metadata = {
   title: "Profile",
-  description: "View and edit your Medusa Store profile.",
+  description: "View and edit your Rustic Halo profile.",
 }
 
 export default async function Profile() {
@@ -27,8 +27,7 @@ export default async function Profile() {
         <h1 className="text-2xl-semi">Profile</h1>
         <p className="text-base-regular">
           View and update your profile information, including your name, email,
-          and phone number. You can also update your billing address, or change
-          your password.
+          and phone number. You can also update your billing address.
         </p>
       </div>
       <div className="flex flex-col gap-y-8 w-full">

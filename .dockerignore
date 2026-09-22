@@ -1,0 +1,13 @@
+.git
+.local
+**/node_modules
+**/.env*
+**/.next
+**/.medusa
+**/*.tsbuildinfo
+**/.DS_Store
+**/coverage
+.turbo
+
+# macOS archive metadata is not source code
+**/._*

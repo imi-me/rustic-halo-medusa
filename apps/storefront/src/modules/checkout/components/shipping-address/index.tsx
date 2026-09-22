@@ -77,11 +77,13 @@ const ShippingAddress = ({
     if (cart && cart.shipping_address) {
       setFormAddress(cart?.shipping_address, cart?.email)
     }
+  }, [cart])
 
-    if (cart && !cart.email && customer?.email) {
+  useEffect(() => {
+    if (cart?.id && !cart.email && customer?.email) {
       setFormAddress(undefined, customer.email)
     }
-  }, [cart]) // Add cart as a dependency
+  }, [cart?.id, cart?.email, customer?.email])
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -112,7 +114,7 @@ const ShippingAddress = ({
           />
         </Container>
       )}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 small:grid-cols-2 gap-4">
         <Input
           label="First name"
           name="shipping_address.first_name"
@@ -167,6 +169,7 @@ const ShippingAddress = ({
           data-testid="shipping-city-input"
         />
         <CountrySelect
+          aria-label="Shipping country"
           name="shipping_address.country_code"
           autoComplete="country"
           region={cart?.region}
@@ -193,7 +196,7 @@ const ShippingAddress = ({
           data-testid="billing-address-checkbox"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 small:grid-cols-2 gap-4 mb-4">
         <Input
           label="Email"
           name="email"
@@ -209,6 +212,7 @@ const ShippingAddress = ({
           label="Phone"
           name="shipping_address.phone"
           autoComplete="tel"
+          type="tel"
           value={formData["shipping_address.phone"]}
           onChange={handleChange}
           data-testid="shipping-phone-input"

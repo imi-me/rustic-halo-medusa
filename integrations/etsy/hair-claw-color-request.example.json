@@ -1,0 +1,8 @@
+{
+  "mode": "preview",
+  "reviewed": false,
+  "color": "REPLACE_WITH_APPROVED_POLICY_COLOR",
+  "targetProductIds": [
+    "prod_REPLACE_AFTER_REVIEW"
+  ]
+}

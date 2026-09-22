@@ -296,42 +296,51 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
     }
-    const cartId = getCartId()
+    const cartId = await getCartId()
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
 
-    const data = {
+    const getText = (name: string): string => {
+      const value = formData.get(name)
+      if (value === null) return ""
+      if (typeof value !== "string") {
+        throw new Error(`Invalid text field: ${name}`)
+      }
+      return value
+    }
+
+    const data: HttpTypes.StoreUpdateCart = {
       shipping_address: {
-        first_name: formData.get("shipping_address.first_name"),
-        last_name: formData.get("shipping_address.last_name"),
-        address_1: formData.get("shipping_address.address_1"),
+        first_name: getText("shipping_address.first_name"),
+        last_name: getText("shipping_address.last_name"),
+        address_1: getText("shipping_address.address_1"),
         address_2: "",
-        company: formData.get("shipping_address.company"),
-        postal_code: formData.get("shipping_address.postal_code"),
-        city: formData.get("shipping_address.city"),
-        country_code: formData.get("shipping_address.country_code"),
-        province: formData.get("shipping_address.province"),
-        phone: formData.get("shipping_address.phone"),
+        company: getText("shipping_address.company"),
+        postal_code: getText("shipping_address.postal_code"),
+        city: getText("shipping_address.city"),
+        country_code: getText("shipping_address.country_code"),
+        province: getText("shipping_address.province"),
+        phone: getText("shipping_address.phone"),
       },
-      email: formData.get("email"),
-    } as HttpTypes.StoreUpdateCart
+      email: getText("email"),
+    }
 
     const sameAsBilling = formData.get("same_as_billing")
     if (sameAsBilling === "on") data.billing_address = data.shipping_address
 
     if (sameAsBilling !== "on")
       data.billing_address = {
-        first_name: formData.get("billing_address.first_name"),
-        last_name: formData.get("billing_address.last_name"),
-        address_1: formData.get("billing_address.address_1"),
+        first_name: getText("billing_address.first_name"),
+        last_name: getText("billing_address.last_name"),
+        address_1: getText("billing_address.address_1"),
         address_2: "",
-        company: formData.get("billing_address.company"),
-        postal_code: formData.get("billing_address.postal_code"),
-        city: formData.get("billing_address.city"),
-        country_code: formData.get("billing_address.country_code"),
-        province: formData.get("billing_address.province"),
-        phone: formData.get("billing_address.phone"),
+        company: getText("billing_address.company"),
+        postal_code: getText("billing_address.postal_code"),
+        city: getText("billing_address.city"),
+        country_code: getText("billing_address.country_code"),
+        province: getText("billing_address.province"),
+        phone: getText("billing_address.phone"),
       }
     await updateCart(data)
   } catch (error: unknown) {
@@ -427,4 +436,17 @@ export async function listCartOptions() {
     headers,
     cache: "force-cache",
   })
+}
+
+/** Re-read server totals immediately before asking Stripe to confirm payment. */
+export async function validateCheckoutTax() {
+  const id = await getCartId()
+  if (!id) throw new Error("Your cart is unavailable. Please refresh checkout.")
+  try {
+    await sdk.client.fetch(`/store/carts/${id}/tax-validation`, {
+      method: "POST", headers: await getAuthHeaders(), cache: "no-store",
+    })
+  } catch {
+    throw new Error("We could not verify your checkout total. Please refresh checkout and try again before paying.")
+  }
 }

@@ -45,13 +45,13 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const maxQuantity = item.variant?.manage_inventory ? 10 : maxQtyFromInventory
 
   return (
-    <Table.Row className="w-full" data-testid="product-row">
-      <Table.Cell className="!pl-0 p-4 w-24">
+    <Table.Row className={clx("w-full", {"grid grid-cols-[64px_minmax(0,1fr)] gap-x-4 gap-y-2 py-4 small:table-row small:py-0": type === "full"})} data-testid="product-row">
+      <Table.Cell className={clx("!pl-0 p-4 w-24", {"!p-0 small:!p-4 small:!pl-0 row-span-3 !w-16 small:!w-24": type === "full"})}>
         <LocalizedClientLink
           href={`/products/${item.product_handle}`}
           className={clx("flex", {
             "w-16": type === "preview",
-            "small:w-24 w-12": type === "full",
+            "small:w-24 w-16": type === "full",
           })}
         >
           <Thumbnail
@@ -62,7 +62,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         </LocalizedClientLink>
       </Table.Cell>
 
-      <Table.Cell className="text-left">
+      <Table.Cell className={clx("text-left", {"!p-0 small:!p-4 min-w-0 break-words": type === "full"})}>
         <Text
           className="txt-medium-plus text-ui-fg-base"
           data-testid="product-title"
@@ -73,10 +73,12 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
       </Table.Cell>
 
       {type === "full" && (
-        <Table.Cell>
+        <Table.Cell className="!p-0 small:!p-4 col-start-2">
           <div className="flex gap-2 items-center w-28">
-            <DeleteButton id={item.id} data-testid="product-delete-button" />
+            <DeleteButton id={item.id} ariaLabel={`Remove ${item.product_title} from cart`} />
             <CartItemSelect
+              aria-label={`Quantity for ${item.product_title}`}
+              disabled={updating}
               value={item.quantity}
               onChange={(value) => changeQuantity(parseInt(value.target.value))}
               className="w-14 h-10 p-4"
@@ -94,9 +96,6 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                 )
               )}
 
-              <option value={1} key={1}>
-                1
-              </option>
             </CartItemSelect>
             {updating && <Spinner />}
           </div>
@@ -114,7 +113,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
         </Table.Cell>
       )}
 
-      <Table.Cell className="!pr-0">
+      <Table.Cell className={clx("!pr-0", {"!p-0 small:!p-4 small:!pr-0 col-start-2": type === "full"})}>
         <span
           className={clx("!pr-0", {
             "flex flex-col items-end h-full justify-center": type === "preview",

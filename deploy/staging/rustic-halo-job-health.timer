@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Rustic Halo job-health report every five minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=rustic-halo-job-health.service
+
+[Install]
+WantedBy=timers.target

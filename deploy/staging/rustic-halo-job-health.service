@@ -1,0 +1,14 @@
+[Unit]
+Description=Publish sanitized Rustic Halo background-job health
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/rustic-halo-job-health/publish-job-health.py
+TimeoutStartSec=50
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/rustic-halo-job-health
+PrivateTmp=true

@@ -1,5 +1,6 @@
+import HeaderSearch from "@modules/layout/components/search"
 import { Suspense } from "react"
-
+import Image from "next/image"
 import { listLocales } from "@lib/data/locales"
 import { getLocale } from "@lib/data/locale-actions"
 import { listRegions } from "@lib/data/regions"
@@ -16,46 +17,25 @@ export default async function Nav() {
   ])
 
   return (
-    <div className="sticky top-0 inset-x-0 z-50 group">
-      <header className="relative h-16 mx-auto border-b duration-200 bg-white border-ui-border-base">
-        <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
-          <div className="flex-1 basis-0 h-full flex items-center">
-            <div className="h-full">
-              <SideMenu regions={regions} locales={locales} currentLocale={currentLocale} />
-            </div>
+    <div className="rh-header-shell sticky top-0 inset-x-0 z-50 group">
+      <div className="rh-announcement"><span>Made to order · Ships in 3–5 business days</span><a href="mailto:contact@rustichalo.com">Contact</a></div>
+      <header className="rh-header">
+        <nav className="rh-navigation" aria-label="Main navigation">
+          <div className="rh-mobile-menu">
+            <SideMenu regions={regions} locales={locales} currentLocale={currentLocale} />
           </div>
-
-          <div className="flex items-center h-full">
-            <LocalizedClientLink
-              href="/"
-              className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
-              data-testid="nav-store-link"
-            >
-              Medusa Store
-            </LocalizedClientLink>
+          <LocalizedClientLink href="/" className="rh-brand-lockup rh-brand-with-caption" data-testid="nav-store-link" aria-label="Rustic Halo home">
+            <Image src="/brand/rustic-halo-circle-horizontal.svg" alt="Rustic Halo" width={516} height={88} className="rh-horizontal-logo" priority /><span className="rh-logo-tagline">Nature inspired. Uniquely you.</span>
+          </LocalizedClientLink>
+          <div className="rh-desktop-links">
+            <LocalizedClientLink href="/store">Shop all</LocalizedClientLink>
+            <LocalizedClientLink href="/#collections">Collections</LocalizedClientLink>
+            <LocalizedClientLink href="/#our-story">Our story</LocalizedClientLink>
           </div>
-
-          <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
-            <div className="hidden small:flex items-center gap-x-6 h-full">
-              <LocalizedClientLink
-                className="hover:text-ui-fg-base"
-                href="/account"
-                data-testid="nav-account-link"
-              >
-                Account
-              </LocalizedClientLink>
-            </div>
-            <Suspense
-              fallback={
-                <LocalizedClientLink
-                  className="hover:text-ui-fg-base flex gap-2"
-                  href="/cart"
-                  data-testid="nav-cart-link"
-                >
-                  Cart (0)
-                </LocalizedClientLink>
-              }
-            >
+          <HeaderSearch />
+          <div className="rh-header-actions">
+            <LocalizedClientLink className="rh-account-link" href="/account" data-testid="nav-account-link">Account</LocalizedClientLink>
+            <Suspense fallback={<LocalizedClientLink href="/cart" data-testid="nav-cart-link">Cart (0)</LocalizedClientLink>}>
               <CartButton />
             </Suspense>
           </div>

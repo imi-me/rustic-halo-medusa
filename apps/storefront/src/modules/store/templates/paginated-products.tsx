@@ -8,6 +8,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 const PRODUCT_LIMIT = 12
 
 type PaginatedProductsParams = {
+  q?: string
   limit: number
   collection_id?: string[]
   category_id?: string[]
@@ -16,6 +17,7 @@ type PaginatedProductsParams = {
 }
 
 export default async function PaginatedProducts({
+  query,
   sortBy,
   page,
   collectionId,
@@ -24,6 +26,7 @@ export default async function PaginatedProducts({
   countryCode,
   optionValueIds,
 }: {
+  query?: string
   sortBy?: SortOptions
   page: number
   collectionId?: string
@@ -35,6 +38,8 @@ export default async function PaginatedProducts({
   const queryParams: PaginatedProductsParams = {
     limit: 12,
   }
+
+  if (query) queryParams.q = query
 
   if (collectionId) {
     queryParams["collection_id"] = [collectionId]
@@ -72,6 +77,7 @@ export default async function PaginatedProducts({
 
   return (
     <>
+      {products.length === 0 && <div className="rh-empty-results"><h2>{query ? "No matching products yet" : "New things are on their way"}</h2><p>{query ? "Try another search, or browse our current shop while we prepare this collection." : "Explore our current shop for available designs."}</p><a href="https://rustichalo.com/collections/all" target="_blank" rel="noreferrer">Visit our current shop ↗</a></div>}
       <ul
         className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
         data-testid="products-list"

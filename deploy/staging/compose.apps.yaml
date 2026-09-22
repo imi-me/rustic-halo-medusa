@@ -1,0 +1,54 @@
+services:
+  backend:
+    command: [/app/apps/backend/node_modules/.bin/medusa, start]
+    build:
+      context: ./source
+      dockerfile: deploy/staging/Dockerfile
+      target: backend
+    env_file: backend.env
+    environment:
+      APP_ENV: staging
+      # Private SSH preview only; remove before exposing through a public proxy.
+      LOCAL_HTTP_ADMIN: 'true'
+      PERSISTENT_JOBS_ENABLED: 'true'
+      APP_ROOT: /app
+      DATABASE_URL: postgres://rustic_halo:${POSTGRES_PASSWORD}@postgres:5432/rustic_halo_staging?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      STORE_CORS: http://localhost:18000
+      ADMIN_CORS: http://localhost:19000
+      AUTH_CORS: http://localhost:18000,http://localhost:19000
+      EMAIL_DELIVERY_ENABLED: 'false'
+    ports: ['127.0.0.1:19000:9000']
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:9000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    logging:
+      options: {max-size: 10m, max-file: '3'}
+
+  storefront:
+    build:
+      context: ./source
+      dockerfile: deploy/staging/Dockerfile
+      target: storefront
+      network: host
+      args:
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:?Required}
+        NEXT_PUBLIC_STRIPE_KEY: ${NEXT_PUBLIC_STRIPE_KEY:?Required}
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${NEXT_PUBLIC_MEDUSA_BACKEND_URL:-http://localhost:19000}
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:18000}
+    environment:
+      MEDUSA_BACKEND_URL: http://backend:9000
+      ETSY_OAUTH_COOKIE_SECRET: ${ETSY_OAUTH_COOKIE_SECRET:-}
+    ports: ['127.0.0.1:18000:8000']
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    logging:
+      options: {max-size: 10m, max-file: '3'}

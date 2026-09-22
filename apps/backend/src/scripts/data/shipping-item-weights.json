@@ -1,0 +1,11 @@
+{
+  "source": "owner-confirmed item-only weights; add packaging once per box",
+  "mass_unit": "oz",
+  "items": [
+    { "id": "hair-claw-4-inch", "weight_oz": 1, "package_id": "hair-claw-box" },
+    { "id": "hair-claw-2-inch", "weight_oz": 0.6, "package_id": "hair-claw-box" },
+    { "id": "earring-pair", "weight_oz": 0.5, "package_id": "earring-box" },
+    { "id": "sign-14-inch", "weight_oz": 40, "package_id": "14-inch-sign-box" }
+  ],
+  "note": "Sign weights apply only to confirmed 14-inch signs. Accessory mixed packing follows the confirmed standard-box combinations; other sign sizes remain unconfigured."
+}

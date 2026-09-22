@@ -1,5 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "XDG_CONFIG_HOME",
+    "XDG_CACHE_HOME",
+    "MEDUSA_DISABLE_TELEMETRY",
+    "NEXT_TELEMETRY_DISABLED"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -26,6 +26,8 @@ The kiosk and integration directories intentionally contain contracts and implem
 
 ## Local setup
 
+For the isolated setup already installed on this Mac, see [Local development on this Mac](docs/local-development.md).
+
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
@@ -36,7 +38,7 @@ cp apps/storefront/.env.template apps/storefront/.env.local
 Create a PostgreSQL database named `rustic_halo`, then set `DATABASE_URL` in `apps/backend/.env`. Replace all example secrets before using any shared environment.
 
 ```bash
-pnpm --dir apps/backend medusa db:migrate
+pnpm --dir apps/backend medusa db:migrate --skip-scripts
 pnpm --dir apps/backend medusa user -e admin@example.com -p 'replace-this-password'
 pnpm dev
 ```
@@ -44,6 +46,8 @@ pnpm dev
 The Medusa API and Admin run at `http://localhost:9000` and `http://localhost:9000/app`. The storefront runs at `http://localhost:8000`.
 
 After signing in to Admin, create a publishable API key and put it in `apps/storefront/.env.local` as `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY`.
+
+Keep `--skip-scripts` when migrating a blank or recovered database unless you have reviewed every pending migration script. The current starter migration script creates European demo products and million-unit inventory quantities. Running it is not a restoration of Rustic Halo data.
 
 ## Commands
 

@@ -5,7 +5,7 @@ import { OptionValueIds } from "@lib/util/product-option-filters"
 import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { getAuthHeaders, getCacheOptions } from "./cookies"
+import { getAuthHeaders } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 
 type ProductListQueryParams = (HttpTypes.FindParams &
@@ -56,10 +56,6 @@ export const listProducts = async ({
     ...(await getAuthHeaders()),
   }
 
-  const next = {
-    ...(await getCacheOptions("products")),
-  }
-
   return sdk.client
     .fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
       `/store/products`,
@@ -74,8 +70,9 @@ export const listProducts = async ({
           ...queryParams,
         },
         headers,
-        next,
-        cache: "force-cache",
+        // Prices and availability must reflect local imports and stock edits.
+        // Reintroduce caching only alongside product/inventory invalidation.
+        cache: "no-store",
       }
     )
     .then(({ products, count }) => {
@@ -93,7 +90,7 @@ export const listProducts = async ({
 }
 
 /**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
+ * Fetch all matching products in batches before sorting and paginating.
  * It will then return the paginated products based on the page and limit parameters.
  */
 export const listProductsWithSort = async ({
@@ -118,17 +115,28 @@ export const listProductsWithSort = async ({
     new Set((optionValueIds || []).filter(Boolean))
   )
 
-  const {
-    response: { products },
-  } = await listProducts({
-    pageParam: 0,
-    queryParams: {
-      ...queryParams,
-      ...(optionFilters.length ? { option_value_id: optionFilters } : {}),
-      limit: 100,
-    },
-    countryCode,
-  })
+  const products: HttpTypes.StoreProduct[] = []
+  const seen = new Set<string>()
+  for (let batch = 1; ; batch++) {
+    const { response } = await listProducts({
+      pageParam: batch,
+      queryParams: {
+        ...queryParams,
+        ...(optionFilters.length ? { option_value_id: optionFilters } : {}),
+        limit: 100,
+      },
+      countryCode,
+    })
+    for (const product of response.products) {
+      if (seen.has(product.id)) throw new Error("Catalog changed while loading; please retry.")
+      seen.add(product.id)
+      products.push(product)
+    }
+    if (products.length >= response.count) break
+    if (!response.products.length || batch >= 100) {
+      throw new Error("Unable to load the complete catalog.")
+    }
+  }
 
   const sortedProducts = sortProducts(products, sortBy)
 

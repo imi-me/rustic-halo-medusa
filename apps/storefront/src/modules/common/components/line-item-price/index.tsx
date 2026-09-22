@@ -56,6 +56,9 @@ const LineItemPrice = ({
             currency_code: currencyCode,
           })}
         </span>
+        {(item.tax_total ?? 0) > 0 && (
+          <span className="block text-xs text-ui-fg-subtle">Includes tax</span>
+        )}
       </div>
     </div>
   )

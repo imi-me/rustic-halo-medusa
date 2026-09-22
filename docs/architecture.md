@@ -1,11 +1,15 @@
 # Rustic Halo commerce architecture
 
-Status: accepted baseline for implementation.
+Status: baseline updated with September 20 connector scope. The current rollout
+is specified in `integration-rollout.md`; kiosk work below is deferred.
 
 ## System boundaries
 
 - **Medusa** is the commerce system of record for catalog, channels, orders, customers, fulfillment state, and inventory availability.
-- **MarketSuite** is the boundary for the legacy POS, generated kiosk barcodes, kiosk payment confirmation, and the handoff into personalization production.
+- **MarketSuite** bridges Copper Mill inventory to AntiqueSoft (AS). Medusa
+  replaces Shopify's existing connector role for Rustic Halo; reporting stays
+  in MarketSuite. AS provides no customer information. Inventory reductions are
+  the existing sales signal, not verified payment or customer records.
 - **Etsy** is an external sales channel. Its listings and orders synchronize through an adapter, not through storefront-specific business logic.
 - **Storefront** is the customer-facing web channel.
 - **Kiosk** is a Copper Mill client that creates a personalized item request. It cannot mark an order paid or release work to production by itself.
@@ -16,7 +20,11 @@ Every external operation must be idempotent. Store external IDs on Medusa record
 
 ### Shop inventory
 
-The website, Etsy, events, and direct sales consume the same **Shop** physical inventory pool. Represent Shop as one Medusa stock location and expose it through the applicable sales channels. Synchronization adapters update or reserve this same pool; they must not create channel-specific copies of stock.
+Represent **Shop** as a separate physical stock location. Rustic Halo website
+orders are made to order and must not be limited by Copper Mill finished stock.
+Confirm stocked versus made-to-order handling per Etsy listing before syncing
+availability. Channels selling physical Shop stock share that pool rather than
+creating channel-specific copies.
 
 An event is represented by an event sales-channel or order tag such as `event:<event-id>`. Taking products to an event does **not** transfer inventory to another location. Event reporting is derived from the tag while availability continues to come from Shop.
 
@@ -28,7 +36,11 @@ An event is represented by an event sales-channel or order tag such as `event:<e
 
 Made-to-order variants remain sellable when finished-goods inventory is zero. Model this explicitly with a product/variant attribute and Medusa inventory policy that permits backorders or does not manage finished stock. Raw-material or capacity constraints are a later production-planning concern and must not be simulated by fake finished-stock quantities.
 
-## Copper Mill personalization flow
+## Copper Mill personalization flow — deferred design
+
+This proposed flow is not the initial connector contract. AS customer data is
+unavailable, and inventory reductions cannot satisfy payment confirmation.
+Any future transaction confirmation requires a separately verified source.
 
 1. A kiosk session captures the base product, personalization choices, price, and non-sensitive production notes.
 2. The backend creates a unique temporary POS item for that configuration. It is scoped to the session/order and is not added to the reusable public catalog.
@@ -56,17 +68,21 @@ Do not put secrets, full payment details, or unrestricted personalization upload
 ## Integration ownership
 
 - `integrations/etsy` owns Etsy authentication, listing mapping, order ingestion, and reconciliation with Shop inventory.
-- `integrations/marketsuite` owns temporary POS item creation, barcode receipt/validation, payment confirmation, refunds/cancellations, and production release.
+- `integrations/marketsuite` initially owns Copper Mill item mirroring and
+  inventory synchronization through MarketSuite to AS, with stable mappings,
+  deduplication and loop prevention. Customer ingestion and paid-order creation
+  from AS inventory changes are excluded. Kiosk capabilities remain deferred.
 - Medusa workflows own business transitions and transactions. Transport adapters call workflows rather than changing inventory or order state directly.
 - Scheduled reconciliation detects missed webhooks and reports discrepancies without silently overwriting conflicting counts.
 
 ## Delivery sequence
 
 1. Establish Medusa catalog, the two stock locations, sales channels, and made-to-order policy.
-2. Brand and configure the storefront against Shop inventory.
-3. Implement Etsy mapping and reconciliation with sandbox/test listings.
-4. Implement signed MarketSuite callbacks and temporary item lifecycle.
-5. Build the kiosk client against those backend contracts.
-6. Add production queue UI, audit history, alerting, and operational runbooks.
+2. Import the Shopify catalog and location inventory with a reviewed staging diff.
+3. Replace Shopify's MarketSuite connector role for Rustic Halo in staging;
+   verify item mirroring, inventory changes, replay and reconciliation.
+4. Implement Etsy mapping and reconciliation with sandbox/test listings.
+5. Plan cutover before enabling external writes; continue theme work independently.
+6. Consider kiosk, production queue and deeper reporting as a later scope.
 
 Vendor credentials, exact MarketSuite API schemas, Etsy application approval, tax configuration, payment provider selection, shipping rules, and product data are deployment inputs, not assumptions made in this repository.

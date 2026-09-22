@@ -1,0 +1,119 @@
+{
+  "readOnlyAfterCleanup": true,
+  "catalogChanges": {
+    "etsyAuthorizedByOwner": true,
+    "medusaChanged": false,
+    "inventoryChanged": false,
+    "browserVerifiedAt": "2026-09-22T01:54:04Z",
+    "etsyManagerActiveBefore": 97,
+    "etsyManagerActiveAfter": 92,
+    "etsyManagerInactiveAfter": 30,
+    "postCleanupApiActiveCount": 97,
+    "apiPropagationPending": true,
+    "deactivatedListings": [
+      { "listingId": 4339027040, "title": "Sunflower Hair Claw", "orphanVariants": 2 },
+      { "listingId": 4339026752, "title": "Paws Hair Claw", "orphanVariants": 2 },
+      { "listingId": 4339026974, "title": "Sunflower Artsy Hair Claw", "orphanVariants": 2 },
+      { "listingId": 4338295585, "title": "Simple Floral Earring", "orphanVariants": 1 },
+      { "listingId": 4338292004, "title": "Leaf Dangle Earring", "orphanVariants": 4 }
+    ],
+    "hiddenVariants": [
+      {
+        "listingId": 4338292126,
+        "title": "Falling Leaves Dangle Earrings",
+        "productId": 25868154927,
+        "sku": "38096",
+        "variation": "Burnt Orange",
+        "preservedActiveSiblingSku": "38095"
+      }
+    ]
+  },
+  "missingSkuEvidence": [
+    {
+      "etsySku": "38312",
+      "etsyTitle": "Sunflower Hair Claw",
+      "evidence": "NAS confirms design 38312 as Sunflower; Medusa uses 38312-CBC4, 38312-N4 and 38312-N2.",
+      "recommendation": "Orphaned from active Etsy at owner direction; do not map the unsuffixed Etsy SKU automatically."
+    },
+    {
+      "etsySku": "38313",
+      "etsyTitle": "Sunflower Hair Claw",
+      "evidence": "NAS design 38313 is Butterfly, not Sunflower; Medusa's 2-inch Sunflower is 38312-N2.",
+      "recommendation": "Orphaned from active Etsy; retain as a documented SKU conflict and do not map."
+    },
+    {
+      "etsySku": "38307-P4",
+      "etsyTitle": "Paws Hair Claw",
+      "evidence": "NAS confirms Paws design base 38307; Medusa has 38307-B4 and 38307-B2 but no Pink variant.",
+      "recommendation": "Orphaned from active Etsy; do not collapse Pink into the Medusa B variant."
+    },
+    {
+      "etsySku": "38301-P2",
+      "etsyTitle": "Paws Hair Claw",
+      "evidence": "NAS design 38301 is a baseball home sign, while Paws is design 38307.",
+      "recommendation": "Orphaned from active Etsy; retain as an erroneous cross-design SKU and do not map."
+    },
+    {
+      "etsySku": "38314",
+      "etsyTitle": "Sunflower Artsy Hair Claw",
+      "evidence": "NAS confirms Sunflower hair-clip design 38314; Medusa uses 38315-N and 38315-CBC for the similarly titled product.",
+      "recommendation": "Orphaned from active Etsy; keep the 38314 versus 38315 design conflict for later product review."
+    },
+    {
+      "etsySku": "38314-B",
+      "etsyTitle": "Sunflower Artsy Hair Claw",
+      "evidence": "NAS confirms Sunflower hair-clip design 38314; no matching Medusa color variant exists.",
+      "recommendation": "Orphaned from active Etsy; do not map this color to the aggregate Colors by Cate variant."
+    },
+    {
+      "etsySku": "38446",
+      "etsyTitle": "Simple Floral Earring",
+      "evidence": "NAS contains SimpleFloral2Part source files under design 38446; no Shopify snapshot or Medusa variant matches it.",
+      "recommendation": "Orphaned from active Etsy; retain the manufacturing evidence if the product is recreated later."
+    },
+    {
+      "etsySku": "38096",
+      "etsyTitle": "Falling Leaves Dangle Earrings",
+      "evidence": "No 38096 manufacturing file was found; Shopify and Medusa contain the Natural sibling as 38095.",
+      "recommendation": "Burnt Orange was hidden; preserve active Natural SKU 38095."
+    },
+    {
+      "etsySku": "37518-B",
+      "etsyTitle": "Leaf Dangle Earring",
+      "evidence": "NAS confirms leafearrings.svg under design 37518; no Shopify snapshot or Medusa variant matches this color.",
+      "recommendation": "Orphaned from active Etsy; no automatic mapping."
+    },
+    {
+      "etsySku": "37518-R",
+      "etsyTitle": "Leaf Dangle Earring",
+      "evidence": "NAS confirms leafearrings.svg under design 37518; no Shopify snapshot or Medusa variant matches this color.",
+      "recommendation": "Orphaned from active Etsy; no automatic mapping."
+    },
+    {
+      "etsySku": "37518-White-Dist",
+      "etsyTitle": "Leaf Dangle Earring",
+      "evidence": "NAS confirms leafearrings.svg under design 37518; no Shopify snapshot or Medusa variant matches this color.",
+      "recommendation": "Orphaned from active Etsy; no automatic mapping."
+    },
+    {
+      "etsySku": "37518-GreenDist",
+      "etsyTitle": "Leaf Dangle Earring",
+      "evidence": "NAS confirms leafearrings.svg under design 37518; no Shopify snapshot or Medusa variant matches this color.",
+      "recommendation": "Orphaned from active Etsy; no automatic mapping."
+    }
+  ],
+  "bohoBirdsSkuProposals": [
+    { "productId": 32496307678, "color": "CREAM", "currentSku": "38316", "proposedSku": "38316-CREAM" },
+    { "productId": 32496307676, "color": "SKY BLUE", "currentSku": "38316", "proposedSku": "38316-SKY-BL" },
+    { "productId": 32188184729, "color": "OCEAN BLUE", "currentSku": "38316", "proposedSku": "38316-OCEAN-BL" },
+    { "productId": 32496307674, "color": "MINT", "currentSku": "38316", "proposedSku": "38316-MINT" },
+    { "productId": 32496307672, "color": "SAGE", "currentSku": "38316", "proposedSku": "38316-SAGE" },
+    { "productId": 32188184727, "color": "BLUSH", "currentSku": "38316", "proposedSku": "38316-BLUSH" },
+    { "productId": 32188184725, "color": "TAUPE", "currentSku": "38316", "proposedSku": "38316-TAUPE" },
+    { "productId": 32496307670, "color": "TERRACOTTA", "currentSku": "38316", "proposedSku": "38316-TERRACOTTA" },
+    { "productId": 32188184723, "color": "ESPRESSO", "currentSku": "38316", "proposedSku": "38316-ESPRESSO" },
+    { "productId": 32496307668, "color": "SLATE", "currentSku": "38316", "proposedSku": "38316-SLATE" },
+    { "productId": 32496307666, "color": "NAVY", "currentSku": "38316", "proposedSku": "38316-NAVY" },
+    { "productId": 32496307664, "color": "Black", "currentSku": "38316", "proposedSku": "38316-BLK" }
+  ]
+}
