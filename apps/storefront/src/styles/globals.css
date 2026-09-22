@@ -475,3 +475,21 @@ body { background: var(--rh-cream); color: var(--rh-ink); }
  .rh-logo-tagline { font-size:5px; margin-left:19px; }
  .rh-announcement { font-size:9px; letter-spacing:.07em; }
 }
+
+/* Familiar social destinations, presented as clear footer actions. */
+.rh-footer-social { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+.rh-footer-top > div:not(:first-child) .rh-footer-social a { display:inline-flex; align-items:center; justify-content:center; gap:9px; min-height:44px; margin:0; padding:10px 14px; border:1px solid #a8b19d; color:#f5f2ea; font-size:12px; font-weight:600; text-decoration:none; transition:background .2s ease,border-color .2s ease; }
+.rh-footer-social a:hover { background:#ffffff18; border-color:#f5f2ea; }
+.rh-footer-social svg { width:18px; height:18px; flex:none; }
+.rh-footer-social svg path { fill:currentColor; }
+.rh-footer-social a:focus-visible { outline:3px solid var(--rh-brass); outline-offset:3px; }
+
+/* Share the current product or selected Medusa variant. */
+.rh-product-share { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:-12px 0 0; font-family:Arial,Helvetica,sans-serif; }
+.rh-product-share button { display:inline-flex; align-items:center; gap:9px; min-height:44px; padding:7px 0; color:var(--rh-olive); font-size:13px; font-weight:600; }
+.rh-product-share button:hover { text-decoration:underline; text-underline-offset:4px; }
+.rh-product-share button:focus-visible,.rh-product-share input:focus-visible { outline:3px solid var(--rh-brass); outline-offset:3px; }
+.rh-product-share button svg { width:18px; height:18px; }
+.rh-share-feedback { color:var(--rh-ink); font-size:12px; }
+.rh-product-share input { flex-basis:100%; min-width:0; padding:9px 11px; border:1px solid #c8cbbb; background:#fffdf8; color:var(--rh-ink); font-size:12px; }
+@media(prefers-reduced-motion:reduce) { .rh-footer-top .rh-footer-social a { transition:none; } }

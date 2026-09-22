@@ -70,3 +70,21 @@ before any staging deployment. Files: `apps/storefront/src/app/[countryCode]/(ma
 `apps/storefront/src/modules/home/components/product-card/`,
 `apps/storefront/src/modules/layout/`, `apps/storefront/src/lib/brand/home-collections.ts`,
 and `apps/storefront/src/styles/globals.css`.
+
+## Footer and product-sharing follow-up
+
+The existing Instagram and Facebook footer destinations now appear as
+keyboard-accessible, touch-sized buttons in the Rustic Halo palette. Product
+pages offer Share this product for the device share sheet, plus a separate Copy
+link action with visible feedback and a selectable-link fallback. Links use the
+current storefront origin and retain the selected Medusa `v_id` only; they do
+not carry unrelated URL parameters.
+
+Verified locally on desktop and a 390px phone width: footer layout, no
+horizontal overflow, a real product page, Copy link feedback, focused lint and
+type checks, 16 storefront tests, and a production build against the staging
+backend. Files: `apps/storefront/src/modules/layout/templates/footer/index.tsx`,
+`apps/storefront/src/modules/products/components/product-share/index.tsx`,
+`apps/storefront/src/modules/products/templates/index.tsx`, and
+`apps/storefront/src/styles/globals.css`. This remains a local change; no
+staging or production deployment was performed.

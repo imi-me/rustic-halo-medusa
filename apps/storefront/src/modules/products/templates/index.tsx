@@ -6,6 +6,7 @@ import ProductActions from "@modules/products/components/product-actions"
 import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
 import ProductInfo from "@modules/products/templates/product-info"
+import ProductShare from "@modules/products/components/product-share"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
@@ -35,6 +36,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         <div className="rh-product-gallery"><ImageGallery images={images} /></div>
         <div className="rh-product-details">
           <ProductInfo product={product} />
+          <ProductShare title={product.title || "Rustic Halo product"} countryCode={countryCode} handle={product.handle || ""} />
           <p className="rh-made-to-order">Made to order <span aria-hidden="true">·</span> Ships in 3–5 business days</p>
           <Suspense fallback={<ProductActions disabled product={product} region={region} />}>
             <ProductActionsWrapper id={product.id} region={region} />
