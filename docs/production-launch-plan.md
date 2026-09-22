@@ -42,11 +42,10 @@ catalog pages; page 21 contains seven products, confirming 247 storefront
 products. The sample products did not appear in the storefront review.
 
 This confirms the current staging publication and pagination state. It is not a
-field-by-field launch approval for all 247 products. The opening catalog must
-still be narrowed to products with complete photos, product facts, packing data,
-shipping rules and customer copy. Existing records show 171 imported products
-remain unpublished for measurements, one remains unpublished for a photo, and
-coasters remain drafts pending packaging details.
+field-by-field launch approval for all 247 products. The opening catalog was
+subsequently narrowed to the approved 24-product set. Existing records show 171
+imported products remain unpublished for measurements, one remains unpublished
+for a photo, and coasters remain drafts pending packaging details.
 
 ### Gate 1 field audit — September 22
 
@@ -124,8 +123,9 @@ claims were removed. The current logo, palette, typography, tagline, and
 made-to-order announcement remain unchanged after the completed desktop and
 phone browser pass. See `docs/policy-and-appearance-review.md`.
 
-The owner still needs to approve this concrete policy and appearance review.
-No staging or production deployment was made.
+The owner approved this concrete policy and appearance review on September 22,
+2026. This closes the policy and appearance portion of Gate 1. No staging or
+production deployment was made.
 
 ## Gate 2 — create production beside staging
 
@@ -207,8 +207,8 @@ milestone.
 
 - Opening catalog approved: all 24 products in
   `deploy/production/opening-catalog.json` (19 core and five seasonal).
-- Approve the final-review policy pages and current storefront appearance for
-  launch; see `docs/policy-and-appearance-review.md`.
+- Policy pages and current storefront appearance approved on September 22,
+  2026; see `docs/policy-and-appearance-review.md`.
 - Decide whether launch waits for stable fiber or uses a temporary cloud VM.
 - Provide the original Turkey Football Round Door Hanger studio SKU when found;
   otherwise leave that product unpublished.

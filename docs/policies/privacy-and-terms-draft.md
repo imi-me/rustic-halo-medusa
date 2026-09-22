@@ -1,8 +1,9 @@
 # Rustic Halo policy review
 
-Status: final owner review. These policies are implemented locally at `/privacy`
-and `/terms` and linked from the footer. They are not published. Their effective
-date is the launch of the new Rustic Halo store.
+Status: approved by the owner on September 22, 2026. These policies are
+implemented locally at `/privacy` and `/terms` and linked from the footer. They
+are not published. Their effective date is the launch of the new Rustic Halo
+store.
 
 ## Confirmed business facts
 

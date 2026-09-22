@@ -1,7 +1,7 @@
 # Gate 1 policy and appearance review
 
 Date: September 22, 2026  
-Status: ready for owner approval; local only
+Status: approved by owner; local only
 
 ## Policy decision
 
@@ -37,10 +37,9 @@ sandbox confirmation page. The current appearance is suitable for the initial
 launch candidate. A broader theme redesign can remain a later, independent
 milestone.
 
-## Owner approval requested
+## Owner approval
 
-Approve the policy pages and the current storefront appearance for the initial
-launch, or identify the exact wording or visual element to change. This approval
-closes the remaining policy and appearance portion of Gate 1; it does not
-authorize deployment, a public launch, live payments, DNS changes, or inventory
-synchronization.
+The owner approved the policy pages and current storefront appearance for the
+initial launch on September 22, 2026. This closes the policy and appearance
+portion of Gate 1. The approval does not authorize deployment, a public launch,
+live payments, DNS changes, or inventory synchronization.
