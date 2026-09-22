@@ -107,6 +107,12 @@ no catalog status, inventory, Etsy, Shopify, Market Suite, or AntiqueSoft record
 was changed. See `docs/opening-catalog-proposal.md` and
 `docs/opening-catalog-proposal.csv`.
 
+The owner approved all 24 proposed products on September 22. The exact handles
+and SKU sets are frozen in `deploy/production/opening-catalog.json`; its safety
+flags leave publication, Etsy writes and inventory synchronization unauthorized.
+A validator rejects readiness, SKU, variant-count, duplicate-identity, or safety
+flag drift before the manifest can be used.
+
 ## Gate 2 — create production beside staging
 
 1. Create a separate production VM and production database. Do not convert VM
@@ -185,8 +191,8 @@ milestone.
 
 ## Owner decisions needed before Gate 1 closes
 
-- Choose the small opening catalog; the recommended default is only products
-  whose shipping and photos are already verified.
+- Opening catalog approved: all 24 products in
+  `deploy/production/opening-catalog.json` (19 core and five seasonal).
 - Approve the policy drafts and current storefront appearance for launch.
 - Decide whether launch waits for stable fiber or uses a temporary cloud VM.
 - Provide the original Turkey Football Round Door Hanger studio SKU when found;

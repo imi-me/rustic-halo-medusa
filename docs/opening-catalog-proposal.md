@@ -4,6 +4,10 @@ Prepared September 22, 2026 from the verified read-only staging catalog audit.
 This is a review proposal only. It did not publish, unpublish, edit, or reorder
 any product and did not change inventory, Etsy, Shopify, Market Suite, or AntiqueSoft.
 
+**Owner decision: approved all 24 products on September 22, 2026.** This
+approval fixes the intended production assortment; it does not authorize
+production publication or any inventory/channel write.
+
 ## Recommendation
 
 - **24 products** and **102 variants**
@@ -45,13 +49,13 @@ batches.
 | Seasonal | Floral Ghost Dangle Earrings | Dangle Earrings | 1 | `floral-ghost-dangle-earrings` |
 | Seasonal | Falling Leaves Dangle Earrings | Dangle Earrings | 1 | `falling-leaves-dangle-earrings` |
 
-## Approval choices
+## Recorded approval
 
-1. **Approve as proposed** — use these 24 products as the production opening set.
-2. **Approve evergreen only** — launch the 19 core products and hold the five
-   fall/Halloween products.
-3. **Revise** — name any products to add or remove before a guarded production
-   manifest is created.
+The owner selected **all 24**: the 19 core products and all five fall/Halloween
+products. The guarded machine-readable manifest is
+`deploy/production/opening-catalog.json`.
 
-No catalog status changes should be made until one of these choices is approved.
-The detailed review sheet is `docs/opening-catalog-proposal.csv`.
+The manifest explicitly leaves production publication, inventory syncing and
+Etsy writes unauthorized. It must pass `scripts/validate_opening_catalog.py`
+against a fresh read-only catalog audit before production use. The detailed
+review sheet is `docs/opening-catalog-proposal.csv`.

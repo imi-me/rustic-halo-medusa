@@ -85,10 +85,11 @@ Authenticated customer order history also remains a final acceptance check; the
 guest login and existing confirmation views passed without creating a customer
 or order.
 
-An owner-review proposal is now available with 24 products and 102 variants:
-19 evergreen products and five fall/Halloween products. Approval or revision is
-still required before it becomes a production manifest. See
-`docs/opening-catalog-proposal.md`.
+The owner approved the proposed 24 products and 102 variants: 19 evergreen
+products and five fall/Halloween products. The exact handle and SKU set is
+frozen in `deploy/production/opening-catalog.json`. Its safety flags keep
+production publication, inventory synchronization and Etsy writes unauthorized.
+See `docs/opening-catalog-proposal.md`.
 
 ## Evidence files
 

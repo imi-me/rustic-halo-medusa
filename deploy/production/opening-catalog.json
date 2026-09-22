@@ -1,0 +1,340 @@
+{
+  "schemaVersion": 1,
+  "name": "rustic-halo-opening-catalog",
+  "approved": true,
+  "approvedBy": "owner",
+  "approvedDate": "2026-09-22",
+  "sourceAuditCheckedAt": "2026-09-22T17:05:37.831449+00:00",
+  "selection": {
+    "products": 24,
+    "variants": 102,
+    "core": 19,
+    "seasonal": 5
+  },
+  "safety": {
+    "inventorySyncAuthorized": false,
+    "etsyWritesAuthorized": false,
+    "productionPublishAuthorized": false,
+    "notes": "Assortment approval only. Production publication requires the production launch gate."
+  },
+  "products": [
+    {
+      "group": "core",
+      "handle": "highland-cow-hair-claw",
+      "title": "Highland Cow Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 48,
+      "skus": [
+        "38309-4-CREAM",
+        "38309-P4-CREAM",
+        "38309-4-SKY-BL",
+        "38309-4-OCEAN-BL",
+        "38309-4-MINT",
+        "38309-4-SAGE",
+        "38309-4-BLUSH",
+        "38309-4-TAUPE",
+        "38309-4-TERRACOTTA",
+        "38309-4-ESPRESSO",
+        "38309-4-SLATE",
+        "38309-4-NAVY",
+        "38309-4-BLK",
+        "38309-P2-CREAM",
+        "38309-P2-SKY-BL",
+        "38309-P2-OCEAN-BL",
+        "38309-P2-MINT",
+        "38309-P2-SAGE",
+        "38309-P2-BLUSH",
+        "38309-P2-TAUPE",
+        "38309-P2-TERRACOTTA",
+        "38309-P2-ESPRESSO",
+        "38309-P2-SLATE",
+        "38309-P2-NAVY",
+        "38309-P2-BLK",
+        "38309-P4-SKY-BL",
+        "38309-P4-OCEAN-BL",
+        "38309-P4-MINT",
+        "38309-P4-SAGE",
+        "38309-P4-BLUSH",
+        "38309-P4-TAUPE",
+        "38309-P4-TERRACOTTA",
+        "38309-P4-ESPRESSO",
+        "38309-P4-SLATE",
+        "38309-P4-NAVY",
+        "38309-P4-BLK",
+        "38309-2-CREAM",
+        "38309-2-SKY-BL",
+        "38309-2-OCEAN-BL",
+        "38309-2-MINT",
+        "38309-2-SAGE",
+        "38309-2-BLUSH",
+        "38309-2-TAUPE",
+        "38309-2-TERRACOTTA",
+        "38309-2-ESPRESSO",
+        "38309-2-SLATE",
+        "38309-2-NAVY",
+        "38309-2-BLK"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "scalloped-beach-hair-claw",
+      "title": "Seashell Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 12,
+      "skus": [
+        "38258-CREAM",
+        "38258-SKY-BL",
+        "38258-OCEAN-BL",
+        "38258-MINT",
+        "38258-SAGE",
+        "38258-BLUSH",
+        "38258-TAUPE",
+        "38258-TERRACOTTA",
+        "38258-ESPRESSO",
+        "38258-SLATE",
+        "38258-NAVY",
+        "38258-BLK"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "sunflower-hair-claw",
+      "title": "Sunflower Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 3,
+      "skus": [
+        "38312-N4",
+        "38312-CBC4",
+        "38312-N2"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "paws-hair-claw",
+      "title": "Paws Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 2,
+      "skus": [
+        "38307-B4",
+        "38307-B2"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "plant-mama-hair-claw",
+      "title": "Plant Mama Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 2,
+      "skus": [
+        "38543-2",
+        "38542"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "teacher-hair-claw",
+      "title": "Teacher Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 1,
+      "skus": [
+        "38654"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "christian-faith-hair-claw",
+      "title": "Christian Faith Hair Claw Clip",
+      "productType": "Hair Claw",
+      "variantCount": 3,
+      "skus": [
+        "38511-4",
+        "38511-CBC4",
+        "38511-2"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "happy-cow-hair-claw",
+      "title": "Happy Cow Hair Claw",
+      "productType": "Hair Claw",
+      "variantCount": 4,
+      "skus": [
+        "38546-2",
+        "38546-CBC2",
+        "38546-4",
+        "38546-CBC4"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "rose-hair-claw-clip",
+      "title": "Rose Hair Claw Clip",
+      "productType": "Hair Claw",
+      "variantCount": 2,
+      "skus": [
+        "37163",
+        "37164"
+      ]
+    },
+    {
+      "group": "seasonal",
+      "handle": "autumn-leaf-claw-clip",
+      "title": "Autumn Leaf Claw Clip",
+      "productType": "Hair Claw",
+      "variantCount": 1,
+      "skus": [
+        "38367"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "floral-cross-dangle-earrings",
+      "title": "Floral Cross Dangle Earrings",
+      "productType": "Uncategorized",
+      "variantCount": 1,
+      "skus": [
+        "38425"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "cowboy-boot-earrings",
+      "title": "Cowboy Boot Earrings",
+      "productType": "Dangle Earrings",
+      "variantCount": 2,
+      "skus": [
+        "38070-TB",
+        "38070-B"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "honey-comb-with-honey-bee-hanging-earrings",
+      "title": "Honey Bee and Comb Dangle Earrings",
+      "productType": "Dangle Earrings",
+      "variantCount": 1,
+      "skus": [
+        "37542"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "monstera-leaf-earrings",
+      "title": "Monstera Leaf Earrings",
+      "productType": "Dangle Earrings",
+      "variantCount": 1,
+      "skus": [
+        "37928-LG"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "sand-dollar-earrings",
+      "title": "Sand Dollar Earrings",
+      "productType": "Drop Earrings",
+      "variantCount": 1,
+      "skus": [
+        "37919"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "sunflower-dangle-earrings",
+      "title": "Sunflower Dangle Earrings",
+      "productType": "Dangle",
+      "variantCount": 2,
+      "skus": [
+        "37910-Y",
+        "37910-O"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "floral-wood-earrings",
+      "title": "Floral Wood Earrings",
+      "productType": "Drop Earrings",
+      "variantCount": 1,
+      "skus": [
+        "38045"
+      ]
+    },
+    {
+      "group": "seasonal",
+      "handle": "autumn-in-the-air-dangle-earrings",
+      "title": "Autumn in the Air Dangle Earrings",
+      "productType": "Dangle Earrings",
+      "variantCount": 1,
+      "skus": [
+        "DE38738"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "baseball-stud-earrings",
+      "title": "Baseball Stud Earrings",
+      "productType": "Stud Earrings",
+      "variantCount": 1,
+      "skus": [
+        "2918677700"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "medical-stud-earrings",
+      "title": "Medical Stud Earrings",
+      "productType": "Stud Earrings",
+      "variantCount": 4,
+      "skus": [
+        "38305-N",
+        "38305-A",
+        "38305-RX",
+        "38305-S"
+      ]
+    },
+    {
+      "group": "core",
+      "handle": "heart-stud-earrings",
+      "title": "Wood Heart Stud Earrings",
+      "productType": "Stud Earrings",
+      "variantCount": 6,
+      "skus": [
+        "37584-WG",
+        "37584-R",
+        "37584-A",
+        "37584-S",
+        "37584-M",
+        "37584-W"
+      ]
+    },
+    {
+      "group": "seasonal",
+      "handle": "striped-pumpkin-studs",
+      "title": "Striped Pumpkin Studs",
+      "productType": "Stud Earrings",
+      "variantCount": 1,
+      "skus": [
+        "38081"
+      ]
+    },
+    {
+      "group": "seasonal",
+      "handle": "floral-ghost-dangle-earrings",
+      "title": "Floral Ghost Dangle Earrings",
+      "productType": "Dangle Earrings",
+      "variantCount": 1,
+      "skus": [
+        "38093"
+      ]
+    },
+    {
+      "group": "seasonal",
+      "handle": "falling-leaves-dangle-earrings",
+      "title": "Falling Leaves Dangle Earrings",
+      "productType": "Dangle Earrings",
+      "variantCount": 1,
+      "skus": [
+        "38095"
+      ]
+    }
+  ]
+}
