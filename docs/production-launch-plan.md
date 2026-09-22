@@ -96,6 +96,17 @@ read-only correction is locally tested and remains undeployed. See
 `docs/release-candidate-2026-09-22.md`. Gate 1 still awaits the owner decisions
 listed below; no production or public change was made.
 
+### Gate 1 opening-assortment proposal — September 22
+
+A concrete owner-review proposal now narrows the 247 eligible storefront
+products to 24 products and 102 variants: 19 evergreen products plus five
+fall/Halloween products. The set gives the launch representation across hair
+claws, dangle/drop earrings and studs while retaining one fully configured hero
+hair claw with size and base-color selection. This is a planning artifact only;
+no catalog status, inventory, Etsy, Shopify, Market Suite, or AntiqueSoft record
+was changed. See `docs/opening-catalog-proposal.md` and
+`docs/opening-catalog-proposal.csv`.
+
 ## Gate 2 — create production beside staging
 
 1. Create a separate production VM and production database. Do not convert VM

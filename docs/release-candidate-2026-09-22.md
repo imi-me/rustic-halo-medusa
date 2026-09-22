@@ -85,9 +85,16 @@ Authenticated customer order history also remains a final acceptance check; the
 guest login and existing confirmation views passed without creating a customer
 or order.
 
+An owner-review proposal is now available with 24 products and 102 variants:
+19 evergreen products and five fall/Halloween products. Approval or revision is
+still required before it becomes a production manifest. See
+`docs/opening-catalog-proposal.md`.
+
 ## Evidence files
 
 - `docs/opening-catalog-readiness.md`
+- `docs/opening-catalog-proposal.md`
+- `docs/opening-catalog-proposal.csv`
 - `docs/opening-catalog-candidates.csv`
 - `docs/staging-browser-pass.md`
 - `docs/production-launch-plan.md`
