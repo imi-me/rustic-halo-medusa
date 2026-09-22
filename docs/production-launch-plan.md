@@ -143,10 +143,11 @@ production deployment was made.
 5. Keep `staging.rustichalo.com` and its sandbox services intact for future
    releases.
 
-Recommended hosting decision: use a new Proxmox production VM after the fiber
-connection is stable. A 2 Gbps symmetric connection is ample for this store.
-If launch must happen before reliable fiber, use a small cloud VM for the same
-container stack rather than depending on the DOCSIS connection.
+Recommended hosting decision: prepare a new Proxmox production VM now as an
+isolated, protected instance. Public cutover should wait for a stable fiber
+connection. A 2 Gbps symmetric connection is ample for this store. If launch
+must happen before reliable fiber, use a small cloud VM for the same container
+stack rather than depending on the DOCSIS connection.
 
 Exit evidence: healthy production services, private admin access, HTTPS on a
 temporary protected production hostname, fresh backup, and a successful
@@ -203,12 +204,13 @@ after the comparison is complete and a separate cutover is explicitly approved.
 Etsy fulfillment and inventory remain independent until their own reviewed
 milestone.
 
-## Owner decisions needed before Gate 1 closes
+## Owner decisions and launch inputs
 
 - Opening catalog approved: all 24 products in
   `deploy/production/opening-catalog.json` (19 core and five seasonal).
 - Policy pages and current storefront appearance approved on September 22,
   2026; see `docs/policy-and-appearance-review.md`.
-- Decide whether launch waits for stable fiber or uses a temporary cloud VM.
+- Decide whether public launch waits for stable fiber or uses a temporary cloud
+  VM. The isolated Proxmox production VM can be prepared before this decision.
 - Provide the original Turkey Football Round Door Hanger studio SKU when found;
   otherwise leave that product unpublished.

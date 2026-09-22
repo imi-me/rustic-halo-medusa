@@ -19,14 +19,22 @@ without a Copper Mill record in Medusa. No quantities changed. Further identity
 mapping is deferred until its own pre-cutover milestone; inventory syncing
 remains disabled.
 
-**One active milestone:** production Gate 1, freezing a small, reviewed release
-candidate. A fresh browser checkpoint confirms that the protected staging
-storefront contains 247 Rustic Halo products and excludes the four Medusa sample
-products assigned to the Default Sales Channel. This milestone now narrows the
-opening catalog to products with complete launch fields, completes the focused
-storefront review, and records policy and appearance approval. It does not
-authorize a production deployment, DNS change, live provider, real transaction,
-or external inventory write.
+**Completed milestone:** production Gate 1. The opening catalog is frozen at 24
+owner-approved products and 102 variants. The focused staging browser review,
+policy pages, and current storefront appearance have been reviewed and approved.
+The local release candidate and approvals are recorded in
+`docs/production-launch-plan.md` and `docs/policy-and-appearance-review.md`.
+
+**One active milestone:** Gate 2 production infrastructure. First verify unused
+Proxmox capacity, an unused VM ID, VLAN 69 addressing, current backup state, and
+the isolation plan. Then create a separate production VM and database beside
+staging, with fresh production-scoped credentials and a private Admin. Test the
+new instance under a protected temporary hostname and prove backup restoration
+before any public cutover. Fiber stability remains a launch decision, not a
+prerequisite for preparing the isolated VM.
+
+This milestone does not authorize public DNS changes, live payment processing,
+customer email, a real transaction, or external inventory writes.
 
 The completed local portion includes a repeatable identity-mapping proposal: it
 matches preserved Shopify variant IDs between Medusa and the MarketSuite portal
