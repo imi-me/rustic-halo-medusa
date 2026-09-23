@@ -25,13 +25,13 @@ const StoreTemplate = ({
 
   return (
     <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
+      className="rh-catalog-page content-container"
       data-testid="category-container"
     >
-      <RefinementList sortBy={sort} hideOptionsPicker />
       <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
+        <div className="rh-catalog-heading">
           <h1 data-testid="store-page-title">{query ? `Search results for “${query}”` : "All products"}</h1>
+          <RefinementList sortBy={sort} hideOptionsPicker />
         </div>
         <Suspense key={`${query}-${pageNumber}-${sort}`} fallback={<SkeletonProductGrid />}>
           <PaginatedProducts

@@ -14,6 +14,7 @@ import {
   visibleProductOptions,
 } from "@lib/util/product-options"
 import ProductPrice from "../product-price"
+import ProductDescription from "../product-description"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
 
@@ -42,6 +43,7 @@ export default function ProductActions({
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
+  const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
   const displayOptions = useMemo(
     () => visibleProductOptions(product.options),
@@ -54,14 +56,24 @@ export default function ProductActions({
 
   // Preselect a sole variant and imported "Default Title" placeholders. The
   // placeholder remains part of variant matching but is not a customer choice.
+  // Preserve an explicit card/gallery variant after Next refreshes the route.
   useEffect(() => {
+    const requestedVariant = product.variants?.find(
+      (variant) => variant.id === searchParams.get("v_id")
+    )
+
+    if (requestedVariant) {
+      setOptions(optionsAsKeymap(requestedVariant.options) ?? {})
+      return
+    }
+
     if (product.variants?.length === 1) {
       const variantOptions = optionsAsKeymap(product.variants[0].options)
       setOptions(variantOptions ?? {})
     } else {
       setOptions(hiddenDefaultSelections)
     }
-  }, [product.id, product.variants, hiddenDefaultSelections])
+  }, [product.id, product.variants, hiddenDefaultSelections, searchParams])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -143,7 +155,7 @@ export default function ProductActions({
 
     await addToCart({
       variantId: selectedVariant.id,
-      quantity: 1,
+      quantity,
       countryCode,
     })
 
@@ -153,6 +165,8 @@ export default function ProductActions({
   return (
     <>
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
+        <ProductPrice product={product} variant={selectedVariant} />
+        <ProductDescription product={product} />
         <div>
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
@@ -175,7 +189,7 @@ export default function ProductActions({
           )}
         </div>
 
-        <ProductPrice product={product} variant={selectedVariant} />
+        <div className="rh-quantity" aria-label="Quantity"><span>Quantity</span><div><button type="button" aria-label="Decrease quantity" onClick={() => setQuantity((current) => Math.max(1, current - 1))} disabled={isAdding || quantity === 1}>−</button><output aria-live="polite">{quantity}</output><button type="button" aria-label="Increase quantity" onClick={() => setQuantity((current) => current + 1)} disabled={isAdding}>+</button></div></div>
 
         <Button
           onClick={handleAddToCart}
@@ -187,7 +201,7 @@ export default function ProductActions({
             !isValidVariant
           }
           variant="primary"
-          className="w-full h-10"
+          className="w-full min-h-12 rh-add-to-cart"
           isLoading={isAdding}
           data-testid="add-product-button"
         >

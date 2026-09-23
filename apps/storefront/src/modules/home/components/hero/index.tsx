@@ -1,11 +1,9 @@
 import { HttpTypes } from "@medusajs/types"
-import { getProductPrice } from "@lib/util/get-product-price"
-import { isProductSoldOut } from "@lib/util/product-availability"
 import { brandAssets, brandCollections } from "@lib/brand/assets"
 import { availableHomeCollections } from "@lib/brand/home-collections"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Image from "next/image"
-import HomeProductCard, { HomeColor, HomeProduct } from "@modules/home/components/product-card"
+import ProductCard from "@modules/products/components/product-card"
 import styles from "./home.module.css"
 
 const valuePoints = [
@@ -15,42 +13,11 @@ const valuePoints = [
   "Made to Order",
 ]
 
-function cardData(product: HttpTypes.StoreProduct): HomeProduct {
-  const variants = product.variants || []
-  const colorOption = product.options?.find((option) => /^(base |claw )?colou?r$/i.test(option.title || ""))
-  const isHairClaw = product.collection?.handle === "hair-accessories-claws-and-clips" || /hair claw/i.test(product.title || "")
-  const seen = new Set<string>()
-  const colors: HomeColor[] = []
-
-  if (isHairClaw && colorOption) {
-    for (const variant of variants) {
-      const value = variant.options?.find((option) => option.option_id === colorOption.id || option.option?.id === colorOption.id)?.value
-      if (!value || seen.has(value)) continue
-      seen.add(value)
-      colors.push({ label: value, variantId: variant.id, image: variant.images?.[0]?.url || undefined })
-    }
-  }
-
-  const prices = new Set(variants.map((variant) => variant.calculated_price?.calculated_amount).filter((amount) => typeof amount === "number"))
-  const price = getProductPrice({ product }).cheapestPrice?.calculated_price
-
-  return {
-    id: product.id,
-    handle: product.handle || "",
-    title: product.title || "Rustic Halo product",
-    image: product.thumbnail || product.images?.[0]?.url || undefined,
-    price: price ? `${prices.size > 1 ? "From " : ""}${price}` : undefined,
-    soldOut: isProductSoldOut(product),
-    hasOptions: variants.length > 1 || !!product.options?.some((option) => !/^title$/i.test(option.title || "")),
-    colors,
-  }
-}
-
 export default function Hero({ products, collections }: { products: HttpTypes.StoreProduct[]; collections: HttpTypes.StoreCollection[] }) {
   const categoryTiles = availableHomeCollections(collections)
   const hairClaws = categoryTiles.find((tile) => tile.handle === "hair-accessories-claws-and-clips")
   const gifts = categoryTiles.find((tile) => tile.handle === "gifts-home-decor")
-  const cards = products.filter((product) => product.handle).map(cardData)
+  const cards = products.filter((product) => product.handle)
 
   return (
     <main className={styles.home}>
@@ -89,7 +56,7 @@ export default function Hero({ products, collections }: { products: HttpTypes.St
             <div><h2 id="best-sellers-heading">Best Sellers</h2><p>Customer favorites, made one at a time.</p></div>
             <LocalizedClientLink href="/store" className={styles.sectionLink}>Shop all <span aria-hidden="true">→</span></LocalizedClientLink>
           </div>
-          <div className={styles.productGrid}>{cards.map((product) => <HomeProductCard key={product.id} product={product} />)}</div>
+          <div className={styles.productGrid}>{cards.map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
 

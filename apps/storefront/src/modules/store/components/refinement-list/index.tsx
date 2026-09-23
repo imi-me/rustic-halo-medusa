@@ -64,7 +64,9 @@ const RefinementList = ({
     })
 
   return (
-    <div className="flex flex-col gap-6 mb-6 small:mr-8 small:min-w-[220px]">
+    <details className="rh-filter-sort" open>
+      <summary>Filter &amp; sort</summary>
+      <div className="rh-filter-sort-content">
       <SortProducts
         sortBy={sortBy}
         setQueryParams={setQueryParams}
@@ -76,7 +78,8 @@ const RefinementList = ({
           setOptionValueIds={setOptionValueIds}
         />
       )}
-    </div>
+      </div>
+    </details>
   )
 }
 

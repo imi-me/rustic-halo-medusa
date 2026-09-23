@@ -1,39 +1,25 @@
+"use client"
+
 import { HttpTypes } from "@medusajs/types"
-import { Container } from "@modules/common/components/ui"
 import Image from "next/image"
+import { useState } from "react"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
 }
 
 const ImageGallery = ({ images }: ImageGalleryProps) => {
+  const usableImages = images.filter((image) => !!image.url)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const activeImage = usableImages[activeIndex]
+  if (!activeImage?.url) return null
+
   return (
-    <div className="flex items-start relative">
-      <div className="flex flex-col flex-1 small:mx-16 gap-y-4">
-        {images.map((image, index) => {
-          return (
-            <Container
-              key={image.id}
-              className="relative aspect-[29/34] w-full overflow-hidden bg-ui-bg-subtle"
-              id={image.id}
-            >
-              {!!image.url && (
-                <Image
-                  src={image.url}
-                  priority={index <= 2 ? true : false}
-                  className="absolute inset-0 rounded-rounded"
-                  alt={`Product image ${index + 1}`}
-                  fill
-                  sizes="(max-width: 576px) 280px, (max-width: 768px) 360px, (max-width: 992px) 480px, 800px"
-                  style={{
-                    objectFit: "cover",
-                  }}
-                />
-              )}
-            </Container>
-          )
-        })}
-      </div>
+    <div className="rh-image-gallery" aria-label="Product images">
+      <div className="rh-gallery-primary"><Image src={activeImage.url} priority alt={`Product image ${activeIndex + 1}`} fill sizes="(max-width: 760px) 100vw, 45vw" className="rh-gallery-image" /></div>
+      {usableImages.length > 1 && <div className="rh-gallery-thumbnails" aria-label="Choose a product image">
+        {usableImages.map((image, index) => <button key={image.id || image.url} type="button" className="rh-gallery-thumbnail" aria-label={`Show product image ${index + 1}`} aria-pressed={index === activeIndex} onClick={() => setActiveIndex(index)}><Image src={image.url!} alt="" fill sizes="72px" className="rh-gallery-thumbnail-image" /></button>)}
+      </div>}
     </div>
   )
 }

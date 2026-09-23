@@ -24,11 +24,11 @@ export default function CollectionTemplate({
   const sort = sortBy || "created_at"
 
   return (
-    <div className="rh-collection-page flex flex-col small:flex-row small:items-start py-6 content-container">
-      <RefinementList sortBy={sort} hideOptionsPicker />
+    <div className="rh-collection-page content-container">
       <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
+        <div className="rh-catalog-heading">
           <p className="rh-eyebrow">The Rustic Halo collection</p><h1>{collection.title}</h1>
+          <RefinementList sortBy={sort} hideOptionsPicker />
         </div>
         <Suspense
           fallback={
