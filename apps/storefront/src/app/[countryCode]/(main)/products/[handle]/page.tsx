@@ -10,6 +10,10 @@ type Props = {
   searchParams: Promise<{ v_id?: string }>
 }
 
+// Products are imported and published after the storefront image is built.
+// Render their details per request so fresh Medusa data can be used safely.
+export const dynamic = "force-dynamic"
+
 export async function generateStaticParams() {
   try {
     const countryCodes = await listRegions().then((regions) =>
