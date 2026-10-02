@@ -80,6 +80,10 @@ services:
     labels:
       - coolify.managed=true
       - coolify.type=application
+      - coolify.applicationId=3
+      - coolify.environmentName=production
+      - coolify.resourceName=production-commerce-apps
+      - coolify.pullRequestId=0
       - traefik.enable=true
       - traefik.docker.network=coolify
       - traefik.http.services.rh-production-api.loadbalancer.server.port=9000
@@ -104,6 +108,10 @@ services:
     labels:
       - coolify.managed=true
       - coolify.type=application
+      - coolify.applicationId=3
+      - coolify.environmentName=production
+      - coolify.resourceName=production-commerce-apps
+      - coolify.pullRequestId=0
       - traefik.enable=true
       - traefik.docker.network=coolify
       - traefik.http.services.rh-production-store.loadbalancer.server.port=8000
