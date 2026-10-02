@@ -1,5 +1,610 @@
 # Rustic Halo staging
 
+## Coolify protected production preview verified — 2026-10-02
+
+Production runs at https://production-preview.rustichalo.com/us behind owner-only
+Cloudflare Access on the shared tunnel, with valid origin TLS. Signed GitHub push
+deployed production commit 2b4af1eb91a246dcb607d7c055e7c15edc65f8cc successfully.
+Approved preview contains 24 products/102 variants, no customer/order copies or
+stock quantities. Owner admin uses the existing staging login; browser sign-in
+verification remains pending. Final backup 20261002T231048Z restored successfully
+and retained off-host with checked hashes. Staging/production API isolation
+verified against their separate databases. Live integrations/public launch
+remain off. Current handoff: `docs/production-environment-handoff.md`.
+The production preparation entries below are historical checkpoints.
+
+## Production environment prepared, launch pending — 2026-10-02
+
+Used existing production environment `tw8sccnoa4xnxigzlojtnaht`.
+Created `Production - Commerce Apps` (`bvfoyx363r3pky9lues4fpyk`) tracking
+new Git branch `production`, commit `21fb0b4f5f1db0807ffea683342f39e4b2570484`.
+Configuration: `deploy/coolify/production-apps.compose.yaml`. App remains
+stopped and auto-deploy disabled pending catalog initialization, hostname,
+production integration credentials and launch validation.
+
+Created `Production - Data` (`aw4sntlbsbfsukqtfvccduqm`), PostgreSQL and Redis
+healthy on independent production named volumes and private networks
+`rustic-halo-production-data` / `rustic-halo-production-api`. Fresh DB/JWT/
+cookie/encryption secrets generated privately; staging integration secrets
+were not copied. Production loopback app ports 29000/28000, independent
+`/var/lib/rustic-halo-production-backups/pre-deploy` directory. No public
+Traefik route, DNS change, live payment/email/shipping, shared media writes,
+or automatic deployment enabled. Staging HTTPS still 200 after provisioning.
+Initial empty database backup pg_restore-list verified at
+`/var/lib/rustic-halo-production-backups/initial-empty.dump`.
+
+Owner approved catalog-only preparation and `production-preview.rustichalo.com`.
+Then initialize app schema/catalog without test orders,
+customers or queued jobs, configure a production publishable key and private
+HTTPS admin, independently back up data/media, verify browser/checkout and
+signed deployment webhook. Live integration activation and public launch
+remain separate consequential steps. Production scheduled backup now runs daily at 20:30 America/New_York via
+`rustic-halo-production-backup.timer`, enabled and active. Updated job ran
+successfully at 20:17 UTC, covering DB/Redis/data resource configuration and
+private app configuration/credentials. Off-host archive
+`.local/coolify-production/production-preparation-20261002T201710Z.tar.gz`
+passed manifest SHA256/size checks. Media export remains pending production
+storage configuration. Reused Git access verified accessible for production.
+Private provisioning helper: `.local/coolify-production/provision.php`.
+
+## GitHub staging branch auto-deploy verified — 2026-10-02
+
+Created and pushed `staging`, including all owner-approved local app changes,
+without switching or resetting the existing `codex/rebuild-rustic-halo-commerce`
+checkout. Git deployment source is commit
+`2c56e8c8bee00f785b4accfd1addaf46457ae588`.
+
+Coolify application `437ttkf5rwqkaar2fnty02al` is **Staging - Commerce Apps**,
+tracking `imi-me/rustic-halo-medusa:staging` with Deploy on push enabled.
+Signed GitHub push webhook 691238560 was replayed and automatically produced
+successful deployment `x6vmshjb0lev27wu0tvteyto` (`is_webhook=true`), finished
+19:50:12 UTC. Initial manual deployment `wdngnvlyzfn1v7cnks0ocbkg` also passed.
+App/dependency/deployment source changes trigger builds; documentation does not.
+This is direct push deployment, without a GitHub CI gate.
+
+Persistent PostgreSQL and Redis remain in **Staging - Data**
+(`zt9mfml34oejgd5lrgffqzcy`). Old API/frontend resource entries are archived
+reversibly; no database volumes were deleted. New containers are
+`backend-rustic-halo-staging` and `storefront-rustic-halo-staging`.
+Shared infrastructure tunnel, split DNS, trusted TLS and private API routing
+are preserved. Production and Shopify remain outside this change.
+
+Build/start files: `deploy/coolify/Dockerfile`, `git-apps.compose.yaml`,
+`start-backend.sh`. Startup takes a private pg_dump before schema migration,
+skips data seed scripts, then runs the API as UID1000 with zero effective
+capabilities and NoNewPrivs. Root startup follows existing migration behavior;
+HOME is reset before privilege drop. Private PostgreSQL URL explicitly disables
+TLS because this server has TLS disabled. Migration validation used an isolated
+database clone; live migrations ran only during deployment startup.
+
+Validation: both Docker builds passed, storefront TypeScript and 16 focused
+checkout tests passed, 14 backend hair-claw tests passed. After webhook deploy,
+API and storefront were healthy, HTTPS returned 200, browser homepage and
+Top Down Hair Claws page/images loaded. Fresh queue check 19:51:16 UTC:
+zero failed/waiting/active/delayed, eight completed. Updated backup and queue
+helpers use the new container and include Git app configuration. Backup timer
+is `rustic-halo-coolify-backup.timer`, daily 20:00 America/New_York;
+health timer is `rustic-halo-job-health.timer`, every five minutes.
+
+Post-webhook backup `/var/lib/rustic-halo-backups/20261002T195044Z` passed
+verification for PostgreSQL, Redis, Git application configuration and all 1,526
+R2 media objects. Private off-host archive
+`.local/coolify-migration/staging-git-backup-20261002T195044Z.tar.gz` passed
+streaming SHA256/size verification for every manifest member and media object.
+
+Local private migration artifacts remain under `.local/coolify-migration/`.
+Do not publish those files or environment secrets. Schema rollback requires
+restoring the matching database backup; application-only rollback is insufficient
+for incompatible future migrations. NAS/Proxmox backup coverage remains an
+infrastructure follow-up. The source staging VM remains safe to retire as
+previously verified. Operational detail: `deploy/coolify/README.md`.
+
+## Pending configuration tracking reconciled — 2026-10-02
+
+Both stacks showed pending changes after stale component cleanup. Installed
+Coolify hashes component images, domains, storage timestamps and environment
+values, but excludes display names/descriptions. Saved rendered Compose files
+matched deployed files byte-for-byte. Read-only runtime comparison verified
+all four containers' images, configured environment, routing labels and named
+volume mounts. Refreshed hashes through isConfigurationChanged(true); both
+subsequently report pending=no. No deployment or restart was needed.
+Comparison helper: `.local/coolify-migration/check-runtime.py`.
+
+## Coolify display names clarified — 2026-10-02
+
+Stack and component descriptions also updated to explain responsibilities,
+API/data dependencies, private admin access, HTTPS/shared tunnel routing,
+database persistence, backups, queue checks and staging integration modes.
+Saved descriptions were read back successfully; no runtime changes required.
+
+Stack zt9mfml34oejgd5lrgffqzcy: `Staging - API & Data`; components
+`Medusa API & Worker`, `PostgreSQL - Commerce Data`, `Redis - Cache & Jobs`.
+Stack uaqjeornrhqzf0r4bggd523r: `Staging - Storefront`; component
+`Storefront - Customer Website`. Updated only stack name and component
+human_name. Compose names, images, networks and storage unchanged; no restart.
+UI verified the new names and all four components running healthy.
+
+## Unused Coolify component cleanup — 2026-10-02
+
+Archived four stale component records reversibly: old core storefront
+1piijazrkcpd6jy88rg8yhhx, database cards p0cqdhlcv2ibqvjto1j4h4r8 and
+4mbelms3zfptasffb4bnmvap, and per-app tunnel z8dfget2es6xvfhnqrd7ejg4.
+All were exited. The old database cards referenced the same volumes as the
+active application cards, so storage deletion hooks were deliberately avoided.
+Only deleted_at was set; storage records, Docker volumes and containers remain
+unchanged. Reversal: clear deleted_at on these exact four records.
+Private metadata snapshot and guarded helper retained in
+`.local/coolify-migration/cleanup/`; snapshot also retained on Coolify host.
+UI verified core shows only Backend/Postgres/Redis, frontend only Storefront.
+Both stacks remain running:healthy; trusted HTTPS still returns 200.
+Shared infrastructure tunnel remains active. No deployment was required.
+
+## Migration complete, source VM ready for retirement — 2026-10-02
+
+Owner confirmed source VM powered off. At 18:59 UTC its SSH address
+10.20.69.159 timed out while trusted HTTPS staging returned 200 directly from
+Coolify 10.20.69.10 through retained split DNS. Product page reloaded in the
+browser successfully. Backend, storefront, PostgreSQL and Redis remained
+healthy; fresh queue report showed zero failures or pending work. Backup and
+job-health timers were both enabled and active.
+
+VM102 rustic-halo-staging can be deleted. Preserve verified off-host migration
+archives under `.local/coolify-migration/`, including final quiesced exports,
+source images/operations, post-cutover data/assets backup and final TLS/config
+archive. Database recovery into a fresh isolated instance passed earlier.
+Coolify NAS/Proxmox VM backup inclusion is still unverified and is a separate
+infrastructure follow-up; application backup and recovery artifacts are retained.
+Do not restart source writers. No further migration blockers remain.
+
+## Trusted HTTPS verified, source power-off check pending — 2026-10-02
+
+The owner configured Traefik's existing letsencrypt resolver with Cloudflare
+DNS challenge. Split DNS remains unchanged. LAN HTTPS validates without a
+bypass and returns 200. Certificate CN/SAN staging.rustichalo.com, issuer
+Let's Encrypt YR1, valid October 2 through December 31, 2026. Browser homepage
+and Top Down Hair Claws product/image loaded over trusted HTTPS.
+
+At 18:58 UTC backend, storefront, PostgreSQL, Redis and proxy were healthy.
+Fresh queue report: zero failed, waiting, active or delayed jobs, eight completed.
+Daily backup now preserves proxy docker-compose.yml, .env and acme.json.
+Private final configuration archive was copied off-host and SHA-256 matched:
+`.local/coolify-migration/rustic-halo-final-configuration-20261002.tar.gz`
+`8a6a5f6e83c65637e3d8babf4a022b8f3fd969ade186f5308beeb9fc22ebee13`.
+Previously verified final database/Redis and 1526 R2 asset backups remain retained.
+
+Retirement is pending one final independence check with source VM fully powered
+off. Requested owner command `sudo shutdown -h now`; source administrator
+authentication requires their password. Do not delete VM102 until that check
+passes. NAS/Proxmox backup inclusion remains unverified. Historical notes below
+describe earlier states and are superseded by this handoff.
+
+## Final data moved, split DNS HTTPS pending — 2026-10-02
+
+Owner authorized completion and selected the existing infrastructure project's
+shared Cloudflare tunnel with split DNS retained. Do not recreate per-app
+tunnels or remove the LAN DNS override. Shared connector
+cloudflared-o0j1n9ww6gv8f1iz36dcjoin routes staging.rustichalo.com to
+http://localhost on Coolify. Frontend domain http://staging.rustichalo.com:8000
+and proxy attachment are saved. Host-header origin request returned 200.
+Public Cloudflare HTTPS validates and redirects to existing Access, but
+signed-in external delivery is unverified. LAN HTTPS still presents a default
+self-signed certificate; trusted split-DNS HTTPS remains required.
+
+Source final-source-export.py passed at final-cutover-20261002T182814Z,
+stopping apps, tunnel, timers and databases while preserving rollback state.
+restore-final-data.py verified all 148 table counts and 21 Redis keys after
+AOF conversion/restart. Coolify apps started, backend worker mode shared,
+email false, Stripe/Shippo test settings preserved. HTTP readiness passed.
+Final shared environment comparison found only expected DATABASE_URL change.
+Source restricted status at 18:40 UTC independently confirmed both apps exited.
+Never restart source writers while Coolify is authoritative.
+
+Core zt9mfml34oejgd5lrgffqzcy stays off proxy networks. Frontend
+uaqjeornrhqzf0r4bggd523r has API, edge, stack and Coolify networks, sharing
+no Postgres/Redis network. Host bindings only loopback 18000/19000.
+scripts/staging-tunnel.sh now uses coolify.internal and its own control socket.
+Post-cutover private product page and image loaded through that script.
+Obsolete component metadata retained but excluded from aggregate status;
+core reports running:healthy. Old rejected tunnel token stopped and removed
+from saved Compose, superseded by owner-selected shared infrastructure tunnel.
+
+Independent final DB recovery restored all 148 tables into stopped, network-none
+rustic-halo-db-rehearsal-dd8070b2b495. operations-20261002T181748Z archive
+(4.9 GB) verified on Mac and Coolify. Destination backups 20261002T181852Z
+and 20261002T183728Z passed, including all 1526 R2 objects, DB, Redis and
+configuration. Both backups copied offhost and all file/object hashes independently verified. All Mac artifacts private
+under .local/coolify-migration; source bundles under rustic-halo-migration and
+destination backups under /var/lib/rustic-halo-backups. R2 originals unchanged.
+
+Daily 20:00 America/New_York rustic-halo-coolify-backup.timer and five-minute
+rustic-halo-job-health.timer installed, enabled and active. Fresh 18:31 UTC
+queue report: zero failed/waiting/active/delayed, eight completed. Existing
+daily Codex heartbeat retargeted to Coolify, quiet when unchanged. Future
+backups also include health code/units and staging TLS files when present.
+NAS/Proxmox capture of Coolify remains unverified.
+
+Before declaring VM102 safe to delete: trusted LAN HTTPS, representative final
+browser/access checks, final offhost backup verification, powered-off source
+independence check. No VM deletion performed. Prepared private proxy-with-dns.json
+is not applied. No existing staging certificate or proxy DNS credentials found.
+User input pending. install-dns-token.py prompts privately on Coolify for a
+rustichalo.com token with Zone Read and DNS Edit; never put tokens in chat.
+No live Shopify changes, live payments, email enablement or catalog imports.
+At 18:47 UTC added an independent HTTPS router using existing letsencrypt
+resolver, retaining the shared tunnel's HTTP origin route to avoid redirect
+loops. Managed Coolify restart applied the router. ACME issuance failed with
+403 unauthorized / HTTP response body read error. Certificate still defaults
+to self-signed TRAEFIK DEFAULT CERT. User believes a valid certificate exists;
+asked its location or whether Coolify should issue one. DNS challenge setup
+remains unapplied pending private token or existing certificate location.
+Both backups' offhost file and all 1526 object hashes now verified. Supplemental
+post-cutover-operations-20261002T1848Z.tar.gz preserves latest service and ops
+files. Fresh post-managed-core-restart queue report 18:47:32 UTC remained OK,
+zero failed/waiting/active/delayed, eight completed. Both core and frontend
+aggregate statuses now healthy after excluding obsolete component cards.
+
+## Durable data staging and private HTTP rehearsal passed — 2026-10-02
+
+Created fresh destination service volumes (none existed beforehand):
+zt9mfml34oejgd5lrgffqzcy_postgres-data and
+zt9mfml34oejgd5lrgffqzcy_redis-data. Restored custom database dump in one
+transaction; all 148 source snapshot table counts match. Source remains live;
+these are rehearsal copies and must be replaced with coordinated final data.
+
+Initial Redis appendonly startup used an empty AOF rather than the RDB and
+reported zero keys. That was not an acceptable restore. Verified untouched
+private export retained; re-copied into only the migration-labeled stopped
+volume, loaded with AOF disabled, enabled AOF via CONFIG SET, waited for rewrite,
+then restarted the actual Compose Redis service. All 21 keys survived restart.
+DESTINATION_REDIS_AOF_RESTART_VERIFIED keys=21 stopped=true. Conversion helper
+and retained stopped containers document the recovery; no source Redis changed.
+The initial destination-data-report.json records zero Redis keys and is
+superseded by the successful conversion/restart evidence in this handoff.
+
+Verified exact migrated image supports MEDUSA_WORKER_MODE. Temporary private
+Compose overrides enabled backend in server-only mode and storefront, with no
+published ports or tunnel. Backend /health and storefront /us returned success.
+PRIVATE_APPLICATION_REHEARSAL_COMPLETE all_services_stopped=true. Report:
+/home/shawnhouse/private-runtime-20261002T180127Z/private-application-report.json.
+No browser/login/checkout/integration mutation tests were performed. Reset app
+containers to the saved disabled commands afterward. Remaining: representative
+private browser check, stale component metadata cleanup, backup/operations
+migration and coordinated final cutover/rollback with routing authorization.
+
+## Approved staging environment configuration saved — 2026-10-02
+
+Owner explicitly approved saving existing staging secrets to both Coolify
+services. Saved private core-env.json (32 keys) and storefront-env.json (2 keys)
+through Developer view; reloaded UI comparison confirmed every value persisted
+without logging them. Environment saves did not refresh deployment files;
+re-saved each Compose definition to regenerate them. Destination comparison
+helper verify-saved-environments.py then confirmed both rendered environments
+exactly match their prepared payloads. Runtime gate false, no published ports,
+pull_policy never remain verified. Values are saved; no app startup, durable
+service-volume restore, credential rotation or routing cutover occurred.
+Screenshot /private/tmp/rustic-halo-coolify-environments-saved.jpg shows key
+names with values hidden. Next: durable destination data staging, safe private
+application rehearsal with consumers/integration side effects controlled,
+component metadata cleanup, backup/operations migration and final coordinated
+cutover/rollback. Original source remains running and authoritative.
+
+## Private runtime transfer and service split verified — 2026-10-02
+
+Owner exported private-runtime-20261002T180127Z. Retrieved and verified hashes
+for runtime-environments.json and redis.rdb, then privately transferred bundle
+to /home/shawnhouse/private-runtime-20261002T180127Z on Coolify. Destination
+verify-private-runtime.py passed bundle integrity, redis-check-rdb and isolated
+Redis load (21 keys). Container rustic-halo-redis-rehearsal-c0351848c988 is
+confirmed exited, network none, no ports, read-only rootfs. No app consumers ran.
+Stripe/Shippo key prefixes are test-only, email false; existing auth/encryption
+keys present. This is a rehearsal snapshot, not coordinated final cutover data.
+
+Saved core-only definition to existing service zt9mfml34oejgd5lrgffqzcy and
+created separate Rustic Halo staging storefront service uaqjeornrhqzf0r4bggd523r.
+Both UI resources are exited with no domains. Rendered core has three services;
+storefront has one and connects to external zt9mfml34oejgd5lrgffqzcy_api, its
+edge network and its own stack network. It shares no network with Postgres or
+Redis. Runtime gates remain false; no service startup occurred. Stale component
+cards remain metadata pending cleanup; they are absent from rendered Compose.
+
+Prepared private core-env.json (32 keys) and storefront-env.json (2 keys) in
+local private bundle, preserving existing values and URL-encoding the existing
+Postgres password for destination hostname postgres. Secrets are not yet saved
+to Coolify's configuration database. Browser credential-saving confirmation is
+required before that UI action; approval request identifies both resources and
+the existing database/auth/integration secrets. Screenshot evidence:
+/private/tmp/rustic-halo-coolify-split-services.jpg.
+
+## Runtime export and network split prepared — 2026-10-02
+
+Inspected rendered Coolify Compose through docker compose config with environment
+values excluded from output. All four services receive a common external
+network named zt9mfml34oejgd5lrgffqzcy in addition to requested networks. Thus
+the single-service definition does not isolate storefront from databases.
+No stack startup occurred. Prepared core.compose.yaml (backend/Postgres/Redis)
+and storefront.compose.yaml (separate service using external core API network)
+to preserve database separation despite Coolify's per-service shared network.
+Split definitions parsed with no ports and runtime disabled; not yet applied.
+Frontend startup will require the core API network/backend ready; cross-stack
+depends_on is omitted. Review rendered networks again after applying the split.
+
+Prepared export-private-runtime.py and copied it to
+/home/shawnhouse/export-private-runtime.py on source. It exports existing core
+container environment values (including secrets) privately, takes a fresh Redis
+replication RDB snapshot, validates it with redis-check-rdb, records checksums,
+and keeps permissions 0700/0600 with owner access for private SSH transfer.
+It never stops staging or copies mutable Redis volume files. Syntax passed;
+source sudo -n is unavailable, so actual export needs owner's authentication.
+This snapshot is rehearsal-only and not coordinated with the database dump.
+
+## Destination database restore rehearsal passed — 2026-10-02
+
+Owner added the existing staging SSH key to Coolify. Explicit-key SSH verified
+host coolify / user shawnhouse; sudo -n was available in that session. Transferred
+the verified private bundle to /home/shawnhouse/database-rehearsal-20261002T175702Z.
+Ran restore helper successfully: DATABASE_REHEARSAL_RESTORE_VERIFIED tables=148.
+Dump integrity, complete user-table set and every table count matched source
+snapshot. Fresh container rustic-halo-db-rehearsal-453dca1e5d73 and volume
+rustic-halo-db-rehearsal-453dca1e5d73-data retained for evidence; helper stopped
+container after verification. No existing Coolify service volume was targeted.
+Remaining: component metadata cleanup/rendered network validation, private
+environment transfer, Redis and final coordinated data backup, application
+verification, backup/ops migration, and separately authorized routing cutover.
+
+## Rehearsal database export verified — 2026-10-02
+
+Owner completed source export at
+/home/shawnhouse/rustic-halo-migration/database-rehearsal-20261002T175702Z
+with 148 user tables. Retrieved staging.dump and database-manifest.json to
+.local/coolify-migration/database-rehearsal-20261002T175702Z. Independently
+verified 1,110,382 bytes and SHA-256
+862148ff0001a9cd62b793e23ee5a5df748cde72a50bb8f2df757e2e36eaa2e2;
+manifest table set/count map both contain 148 entries. Packaged corrected
+restore-rehearsal-database.py alongside them with private file permissions.
+Restore readiness now checks container loopback TCP before proceeding; syntax
+passed. Next owner transfers that directory to coolify.internal and runs the
+restore helper with sudo. Destination restore remains unverified; Coolify
+resource startup, Redis/config transfer and routing remain pending.
+
+## Rehearsal export helper corrected — 2026-10-02
+
+Owner's first export failed. Reviewed helper: capture_output=True combined with
+explicit stderr=DEVNULL raises ValueError at the first docker inventory call,
+before any database query/dump. The private root-owned partial directory is
+/home/shawnhouse/rustic-halo-migration/database-rehearsal-20261002T175608Z;
+left intact. Fixed both helpers to capture stdout via PIPE while suppressing
+stderr. Local executable checks passed captured text, suppressed stderr, and
+streamed-output calls; AST checks passed. Copied corrected export helper to
+the existing source path. Export/restore still pending owner's sudo run.
+
+## Database rehearsal prepared — 2026-10-02
+
+Owner confirms destination Postgres/Redis aliases added. MCP confirms original
+database UUIDs retained with those aliases; two extra application metadata rows
+also remain exited with no domains. Avoid deleting their associated storage
+until component cleanup behavior is reviewed. No startup or routing occurred.
+
+Prepared export-rehearsal-database.py and restore-rehearsal-database.py in
+deploy/coolify. Export holds a read-only repeatable-read snapshot, takes a custom
+pg_dump using that same snapshot, records all user-table counts, validates the
+archive listing, and writes private owner-readable files. Source stays running;
+this is not a final coordinated cutover backup and excludes Redis and secrets.
+Restore verifies dump checksum, uses the verified Postgres alias in a fresh
+uniquely named volume/container with network none and no host ports, compares
+table names/counts, and stops the container while retaining evidence. It never
+targets the Coolify service volumes. Both scripts passed AST syntax checks;
+actual export/restore remains pending. Copied export script to the staging VM
+at /home/shawnhouse/export-rehearsal-database.py for the owner's sudo invocation.
+
+## Destination image contents verified — 2026-10-02
+
+Owner ran the updated importer with --verify-only. All four source config
+digests and RootFS layer lists match destination re-exported image contents;
+DESTINATION_IMAGE_IMPORT_VERIFIED services=4. Different reported image IDs
+are not a failed content check. Supersedes the pending notes below.
+
+Saved verified backend/storefront references in Coolify. Custom database image
+names generated application metadata beside original database records, so
+Compose now uses database-recognizable local aliases:
+postgres:rustic-halo-migration-248efd5e58cd and
+redis:rustic-halo-migration-64035c2c9726. Owner must add those aliases on the
+destination using docker tag before startup. Every service has pull_policy:
+never. Original database records and volumes are retained; extra stale
+application cards need review before deployment. Stack remains exited with
+runtime gate disabled and no routes.
+
+Next: destination aliases, resolve stale component metadata, private rehearsal
+database export/restore, secure environment transfer, and rendered network
+validation. No database/Redis data or credentials have moved yet.
+
+## Destination image identity verification pending — 2026-10-02
+
+Owner reports all four migration image tags loaded, but the import verifier
+rejected backend ID comparison. Destination backend reports linux/amd64 and
+ID `sha256:7c2b443d191f37d15835e6dcf128ff7f03b0cf83ad057cc104a2d41e3754f07b`.
+Independently parsed local archive confirms all four original config digests
+match the source manifest. A different reported identity may reflect image-store
+format; content equivalence is not yet confirmed. Updated importer adds
+`--verify-only`, re-exports destination images without starting them, checks the
+exact config digest against source, and compares actual RootFS layer hashes
+with that verified config. It never prints full configs or environment values.
+AST syntax passed. Owner must transfer the updated small verifier and run the
+verification-only mode; no reload, application start, or cutover is needed.
+
+## Image export verified — 2026-10-02
+
+Owner completed export at `/home/shawnhouse/rustic-halo-migration/20261002T173832Z`.
+Retrieved archive and manifest to `.local/coolify-migration/20261002T173832Z`;
+independently verified 1,170,672,156 bytes and SHA-256
+`59ab1811d4152c552485a0a974d0d1a08d934849ad75bd5987998f7a5ededf07`.
+All four images are linux/amd64. Local Compose now uses manifest migration tags
+for all four services; Coolify's stored definition still needs that update.
+
+Owner's Coolify host report: coolify, x86_64, 4 CPUs, 7.8 GiB RAM / 6.3 GiB
+available, no swap, root filesystem 118 GB / 104 GB free. Destination SSH name
+is coolify.internal. The staging-specific key is not accepted there; do not
+grant or broaden SSH access just to bypass the existing login requirements.
+Prepared `deploy/coolify/import-staging-images.py` and copied it into the local
+archive directory. It verifies archive bytes/hash, loads images, and verifies
+all four IDs/architectures without starting services. AST syntax passed; actual
+destination import remains pending authenticated transfer and administrator run.
+
+## Coolify resource preparation — 2026-10-02
+
+Created the stopped Docker Compose service in Rustic Halo / staging:
+`zt9mfml34oejgd5lrgffqzcy`. Its parsed components are backend
+`c0wpnvsgqckvv7e7hhht9ube`, storefront `1piijazrkcpd6jy88rg8yhhx`, Postgres
+`p0cqdhlcv2ibqvjto1j4h4r8`, and Redis `4mbelms3zfptasffb4bnmvap`.
+MCP confirmed exited status and shared-proxy-network attachment disabled.
+Storage metadata maps destination Postgres and Redis volumes to their expected
+container paths. No containers were started, data restored, secrets transferred,
+or domains routed. Cloudflared will be added at the later routing gate.
+
+Prepared `deploy/coolify/staging.compose.yaml`, `deploy/coolify/README.md`, and
+the read-only `deploy/coolify/inventory-staging.py`. YAML parsing and focused
+checks for service count, no published ports/privilege flags, and disabled
+runtime gate passed. Python AST syntax passed. Docker Compose runtime validation
+is pending; Docker is unavailable on this Mac. The initial move will preserve
+running app images rather than rebuild the unfinished checkout. Placeholder
+image references deliberately require replacement before deployment.
+
+Fresh VM checks: source tree 18 MB, root filesystem 157 GB total / 88 GB free.
+Job-health timer and daily 20:00 Eastern image export timer are present.
+backend.env and the pinned tunnel image reference are administrator-only.
+Copied the inventory script to `/home/shawnhouse/inventory-rustic-halo-migration.py`.
+Owner ran the inventory command; sanitized report retrieved to
+`.local/rustic-halo-migration-inventory.json`. Database size is 28,661,427 bytes,
+only plpgsql extension, Redis has 25 keys. Both app containers have no mounts.
+Running image IDs and environment names are recorded in that report. Added
+ETSY_SHOP_NAME and the three existing read-only Market Suite keys to the prepared
+Compose file and saved Coolify definition; MCP key inventory confirms them.
+No permissions were loosened.
+
+Prepared and copied `deploy/coolify/export-staging-images.py` to
+`/home/shawnhouse/export-rustic-halo-images.py`. It checks all four running image
+IDs against the inventory, adds distinct migration tags, and streams a private
+gzip image archive plus SHA-256 manifest to a fresh timestamped directory.
+It neither exports secrets nor stops services. Python AST syntax passed; actual
+export remains pending the owner's `sudo python3` invocation. Coolify's browser
+terminal remained reconnecting; destination capacity/architecture require an
+authenticated host-shell check. No firewall/proxy changes were attempted.
+
+Remaining: source image export, destination capacity/private image transfer access, coordinated backup/restore,
+secure configuration transfer, rendered network inspection and restore tests.
+
+## Coolify migration discovery and plan — 2026-10-02
+
+Scope: move staging to the instance at coolify.imi.me. Discovery only; no
+resource creation, deployment, credential transfer, routing change, or shutdown
+was performed. Production and Shopify remain outside this milestone.
+
+### Verified destination
+
+Coolify MCP reports version 4.3.23. The existing Rustic Halo project
+(`npbi9lwm2ylmctnsyaidztcs`) has an empty staging environment
+(`0hhcjv34y6djbzyog03ozznj`), an empty production environment, and no resources.
+Staging shared environment keys are empty. The sole server is localhost
+(`48ox3mvfh70rj7vlrmoknyd0`, host.docker.internal), reachable and usable, with
+Traefik running. CPU/RAM/free disk, architecture, underlying host identity,
+backup destination access, and origin reachability remain unverified. Its GitHub
+source is listed as Public GitHub; private repository access is not established.
+The exposed MCP tools support inventory and existing-resource lifecycle actions,
+but expose no resource creation or configuration mutation tool. Provisioning may
+require the Coolify UI or a separately authorized API path.
+
+### Inventory to move or recreate
+
+- PostgreSQL 17: full staging database, including products/variants, inventory,
+  carts/orders/payment references, admin/customer accounts, provider settings,
+  integration state, custom modules, and tax/reconciliation metadata. Use a
+  verified logical backup and preserve role/extension requirements; do not
+  reuse an old seed dump or rerun catalog imports.
+- Redis 7.4: persistent event/workflow/locking state and AOF data. Confirm live
+  queue status and choose a supported consistent snapshot/restore procedure.
+  Do not discard it as cache or run two restored consumers concurrently.
+- Medusa backend/admin and Next.js storefront: deploy the exact approved source
+  revision and required patches. Local checkout has substantial uncommitted
+  work; deployed VM source and frozen operations configuration must be compared
+  before selecting a revision. Preserve node runtime, pinned pnpm, non-root
+  containers, startup command, and any deployed HEIC dependencies.
+- Secrets/configuration: privately inventory actual runtime key names from
+  backend.env, .env and root-only frozen configuration. Transfer database,
+  JWT/cookie, Stripe TEST/webhook, Shippo TEST, R2, Etsy app/token encryption and
+  OAuth cookie credentials, plus enabled integration keys and feature flags.
+  Preserve encryption keys required to read restored records. Keep automatic
+  email disabled and all payment/shipping/tax testing guards intact.
+- Routing/access: staging.rustichalo.com and owner Cloudflare Access policy.
+  Rehome its tunnel connector/origin routing or deliberately route through the
+  destination proxy while retaining Access. Avoid concurrently connecting old
+  and new origins to the same active tunnel. Storefront alone is externally
+  routed; backend/admin, Postgres and Redis remain private.
+- Operations: daily 20:00 America/New_York R2 export, sanitized five-minute
+  queue-health publisher, daily Codex monitoring target, database backups,
+  NAS/off-host backup coverage, restore drills, and rollback evidence. Existing
+  host systemd jobs and VM backup coverage do not follow an application move.
+- Preserve private reports, image migration mappings, dumps and rollback source
+  archives in an appropriate archive; they are not application build inputs.
+  Audit live mounts and local upload paths for any additional required files.
+
+R2 bucket rustic-halo-images and cdn.rustichalo.com should stay in place; move
+their configuration and backup responsibility, not the objects. Shopify,
+production VM/resources and preview.rustichalo.com remain untouched.
+
+### Proposed sequence and acceptance gates
+
+1. Finish read-only inventory: VM services/images/mounts, source differences,
+   secret names, database/Redis size and state, installed timers, tunnel routes,
+   integration callbacks/webhooks, and destination capacity/network/backups.
+   A fresh read-only SSH check confirmed rustic-halo-staging: storefront running,
+   backend running/healthy, and the last storefront deployment completed on
+   September 29. The queue report at 2026-10-02T17:10:50Z showed zero failed,
+   waiting, active, delayed or paused jobs and eight completed. Full mount/data/
+   image inventory remains pending; other source details above derive from
+   repository configuration/status documents.
+2. Prepare a dedicated Coolify staging Compose definition with internal-only
+   Postgres/Redis/backend and explicit persistent volumes. Use the existing
+   staging environment and pinned runtime versions. Adapt VM-specific paths,
+   external preview network and deployment helper assumptions. Keep automatic
+   deployment off until the migration is accepted.
+3. Resolve storefront builds: current Dockerfiles call 127.0.0.1:19000 during
+   build using host networking. Provide a tested private build-time backend path
+   or remove build-time API dependence. Never publish admin just to make a
+   build pass. Retain staging public build URLs and internal runtime API URL.
+4. Securely configure secrets and source access. Rehearse restore into isolated
+   volumes with background consumers/integration calls suppressed. Compare
+   database counts and selected records, schema, assets and secret-dependent
+   encrypted state. Coordinate any migrations with the approved source version;
+   do not silently change schema during a host move.
+5. Validate on a temporary protected route: health, owner access enforcement,
+   product/variant/cart identity, images, private admin access, applicable upload
+   formats, checkout TEST flags, NC/VA tax behavior, callback/webhook routing and
+   persistent jobs. Keep side-effecting sandbox order/refund/upload tests as
+   explicitly bounded validation actions. Test destination backups and restore.
+6. After cutover authorization, block staging writes and incoming events,
+   quiesce workers/schedulers, stop old backend consumption, and capture final
+   coordinated Postgres/Redis backups. Restore destination, verify, route the
+   existing protected hostname, and enable one consumer set. Record the final
+   backup, image/revision and measured outage window.
+7. Verify resulting external behavior and queue health, retarget monitoring,
+   confirm the next scheduled backup/export succeeds, and retain VM 102 stopped
+   or otherwise prevented from writing/processing jobs for rollback. Removal
+   of the VM/volumes/backups is a separate decision.
+
+Rollback before destination writes: stop destination, restore old routing and
+restart old stack. After new writes/jobs, first reconcile or transfer changed
+Postgres/Redis state; simply switching back would lose new records or replay
+integration effects. Preserve old images and volumes, including against
+destination image-cleanup policies.
+
+Completed: repository discovery and live Coolify inventory. Remaining blockers:
+fresh VM inventory, destination capacity/access checks, exact source selection,
+secure provisioning path, build-time networking, and coordinated data/queue
+cutover design. Next bounded milestone is a reviewable Coolify deployment
+definition plus a validated restore/cutover runbook, before moving traffic.
+
+References: https://coolify.io/docs/applications/configuration/persistent-storage
+and https://coolify.io/docs/core/backup-and-recovery/instance-backup.
+
 Local-network storefront review is documented in `docs/staging-lan-access.md`.
 It publishes only the storefront on the VM's VLAN address; Admin, PostgreSQL,
 and Redis remain private.

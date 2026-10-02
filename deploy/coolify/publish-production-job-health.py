@@ -30,7 +30,7 @@ def sanitize(raw):
 def main():
     try:
         found = subprocess.run(['/usr/bin/docker','ps','--filter','name=backend-rustic-halo-production',
-            '--filter','label=com.docker.compose.service=backend','--format','{{.ID}}'],
+            '--filter','label=coolify.applicationId=3','--format','{{.ID}}'],
             capture_output=True, text=True, timeout=10, check=True).stdout.split()
         if len(found) != 1 or not re.fullmatch(r'[a-f0-9]{12,64}', found[0]):
             raise ValueError('Backend unavailable')
