@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hair claw overlay preview</title>
+<style>html,body{margin:0;background:white}svg{display:block;width:100%;height:auto}p{font:16px system-ui;padding:2rem}</style></head>
+<body><main id="preview"><p>Loading overlay preview…</p></main>
+<script type="module">
+import { renderClaw } from './compositor.js?v=admin1'
+const stage = document.getElementById('preview')
+// This document is an isolated renderer, not an editor. It makes no API writes.
+window.addEventListener('message', event => {
+  if (event.source !== window.parent || event.data?.type !== 'hair-claw-preview') return
+  const { recipe, size, color, outline } = event.data
+  if (size !== '4') { stage.textContent = '2-inch preview pending its measured physical template. Your overlay can be saved as a draft.'; return }
+  try {
+    stage.innerHTML = renderClaw({ colorSlug: color, uploaded: recipe, scale: recipe.scale, vertical: recipe.vertical, showOutline: outline === true, id: 'uploaded' })
+  } catch { stage.textContent = 'This overlay could not be displayed. Check the image and alignment.' }
+})
+window.parent.postMessage({type:'hair-claw-preview-ready'}, '*')
+</script></body></html>

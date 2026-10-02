@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "status": "target_not_applied",
+  "note": "Owner-approved replacement names. Existing Medusa and Etsy option values, SKUs, and images remain unchanged until a reviewed migration. Swatches and processing parameters require real product reference photos.",
+  "colors": [
+    { "name": "Black", "slug": "black" },
+    { "name": "Espresso", "slug": "espresso" },
+    { "name": "Mocha", "slug": "mocha" },
+    { "name": "Chocolate", "slug": "chocolate" },
+    { "name": "Caramel", "slug": "caramel" },
+    { "name": "Khaki", "slug": "khaki" },
+    { "name": "Taupe", "slug": "taupe" },
+    { "name": "Sand", "slug": "sand" },
+    { "name": "Ivory", "slug": "ivory" },
+    { "name": "Gray", "slug": "gray" },
+    { "name": "Terracotta", "slug": "terracotta" },
+    { "name": "Rose", "slug": "rose" }
+  ]
+}

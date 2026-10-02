@@ -17,6 +17,12 @@ import ProductPrice from "../product-price"
 import ProductDescription from "../product-description"
 import MobileActions from "./mobile-actions"
 import { useRouter } from "next/navigation"
+import {
+  getHealingHeartsColor,
+  HEALING_HEARTS_HANDLE,
+} from "@lib/brand/healing-hearts-colors"
+import { HAPPY_COW_HANDLE, isHappyCowFourInchSize } from "@lib/brand/happy-cow-colors"
+import { useHappyCowPreview } from "@modules/products/components/happy-cow-color-preview-context"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -40,6 +46,7 @@ export default function ProductActions({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { setCanPreviewFourInch } = useHappyCowPreview()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
@@ -49,10 +56,23 @@ export default function ProductActions({
     () => visibleProductOptions(product.options),
     [product.options]
   )
+  const sizeOptionId = product.options?.find(
+    (option) => option.title?.trim().toLowerCase() === "size"
+  )?.id
   const hiddenDefaultSelections = useMemo(
     () => defaultTitleSelections(product.options),
     [product.options]
   )
+  const previewColor = getHealingHeartsColor(searchParams.get("color"))
+  const isHealingHeartsProof = product.handle === HEALING_HEARTS_HANDLE
+  const isPreviewOnlyColor = isHealingHeartsProof && previewColor.slug !== "black"
+
+  useEffect(() => {
+    const selectedSize = sizeOptionId ? options[sizeOptionId] : undefined
+    setCanPreviewFourInch(
+      product.handle === HAPPY_COW_HANDLE && isHappyCowFourInchSize(selectedSize)
+    )
+  }, [product.handle, options, setCanPreviewFourInch, sizeOptionId])
 
   // Preselect a sole variant and imported "Default Title" placeholders. The
   // placeholder remains part of variant matching but is not a customer choice.
@@ -198,6 +218,7 @@ export default function ProductActions({
             !selectedVariant ||
             !!disabled ||
             isAdding ||
+            isPreviewOnlyColor ||
             !isValidVariant
           }
           variant="primary"
@@ -205,12 +226,20 @@ export default function ProductActions({
           isLoading={isAdding}
           data-testid="add-product-button"
         >
-          {!selectedVariant
+          {isPreviewOnlyColor
+            ? "Color preview only"
+            : !selectedVariant
             ? "Select variant"
             : !inStock || !isValidVariant
             ? "Out of stock"
             : "Add to cart"}
         </Button>
+        {isPreviewOnlyColor && (
+          <p className="rh-color-preview-note" role="status">
+            {previewColor.name} is a visual preview. Its purchasable catalog
+            variant has not been attached yet.
+          </p>
+        )}
         <MobileActions
           product={product}
           variant={selectedVariant}

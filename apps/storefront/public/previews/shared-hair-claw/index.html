@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Shared 4-inch claw proof · Rustic Halo</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f4f2eb;color:#30382e;font:16px/1.5 system-ui,sans-serif}
+    main{max-width:1260px;margin:auto;padding:32px}header{margin-bottom:24px}h1{font:32px/1.2 Georgia,serif;margin:6px 0 12px}p{margin:0 0 12px}.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:28px;align-items:start}.stage{background:white;border-radius:14px;overflow:hidden;aspect-ratio:1;width:min(100%,75vh);margin:auto}.stage svg{display:block;width:100%;height:100%}
+    aside{background:#fff;border:1px solid #deded4;border-radius:14px;padding:22px}fieldset{border:0;padding:0;margin:0 0 24px}legend{font-weight:600;margin-bottom:12px}button,select{font:inherit}button{cursor:pointer}
+    .designs{display:flex;gap:8px;flex-wrap:wrap}.designs button{padding:9px 12px;background:#f4f2eb;border:1px solid #d7d9cf;border-radius:8px}.designs button[aria-pressed=true]{background:#3e4c36;color:white;border-color:#3e4c36}
+    .colors{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.colors button{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;border:2px solid transparent;border-radius:8px;background:white;padding:5px 2px}.colors button[aria-pressed=true]{border-color:#3e4c36;background:#f4f2eb}.swatch{height:31px;width:31px;border-radius:50%;border:1px solid #0002}.option{display:block;margin:10px 0}.option input{margin-right:8px}input[type=range]{width:100%;accent-color:#3e4c36}.caption{padding:12px 4px;font-size:14px}.note{font-size:13px;color:#60665b;margin-top:20px}.status{font-weight:600}
+    @media(max-width:800px){main{padding:18px}.layout{grid-template-columns:1fr}aside{padding:18px}.colors{grid-template-columns:repeat(7,1fr)}h1{font-size:27px}}
+  </style>
+</head>
+<body>
+  <main>
+    <header><div class="eyebrow">Rustic Halo · working proof</div><h1>One claw. A wood layer for every design.</h1><p>Four wood designs, one shared set of 13 claw colors. Jesus and Boho Gecko are new review candidates. Every view stays square.</p></header>
+    <div class="layout">
+      <section><div id="stage" class="stage"></div><p class="caption" id="caption" role="status"></p></section>
+      <aside>
+        <fieldset><legend>Wood design</legend><div class="designs" id="designs"></div></fieldset>
+        <fieldset><legend>Claw color</legend><div class="colors" id="colors"></div></fieldset>
+        <fieldset><legend>Check the layers</legend><label class="option"><input id="overlay" type="checkbox" checked>Show wood overlay</label><label class="option"><input id="vertical" type="checkbox">Display vertically</label></fieldset>
+        <label class="option"><input id="outline" type="checkbox" checked>Show exact SVG outline</label>
+        <label for="scale">Overlay size <output id="scale-output">100%</output></label><input id="scale" type="range" min="90" max="101" value="100" step="0.25">
+        <p class="note">Batch holds: Chicken Chick's saved photo is painted; Top Down's saved photo is too angled for a reliable extraction. Other catalog designs still need source-photo review. No product galleries have been changed.</p>
+        <p class="note">Fixed reference: clip width 103 mm; SVG 101.524 × 37.524 mm. At 100%, wood matches the reference with approximately 0.738 mm end allowance per side. The slider changes only the wood, not the dashed reference. Maximum 101% keeps the wood narrower than the clip. Source files are unchanged; the preview intentionally warps existing photographs.</p>
+      </aside>
+    </div>
+  </main>
+  <script type="module">
+    import { colors, designs, renderClaw } from './compositor.js?v=20260929-batch9'
+    const state = { designId: 'healing-hearts', colorSlug: 'taupe', showOverlay: true, showOutline: true, vertical: false, scale: 1 }
+    const stage = document.querySelector('#stage')
+    const caption = document.querySelector('#caption')
+    const designButtons = document.querySelector('#designs')
+    const colorButtons = document.querySelector('#colors')
+    const render = () => {
+      stage.innerHTML = renderClaw(state)
+      caption.textContent = `${designs[state.designId].name} · ${colors.find(c => c.slug === state.colorSlug).name} · ${state.vertical ? 'Vertical' : 'Horizontal'}${state.showOverlay ? '' : ' · Base only'}${designs[state.designId].review ? ' — '+designs[state.designId].review : ''}`
+      designButtons.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.design === state.designId)))
+      colorButtons.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.color === state.colorSlug)))
+    }
+    for (const [key, design] of Object.entries(designs)) {
+      const button = document.createElement('button')
+      button.type = 'button'; button.dataset.design = key; button.textContent = design.name
+      button.addEventListener('click', () => { state.designId = key; render() })
+      designButtons.append(button)
+    }
+    for (const color of colors) {
+      const button = document.createElement('button')
+      button.type = 'button'; button.dataset.color = color.slug; button.setAttribute('aria-label', color.name)
+      const swatch = document.createElement('span'); swatch.className = 'swatch'; swatch.style.backgroundColor = color.hex
+      const label = document.createElement('span'); label.textContent = color.name
+      button.append(swatch, label); button.addEventListener('click', () => { state.colorSlug = color.slug; render() })
+      colorButtons.append(button)
+    }
+    document.querySelector('#overlay').addEventListener('change', e => { state.showOverlay = e.target.checked; render() })
+    document.querySelector('#outline').addEventListener('change', e => { state.showOutline = e.target.checked; render() })
+    document.querySelector('#scale').addEventListener('input', e => { state.scale = Number(e.target.value)/100; document.querySelector('#scale-output').value = `${e.target.value}%`; render() })
+    document.querySelector('#vertical').addEventListener('change', e => { state.vertical = e.target.checked; render() })
+    render()
+  </script>
+</body>
+</html>
