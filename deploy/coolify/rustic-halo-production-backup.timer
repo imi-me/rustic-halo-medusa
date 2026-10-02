@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily Rustic Halo production database backup
+[Timer]
+OnCalendar=*-*-* 20:30:00 America/New_York
+Persistent=true
+AccuracySec=1min
+Unit=rustic-halo-production-backup.service
+[Install]
+WantedBy=timers.target

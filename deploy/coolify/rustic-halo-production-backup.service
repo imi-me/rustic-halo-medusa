@@ -1,0 +1,11 @@
+[Unit]
+Description=Back up Rustic Halo production databases and configuration
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flock -n /run/rustic-halo-production-backup.lock /usr/bin/python3 /usr/local/lib/rustic-halo-production/backup-production.py
+UMask=0077
+TimeoutStartSec=45min
+Nice=10
