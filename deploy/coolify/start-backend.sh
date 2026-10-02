@@ -6,4 +6,5 @@ pg_dump --dbname="$DATABASE_URL" --format=custom --no-owner --no-acl --file="$ba
 mv "$backup.partial" "$backup"
 echo 'Pre-migration database backup saved.'
 /app/apps/backend/node_modules/.bin/medusa db:migrate --skip-scripts --execute-safe-links
+export HOME=/home/node
 exec setpriv --reuid=node --regid=node --init-groups --no-new-privs /app/apps/backend/node_modules/.bin/medusa start
