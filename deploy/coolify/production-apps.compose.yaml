@@ -1,4 +1,4 @@
-# Production preparation: private loopback only until domains and live integrations are approved.
+# Owner-only production preview; Cloudflare Access protects this hostname. Live integrations remain disabled.
 services:
   backend:
     image: rustic-halo-production-backend:git
@@ -54,6 +54,7 @@ services:
       MARKETSUITE_INVENTORY_READ_KEY: ${MARKETSUITE_INVENTORY_READ_KEY}
     networks:
       data: {}
+      proxy: {}
       api:
         aliases:
           - backend
@@ -79,6 +80,18 @@ services:
     labels:
       - coolify.managed=true
       - coolify.type=application
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.services.rh-production-api.loadbalancer.server.port=9000
+      - traefik.http.routers.rh-production-api-http.entrypoints=http
+      - traefik.http.routers.rh-production-api-http.rule=Host(`production-preview.rustichalo.com`) && (PathPrefix(`/app`) || PathPrefix(`/admin`) || PathPrefix(`/auth`) || PathPrefix(`/store`) || Path(`/health`))
+      - traefik.http.routers.rh-production-api-http.priority=100
+      - traefik.http.routers.rh-production-api-http.service=rh-production-api
+      - traefik.http.routers.rh-production-api-https.entrypoints=https
+      - traefik.http.routers.rh-production-api-https.rule=Host(`production-preview.rustichalo.com`) && (PathPrefix(`/app`) || PathPrefix(`/admin`) || PathPrefix(`/auth`) || PathPrefix(`/store`) || Path(`/health`))
+      - traefik.http.routers.rh-production-api-https.priority=100
+      - traefik.http.routers.rh-production-api-https.service=rh-production-api
+      - traefik.http.routers.rh-production-api-https.tls.certresolver=letsencrypt
     volumes:
       - /var/lib/rustic-halo-production-backups/pre-deploy:/backups
   storefront:
@@ -91,6 +104,18 @@ services:
     labels:
       - coolify.managed=true
       - coolify.type=application
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.services.rh-production-store.loadbalancer.server.port=8000
+      - traefik.http.routers.rh-production-store-http.entrypoints=http
+      - traefik.http.routers.rh-production-store-http.rule=Host(`production-preview.rustichalo.com`)
+      - traefik.http.routers.rh-production-store-http.priority=1
+      - traefik.http.routers.rh-production-store-http.service=rh-production-store
+      - traefik.http.routers.rh-production-store-https.entrypoints=https
+      - traefik.http.routers.rh-production-store-https.rule=Host(`production-preview.rustichalo.com`)
+      - traefik.http.routers.rh-production-store-https.priority=1
+      - traefik.http.routers.rh-production-store-https.service=rh-production-store
+      - traefik.http.routers.rh-production-store-https.tls.certresolver=letsencrypt
     command:
       - pnpm
       - exec
@@ -103,6 +128,7 @@ services:
       ETSY_OAUTH_COOKIE_SECRET: ${ETSY_OAUTH_COOKIE_SECRET}
     networks:
       api: {}
+      proxy: {}
     healthcheck:
       test:
         - CMD
@@ -139,3 +165,6 @@ networks:
   api:
     external: true
     name: rustic-halo-production-api
+  proxy:
+    external: true
+    name: coolify

@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh production queue health every five minutes
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=rustic-halo-production-health.service
+[Install]
+WantedBy=timers.target

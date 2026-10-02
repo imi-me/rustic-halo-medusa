@@ -20,12 +20,15 @@ def main():
   run('docker','cp',client+':/data/snapshot.rdb',str(folder/'redis.rdb'),stdout=subprocess.DEVNULL)
   run('docker','run','--rm','--pull=never','--network','none','--user','0:0','--entrypoint','redis-check-rdb','--mount','type=bind,source='+str(folder/'redis.rdb')+',target=/snapshot.rdb,readonly',image,'/snapshot.rdb',stdout=subprocess.DEVNULL)
  finally:subprocess.run(['docker','rm',client],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
- php="require '/var/www/html/vendor/autoload.php';$app=require '/var/www/html/bootstrap/app.php';$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();$a=App\\Models\\Application::where('uuid','bvfoyx363r3pky9lues4fpyk')->firstOrFail();echo json_encode(['application'=>$a->getAttributes(),'settings'=>$a->settings->getAttributes(),'environment'=>$a->environment_variables->map(fn($e)=>['key'=>$e->key,'value'=>$e->value,'is_runtime'=>$e->is_runtime,'is_buildtime'=>$e->is_buildtime])->all()]);"
+ php="require '/var/www/html/vendor/autoload.php';$app=require '/var/www/html/bootstrap/app.php';$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap();$a=App\\Models\\Application::where('uuid','bvfoyx363r3pky9lues4fpyk')->firstOrFail();echo json_encode(['application'=>$a->getAttributes(),'settings'=>$a->settings->getAttributes(),'last_successful_deployment'=>App\\Models\\ApplicationDeploymentQueue::where('application_id',$a->id)->where('status','finished')->latest()->first()?->only(['commit','deployment_uuid','finished_at']),'environment'=>$a->environment_variables->map(fn($e)=>['key'=>$e->key,'value'=>$e->value,'is_runtime'=>$e->is_runtime,'is_buildtime'=>$e->is_buildtime])->all()]);"
  with (folder/'application-private.json').open('xb') as out:run('docker','exec','-u','0','coolify','php','-r',php,stdout=out)
  with tarfile.open(folder/'configuration.tar.gz','w:gz') as tar:
   tar.add('/data/coolify/services/'+CORE,arcname='data-resource')
   tar.add('/usr/local/lib/rustic-halo-production',arcname='operations')
-  for kind in ['service','timer']:tar.add('/etc/systemd/system/rustic-halo-production-backup.'+kind,arcname='systemd/backup.'+kind)
+  for unit in ['backup','health']:
+   for kind in ['service','timer']:tar.add('/etc/systemd/system/rustic-halo-production-'+unit+'.'+kind,arcname='systemd/'+unit+'.'+kind)
+  appdir=Path('/data/coolify/applications/bvfoyx363r3pky9lues4fpyk')
+  if appdir.exists():tar.add(appdir,arcname='application-resource')
  manifest={'scope':'online DB/Redis snapshots, not atomic; production media not yet configured','files':{p.name:{'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in folder.iterdir() if p.is_file()}}
  (folder/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
  print('PRODUCTION_BACKUP_VERIFIED '+str(folder))

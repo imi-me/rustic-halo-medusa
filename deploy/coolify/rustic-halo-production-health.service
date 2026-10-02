@@ -1,0 +1,7 @@
+[Unit]
+Description=Read Rustic Halo production queue health
+After=docker.service
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/rustic-halo-production/publish-production-job-health.py
+UMask=0077
