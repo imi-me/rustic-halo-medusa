@@ -15,7 +15,7 @@ services:
       APP_ROOT: /app
       LOCAL_HTTP_ADMIN: "false"
       DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://redis-aw4sntlbsbfsukqtfvccduqm:6379
       PERSISTENT_JOBS_ENABLED: "true"
       MEDUSA_WORKER_MODE: shared
       STORE_CORS: ${PRODUCTION_STORE_ORIGIN}
@@ -124,7 +124,7 @@ services:
       - -p
       - "8000"
     environment:
-      MEDUSA_BACKEND_URL: http://backend:9000
+      MEDUSA_BACKEND_URL: http://backend-rustic-halo-production:9000
       ETSY_OAUTH_COOKIE_SECRET: ${ETSY_OAUTH_COOKIE_SECRET}
     networks:
       api: {}
