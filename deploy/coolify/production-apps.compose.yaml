@@ -1,6 +1,6 @@
 # Owner-only production preview; Cloudflare Access protects this hostname. Live integrations remain disabled.
 services:
-  backend:
+  production-backend:
     image: rustic-halo-production-backend:git
     user: 0:0
     pull_policy: never
@@ -98,7 +98,7 @@ services:
       - traefik.http.routers.rh-production-api-https.tls.certresolver=letsencrypt
     volumes:
       - /var/lib/rustic-halo-production-backups/pre-deploy:/backups
-  storefront:
+  production-storefront:
     image: rustic-halo-production-storefront:git
     user: node
     pull_policy: never
@@ -164,7 +164,7 @@ services:
         NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${PRODUCTION_STORE_ORIGIN}
         NEXT_PUBLIC_BASE_URL: ${PRODUCTION_STORE_ORIGIN}
     depends_on:
-      backend:
+      production-backend:
         condition: service_healthy
 networks:
   data:
