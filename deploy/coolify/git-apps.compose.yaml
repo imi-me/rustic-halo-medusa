@@ -1,0 +1,152 @@
+services:
+  backend:
+    image: rustic-halo-staging-backend:git
+    user: node
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:19000:9000
+    command:
+      - sh
+      - /app/deploy/coolify/start-backend.sh
+    environment:
+      APP_ENV: staging
+      APP_ROOT: /app
+      LOCAL_HTTP_ADMIN: "true"
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      PERSISTENT_JOBS_ENABLED: "true"
+      MEDUSA_WORKER_MODE: shared
+      STORE_CORS: http://localhost:18000
+      ADMIN_CORS: http://localhost:19000
+      AUTH_CORS: http://localhost:18000,http://localhost:19000
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      EMAIL_DELIVERY_ENABLED: "false"
+      CUSTOMER_PASSWORD_RESET_ENABLED: ${CUSTOMER_PASSWORD_RESET_ENABLED:-false}
+      STRIPE_TEST_ENABLED: "true"
+      STRIPE_API_KEY: ${STRIPE_API_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_TAX_TEST_ENABLED: ${STRIPE_TAX_TEST_ENABLED:-false}
+      STRIPE_TAX_REPORTING_TEST_ENABLED: ${STRIPE_TAX_REPORTING_TEST_ENABLED:-false}
+      SHIPPO_API_KEY: ${SHIPPO_API_KEY}
+      SHIPPO_FROM_NAME: ${SHIPPO_FROM_NAME}
+      SHIPPO_FROM_STREET1: ${SHIPPO_FROM_STREET1}
+      SHIPPO_FROM_CITY: ${SHIPPO_FROM_CITY}
+      SHIPPO_FROM_STATE: ${SHIPPO_FROM_STATE}
+      SHIPPO_FROM_ZIP: ${SHIPPO_FROM_ZIP}
+      SHIPPO_FROM_COUNTRY: ${SHIPPO_FROM_COUNTRY}
+      R2_STORAGE_ENABLED: ${R2_STORAGE_ENABLED:-false}
+      R2_ENDPOINT: ${R2_ENDPOINT}
+      R2_BUCKET: ${R2_BUCKET}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      ETSY_READ_ENABLED: ${ETSY_READ_ENABLED:-false}
+      ETSY_ORDER_REPORT_ENABLED: ${ETSY_ORDER_REPORT_ENABLED:-false}
+      ETSY_API_KEY: ${ETSY_API_KEY}
+      ETSY_SHARED_SECRET: ${ETSY_SHARED_SECRET}
+      ETSY_TOKEN_ENCRYPTION_KEY: ${ETSY_TOKEN_ENCRYPTION_KEY}
+      ETSY_OAUTH_CALLBACK_URL: ${ETSY_OAUTH_CALLBACK_URL}
+      ETSY_SHOP_NAME: ${ETSY_SHOP_NAME}
+      MARKETSUITE_COPPER_MILL_LOCATION_ID: ${MARKETSUITE_COPPER_MILL_LOCATION_ID}
+      MARKETSUITE_INVENTORY_READ_ENABLED: ${MARKETSUITE_INVENTORY_READ_ENABLED:-false}
+      MARKETSUITE_INVENTORY_READ_KEY: ${MARKETSUITE_INVENTORY_READ_KEY}
+    networks:
+      data: {}
+      api:
+        aliases:
+          - backend
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://localhost:9000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    container_name: backend-rustic-halo-staging
+    build:
+      context: .
+      dockerfile: deploy/coolify/Dockerfile
+      target: backend
+    labels:
+      - coolify.managed=true
+      - coolify.type=application
+    volumes:
+      - /var/lib/rustic-halo-backups/pre-deploy:/backups
+  storefront:
+    image: rustic-halo-staging-storefront:git
+    user: node
+    pull_policy: never
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:18000:8000
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rustic-halo-staging-https.entrypoints=https
+      - traefik.http.routers.rustic-halo-staging-https.rule=Host(`staging.rustichalo.com`)
+      - traefik.http.routers.rustic-halo-staging-https.service=rustic-halo-staging-https
+      - traefik.http.routers.rustic-halo-staging-https.tls.certresolver=letsencrypt
+      - traefik.http.services.rustic-halo-staging-https.loadbalancer.server.port=8000
+      - coolify.managed=true
+      - coolify.type=application
+      - traefik.http.routers.rustic-halo-staging-http.entrypoints=http
+      - traefik.http.routers.rustic-halo-staging-http.rule=Host(`staging.rustichalo.com`)
+      - traefik.http.routers.rustic-halo-staging-http.service=rustic-halo-staging-https
+    command:
+      - pnpm
+      - exec
+      - next
+      - start
+      - -p
+      - "8000"
+    environment:
+      MEDUSA_BACKEND_URL: http://backend:9000
+      ETSY_OAUTH_COOKIE_SECRET: ${ETSY_OAUTH_COOKIE_SECRET}
+    networks:
+      api: {}
+      proxy: {}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://localhost:8000/us').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 10
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    container_name: storefront-rustic-halo-staging
+    build:
+      context: .
+      dockerfile: deploy/coolify/Dockerfile
+      target: storefront
+      network: host
+      args:
+        NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: ${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_STRIPE_KEY: ${NEXT_PUBLIC_STRIPE_KEY}
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://staging.rustichalo.com
+        NEXT_PUBLIC_BASE_URL: https://staging.rustichalo.com
+    depends_on:
+      backend:
+        condition: service_healthy
+networks:
+  data:
+    external: true
+    name: zt9mfml34oejgd5lrgffqzcy_data
+  api:
+    external: true
+    name: zt9mfml34oejgd5lrgffqzcy_api
+  proxy:
+    external: true
+    name: coolify
