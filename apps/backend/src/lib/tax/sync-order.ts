@@ -2,6 +2,8 @@ import type { MedusaContainer } from '@medusajs/framework/types'
 import { ContainerRegistrationKeys, Modules } from '@medusajs/framework/utils'
 import { assertShippingTestEnvironment } from '../shipping-test-environment'
 import { TaxSale, TestTaxReporting } from './test-reporting'
+import { LiveTaxReporting } from './live-reporting'
+import { productionCommerce } from '../production-commerce'
 
 const cents = (value: unknown) => {
   const amount = Number(value)
@@ -15,9 +17,12 @@ const assertRetryWindow = (started: number) => {
 
 /** Single-backend staging pilot. Amount-based refunds proportionally include tax for the current uniformly taxable catalog. */
 export async function syncOrderTax(container: MedusaContainer, orderId: string) {
-  if (process.env.STRIPE_TAX_REPORTING_TEST_ENABLED !== 'true') return
-  assertShippingTestEnvironment(process.env)
-  const reporting = new TestTaxReporting(process.env.STRIPE_API_KEY || '')
+  const live = process.env.STRIPE_TAX_REPORTING_LIVE_ENABLED === 'true'
+  if (!live && process.env.STRIPE_TAX_REPORTING_TEST_ENABLED !== 'true') return
+  if (live) productionCommerce(process.env)
+  else assertShippingTestEnvironment(process.env)
+  const reporting = live ? new LiveTaxReporting(process.env.STRIPE_API_KEY || '') : new TestTaxReporting(process.env.STRIPE_API_KEY || '')
+  const metadataKey = live ? 'stripe_tax_live_reporting' : 'stripe_tax_test_reporting'
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const orders = container.resolve(Modules.ORDER)
   const lock = container.resolve(Modules.LOCKING)
@@ -29,7 +34,7 @@ export async function syncOrderTax(container: MedusaContainer, orderId: string) 
     ] })
     const order = rows[0]
     if (!order) throw new Error('Tax reporting order was not found.')
-    let state = order.metadata?.stripe_tax_test_reporting as RecordState | undefined
+    let state = order.metadata?.[metadataKey] as RecordState | undefined
     if (!state && order.shipping_address?.province?.toLowerCase() !== 'nc') return
     if (order.currency_code !== 'usd') throw new Error('Tax reporting pilot supports USD only.')
     const payments = order.payment_collections?.flatMap(collection => collection?.payments || []) || []
@@ -41,12 +46,12 @@ export async function syncOrderTax(container: MedusaContainer, orderId: string) 
     })
     if (!response.ok) throw new Error('Unable to verify payment before tax reporting.')
     const payment = await response.json()
-    if (payment.livemode !== false || payment.currency !== 'usd') throw new Error('Expected a USD test payment.')
+    if (payment.livemode !== live || payment.currency !== 'usd') throw new Error('Unexpected USD payment mode.')
     if (payment.status !== 'succeeded') return
     if (payment.amount_received !== (state?.sale.expectedTotalCents ?? cents(order.total))) throw new Error('Captured payment does not match order total.')
     const save = async () => {
       const current = await orders.retrieveOrder(orderId)
-      await orders.updateOrders(orderId, { metadata: { ...current.metadata, stripe_tax_test_reporting: state } })
+      await orders.updateOrders(orderId, { metadata: { ...current.metadata, [metadataKey]: state } })
     }
     if (!state) {
       const address = order.shipping_address!

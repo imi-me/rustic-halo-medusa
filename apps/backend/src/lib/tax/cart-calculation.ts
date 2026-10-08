@@ -41,6 +41,13 @@ export function cartCalculationParameters(cart: TaxCart) {
 }
 export async function compareCartTax(cart: TaxCart, key: string) {
   if (!key.startsWith('sk_test_')) throw Error('Sandbox Stripe key required')
+  return compareCartTaxInMode(cart, key, false)
+}
+export async function compareProductionCartTax(cart: TaxCart, key: string) {
+  if (!key.startsWith('sk_live_')) throw Error('Live Stripe key required')
+  return compareCartTaxInMode(cart, key, true)
+}
+async function compareCartTaxInMode(cart: TaxCart, key: string, live: boolean) {
   const body = cartCalculationParameters(cart)
   const response = await fetch('https://api.stripe.com/v1/tax/calculations', {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -48,7 +55,7 @@ export async function compareCartTax(cart: TaxCart, key: string) {
   })
   if (!response.ok) throw Error('Cart tax comparison unavailable')
   const result = await response.json()
-  if (result.livemode !== false || result.currency !== 'usd' || typeof result.id !== 'string' || !result.id.startsWith('taxcalc_') || !Number.isSafeInteger(result.tax_amount_exclusive) || result.tax_amount_exclusive < 0 || !Number.isSafeInteger(result.amount_total) || result.amount_total < 0 || result.tax_amount_inclusive !== 0) throw Error('Unexpected tax calculation')
+  if (result.livemode !== live || result.currency !== 'usd' || typeof result.id !== 'string' || !result.id.startsWith('taxcalc_') || !Number.isSafeInteger(result.tax_amount_exclusive) || result.tax_amount_exclusive < 0 || !Number.isSafeInteger(result.amount_total) || result.amount_total < 0 || result.tax_amount_inclusive !== 0) throw Error('Unexpected tax calculation')
   const expectedTaxCents = cents(amount(cart.tax_total))
   const expectedTotalCents = cents(amount(cart.total))
   return { cartId: cart.id, calculationId: result.id, expectedTaxCents, calculatedTaxCents: result.tax_amount_exclusive,

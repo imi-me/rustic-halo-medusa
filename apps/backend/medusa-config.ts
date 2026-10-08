@@ -3,7 +3,8 @@ import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
-const shippingLiveEnabled = productionCommerce(process.env).shipping
+const liveCommerce = productionCommerce(process.env)
+const shippingLiveEnabled = liveCommerce.shipping
 const stripeWebhookOnly = process.env.STRIPE_LIVE_WEBHOOK_ENABLED === 'true'
 if (stripeWebhookOnly) {
   const db = new URL(process.env.DATABASE_URL || '')
@@ -97,6 +98,9 @@ module.exports = defineConfig({
   ] : []), ...(process.env.STRIPE_TAX_TEST_ENABLED === 'true' ? [{
     resolve: '@medusajs/medusa/tax',
     options: { providers: [{ resolve: './src/modules/stripe-tax-test', id: 'stripe', options: { apiKey: process.env.STRIPE_API_KEY } }] },
+  }] : []), ...(liveCommerce.tax ? [{
+    resolve: '@medusajs/medusa/tax',
+    options: { providers: [{ resolve: './src/modules/stripe-tax-live', id: 'stripe', options: { apiKey: process.env.STRIPE_API_KEY } }] },
   }] : []), {
     resolve: '@medusajs/medusa/notification',
     options: { providers: [{ resolve: './src/modules/resend', id: 'resend', options: { channels: ['email'] } }] },

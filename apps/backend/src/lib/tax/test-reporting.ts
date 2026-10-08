@@ -7,9 +7,11 @@ export type TaxSale = {
   expectedTaxCents: number
   expectedTotalCents: number
 }
-export class TestTaxReporting {
-  constructor(private key: string) {
-    if (!key.startsWith('sk_test_')) throw new Error('Tax reporting pilot requires a test key.')
+export abstract class TaxReporting {
+  protected prefix: string
+  protected constructor(private key: string, protected live: boolean) {
+    if (!key.startsWith(live ? 'sk_live_' : 'sk_test_')) throw new Error(live ? 'Live tax reporting requires a live key.' : 'Tax reporting pilot requires a test key.')
+    this.prefix = live ? 'rh-live-tax' : 'rh-test-tax'
   }
   private async request(path: string, parameters: Record<string, string>, idempotencyKey: string) {
     const response = await fetch(`https://api.stripe.com/v1/tax/${path}`, {
@@ -19,7 +21,7 @@ export class TestTaxReporting {
     })
     if (!response.ok) throw new Error(`Stripe Tax reporting failed (HTTP ${response.status}); retry with the same reference.`)
     const result = await response.json()
-    if (result.livemode !== false) throw new Error('Expected a test tax record.')
+    if (result.livemode !== this.live) throw new Error('Unexpected tax record mode.')
     return result
   }
   async recordSale(sale: TaxSale) {
@@ -36,13 +38,13 @@ export class TestTaxReporting {
       params[`line_items[${index}][tax_code]`] = 'txcd_99999999'
       params[`line_items[${index}][tax_behavior]`] = 'exclusive'
     })
-    const calculation = await this.request('calculations', params, `rh-test-tax-calc/${sale.reference}`)
+    const calculation = await this.request('calculations', params, `${this.prefix}-calc/${sale.reference}`)
     if (calculation.tax_amount_exclusive !== sale.expectedTaxCents || calculation.amount_total !== sale.expectedTotalCents) {
       throw new Error('Stripe tax does not match the collected order amounts. Do not record this sale until reconciled.')
     }
     const transaction = await this.request('transactions/create_from_calculation', {
       calculation: calculation.id, reference: sale.reference,
-    }, `rh-test-tax-sale/${sale.reference}`)
+    }, `${this.prefix}-sale/${sale.reference}`)
     return { calculationId: calculation.id as string, transactionId: transaction.id as string }
   }
   async recordPartialRefund(transactionId: string, refundReference: string, grossCents: number) {
@@ -50,14 +52,17 @@ export class TestTaxReporting {
     const reversal = await this.request('transactions/create_reversal', {
       mode: 'partial', original_transaction: transactionId, reference: refundReference,
       flat_amount: String(-grossCents),
-    }, `rh-test-tax-refund/${refundReference}`)
+    }, `${this.prefix}-refund/${refundReference}`)
     return { reversalId: reversal.id as string }
   }
   async recordFullRefund(transactionId: string, refundReference: string) {
     if (!transactionId.startsWith('tax_') || !refundReference) throw new Error('Original tax transaction and unique refund reference are required.')
     const reversal = await this.request('transactions/create_reversal', {
       mode: 'full', original_transaction: transactionId, reference: refundReference,
-    }, `rh-test-tax-refund/${refundReference}`)
+    }, `${this.prefix}-refund/${refundReference}`)
     return { reversalId: reversal.id as string }
   }
+}
+export class TestTaxReporting extends TaxReporting {
+  constructor(key: string) { super(key, false) }
 }
