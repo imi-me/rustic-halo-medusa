@@ -2,6 +2,12 @@ import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
+const stripeWebhookOnly = process.env.STRIPE_LIVE_WEBHOOK_ENABLED === 'true'
+if (stripeWebhookOnly) {
+  const db = new URL(process.env.DATABASE_URL || '')
+  if (process.env.APP_ENV !== 'production' || db.hostname !== 'postgres-aw4sntlbsbfsukqtfvccduqm' || db.pathname !== '/rustic_halo_production' || process.env.STRIPE_TEST_ENABLED === 'true' || !process.env.STRIPE_API_KEY?.startsWith('sk_live_') || !process.env.STRIPE_WEBHOOK_SECRET?.startsWith('whsec_')) throw Error('Live webhook requires isolated production and matching credentials.')
+}
+
 const stripeTestEnabled = process.env.STRIPE_TEST_ENABLED === 'true'
 if (stripeTestEnabled) {
   if (!process.env.STRIPE_API_KEY?.startsWith('sk_test_')) {
@@ -92,7 +98,7 @@ module.exports = defineConfig({
   }] : []), {
     resolve: '@medusajs/medusa/notification',
     options: { providers: [{ resolve: './src/modules/resend', id: 'resend', options: { channels: ['email'] } }] },
-  }, ...(stripeTestEnabled ? [{
+  }, ...((stripeTestEnabled || stripeWebhookOnly) ? [{
     resolve: '@medusajs/medusa/payment',
     options: {
       providers: [{
@@ -105,7 +111,7 @@ module.exports = defineConfig({
         },
       }],
     },
-  }, {
+  }] : []), ...(stripeTestEnabled ? [{
     resolve: '@medusajs/medusa/fulfillment',
     options: { providers: [
       { resolve: '@medusajs/medusa/fulfillment-manual', id: 'manual' },
