@@ -2,7 +2,7 @@ import { guardStripeWebhook } from '../guard-stripe-webhook'
 function run(path: string, method: string) {
   const res = { status: jest.fn().mockReturnThis(), end: jest.fn(), setHeader: jest.fn() }
   const next = jest.fn()
-  guardStripeWebhook({ path, method } as any, res as any, next)
+  guardStripeWebhook({ path: '/', originalUrl: path, method } as any, res as any, next)
   return { res, next }
 }
 test('passes exact POST to Medusa signature verification', () => {
@@ -17,4 +17,8 @@ test.each(['/hooks/payment/stripe_stripe/', '/hooks/payment/stripe_stripe/admin'
   const { res, next } = run(path, 'POST')
   expect(res.status).toHaveBeenCalledWith(404)
   expect(next).not.toHaveBeenCalled()
+})
+
+test('accepts query strings using the original mounted URL', () => {
+  expect(run('/hooks/payment/stripe_stripe?probe=1', 'POST').next).toHaveBeenCalledTimes(1)
 })
