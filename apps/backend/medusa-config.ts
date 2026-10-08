@@ -1,7 +1,9 @@
+import { productionCommerce } from './src/lib/production-commerce'
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
+const shippingLiveEnabled = productionCommerce(process.env).shipping
 const stripeWebhookOnly = process.env.STRIPE_LIVE_WEBHOOK_ENABLED === 'true'
 if (stripeWebhookOnly) {
   const db = new URL(process.env.DATABASE_URL || '')
@@ -111,11 +113,11 @@ module.exports = defineConfig({
         },
       }],
     },
-  }] : []), ...(stripeTestEnabled ? [{
+  }] : []), ...((stripeTestEnabled || shippingLiveEnabled) ? [{
     resolve: '@medusajs/medusa/fulfillment',
     options: { providers: [
       { resolve: '@medusajs/medusa/fulfillment-manual', id: 'manual' },
-      { resolve: './src/modules/shippo-test', id: 'shippo' },
+      { resolve: shippingLiveEnabled ? './src/modules/shippo-live' : './src/modules/shippo-test', id: 'shippo' },
     ] },
   }] : [])],
   projectConfig: {

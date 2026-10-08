@@ -16,10 +16,14 @@ export default class ShippoTestService extends AbstractFulfillmentProviderServic
   async canCalculate() { return true }
   async validateFulfillmentData() { return {} }
   async createFulfillment(): Promise<never> { throw new Error('Test quote provider cannot buy labels or fulfill orders.') }
-  async calculatePrice(_option: CalculateShippingOptionPriceDTO['optionData'], _data: CalculateShippingOptionPriceDTO['data'], context: CalculateShippingOptionPriceDTO['context']) {
+  protected shippingSettings() {
     assertShippingTestEnvironment(process.env)
     const env = process.env.APP_ENV === 'staging' ? process.env : Object.fromEntries(readFileSync(resolve(this.root, '.local/shippo.env'), 'utf8').split(/\r?\n/).filter(l => l.includes('=') && !l.startsWith('#')).map(l => { const n = l.indexOf('='); return [l.slice(0,n), l.slice(n+1).trim().replace(/^["']|["']$/g, '')] }))
     if (!env.SHIPPO_API_KEY?.startsWith('shippo_test_')) throw new Error('Shippo test token required')
+    return env
+  }
+  async calculatePrice(_option: CalculateShippingOptionPriceDTO['optionData'], _data: CalculateShippingOptionPriceDTO['data'], context: CalculateShippingOptionPriceDTO['context']) {
+    const env = this.shippingSettings()
     const ctx = context as unknown as { currency_code: string, shipping_address: Record<string,string>, items: Array<{quantity:number,variant_sku?:string,variant?:{sku?:string}}> }
     // Medusa recalculates an existing shipping method when the last line is removed.
     // No parcel or external quote is needed for an empty cart.
