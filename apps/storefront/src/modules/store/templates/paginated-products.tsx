@@ -2,7 +2,7 @@ import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import ProductPreview from "@modules/products/components/product-preview"
-import { Pagination } from "@modules/store/components/pagination"
+import { LoadMore } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 const PRODUCT_LIMIT = 12
@@ -35,8 +35,11 @@ export default async function PaginatedProducts({
   countryCode: string
   optionValueIds?: OptionValueIds
 }) {
+  const loadedPages = Number.isFinite(page)
+    ? Math.min(1000, Math.max(1, Math.floor(page)))
+    : 1
   const queryParams: PaginatedProductsParams = {
-    limit: 12,
+    limit: PRODUCT_LIMIT * loadedPages,
   }
 
   if (query) queryParams.q = query
@@ -66,20 +69,19 @@ export default async function PaginatedProducts({
   const {
     response: { products, count },
   } = await listProductsWithSort({
-    page,
+    page: 1,
     queryParams,
     sortBy,
     countryCode,
     optionValueIds,
   })
 
-  const totalPages = Math.ceil(count / PRODUCT_LIMIT)
-
   return (
     <>
       {products.length > 0 && <p className="rh-product-count" aria-live="polite">{count} {count === 1 ? "product" : "products"}</p>}
       {products.length === 0 && <div className="rh-empty-results"><h2>{query ? "No matching products yet" : "New things are on their way"}</h2><p>{query ? "Try another search, or browse our current shop while we prepare this collection." : "Explore our current shop for available designs."}</p><a href="https://rustichalo.com/collections/all" target="_blank" rel="noreferrer">Visit our current shop ↗</a></div>}
       <ul
+        id="catalog-products"
         className="rh-catalog-grid"
         data-testid="products-list"
       >
@@ -91,12 +93,8 @@ export default async function PaginatedProducts({
           )
         })}
       </ul>
-      {totalPages > 1 && (
-        <Pagination
-          data-testid="product-pagination"
-          page={page}
-          totalPages={totalPages}
-        />
+      {count > 0 && (
+        <LoadMore page={loadedPages} shown={products.length} total={count} />
       )}
     </>
   )

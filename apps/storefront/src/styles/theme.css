@@ -88,8 +88,10 @@ html { scroll-padding-top:calc(var(--rh-header-height) + 16px); }
 .rh-related-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px; }
 .rh-related-grid > li { min-width:0; }
 .rh-stock-badge { background:#fff; color:var(--rh-ink); border-color:#e2e1e2; }
-[data-testid="product-pagination"] button { min-width:40px; height:40px; border-radius:50%; font-size:14px; }
-[data-testid="product-pagination"] button:disabled { background:var(--rh-accent); color:#fff; }
+.rh-load-more { display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:40px; }
+.rh-load-more p { font-size:13px; color:var(--rh-muted); }
+.rh-load-more button { min-width:180px; padding:12px 30px; font-size:14px; }
+.rh-load-more button:disabled { opacity:.65; cursor:wait; }
 
 /* Carry the same type, surfaces, and action color through transactional pages. */
 .font-serif { font-family:var(--rh-display); }

@@ -86,6 +86,7 @@ export default function CategoryTemplate({
         )}
         <div className="rh-catalog-toolbar"><LocalizedClientLink href="/store">All products</LocalizedClientLink><RefinementList sortBy={sort} hideOptionsPicker /></div>
         <Suspense
+          key={`${category.id}-${sort}-${optionValueIds?.join(",")}`}
           fallback={
             <SkeletonProductGrid
               numberOfProducts={category.products?.length ?? 8}

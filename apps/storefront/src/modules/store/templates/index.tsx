@@ -30,7 +30,7 @@ const StoreTemplate = ({
     >
       <div className="w-full">
         <CatalogHeading title={query ? `Search results for “${query}”` : "Explore the collection"} subtitle={query ? undefined : "Find something that feels like you."} sortBy={sort} titleTestId="store-page-title" />
-        <Suspense key={`${query}-${pageNumber}-${sort}`} fallback={<SkeletonProductGrid />}>
+        <Suspense key={`${query}-${sort}-${optionValueIds?.join(",")}`} fallback={<SkeletonProductGrid />}>
           <PaginatedProducts
             query={query}
             sortBy={sort}

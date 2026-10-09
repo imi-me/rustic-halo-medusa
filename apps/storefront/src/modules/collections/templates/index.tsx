@@ -28,6 +28,7 @@ export default function CollectionTemplate({
       <div className="w-full">
         <CatalogHeading title={collection.title} collectionHandle={collection.handle} sortBy={sort} />
         <Suspense
+          key={`${collection.id}-${sort}-${optionValueIds?.join(",")}`}
           fallback={
             <SkeletonProductGrid
               numberOfProducts={collection.products?.length}
