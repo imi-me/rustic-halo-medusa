@@ -50,7 +50,7 @@ html { scroll-padding-top:calc(var(--rh-header-height) + 16px); }
 .rh-footer-social a:hover { background:var(--rh-stone); }
 .rh-footer-bottom { border-color:#e2e1e2; }
 .rh-footer-reference { padding-top:10px; padding-bottom:16px; }
-.rh-footer-reference-row { display:grid; grid-template-columns:1fr auto 1fr; gap:32px; align-items:center; max-width:1340px; margin:auto; }
+.rh-footer-reference-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:32px; align-items:center; max-width:1340px; margin:auto; }
 .rh-footer-reference .rh-footer-logo { width:300px; }
 .rh-footer-reference-brand p { color:var(--rh-muted); font-size:11px; margin-top:0; }
 .rh-footer-reference-nav { display:flex; align-items:center; justify-content:center; gap:38px; font-size:14px; }
