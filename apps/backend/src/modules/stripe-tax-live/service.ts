@@ -1,5 +1,6 @@
 import type { ITaxProvider, TaxTypes } from '@medusajs/framework/types'
 import { productionCommerce } from '../../lib/production-commerce'
+import { decimalCents } from '../../lib/tax/cents'
 
 /** NC taxable physical goods. Exact discounted cart totals are checked before payment. */
 export default class StripeTaxLiveService implements ITaxProvider {
@@ -37,13 +38,13 @@ export default class StripeTaxLiveService implements ITaxProvider {
       'expand[0]': 'line_items.data.tax_breakdown' })
     // Keep each Medusa shipping line identifiable instead of merging multiple boxes.
     lines.filter(l => !l.shipping).forEach((l, i) => {
-      params.set(`line_items[${i}][amount]`, String(Math.round(l.amount * 100)))
+      params.set(`line_items[${i}][amount]`, String(decimalCents(l.amount)))
       params.set(`line_items[${i}][reference]`, l.id)
       params.set(`line_items[${i}][tax_code]`, l.shipping ? 'txcd_92010001' : 'txcd_99999999')
       params.set(`line_items[${i}][tax_behavior]`, 'exclusive')
     })
     if (shipping.length) {
-      params.set('shipping_cost[amount]', String(Math.round(lines.filter(l => l.shipping).reduce((sum, l) => sum + l.amount, 0) * 100)))
+      params.set('shipping_cost[amount]', String(decimalCents(lines.filter(l => l.shipping).reduce((sum, l) => sum + l.amount, 0))))
       params.set('shipping_cost[tax_code]', 'txcd_92010001')
       params.set('shipping_cost[tax_behavior]', 'exclusive')
     }

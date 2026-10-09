@@ -4,11 +4,12 @@ import { assertShippingTestEnvironment } from '../shipping-test-environment'
 import { TaxSale, TestTaxReporting } from './test-reporting'
 import { LiveTaxReporting } from './live-reporting'
 import { productionCommerce } from '../production-commerce'
+import { decimalCents } from './cents'
 
 const cents = (value: unknown) => {
   const amount = Number(value)
   if (value == null || !Number.isFinite(amount) || amount < 0) throw new Error('Missing or invalid tax reporting amount.')
-  return Math.round(amount * 100)
+  return decimalCents(amount)
 }
 type RecordState = { sale: TaxSale; startedAt: number; transactionId?: string; calculationId?: string; refundStartedAt?: number; reversalId?: string; refunds?: Record<string, { amount: number; startedAt: number; reversalId?: string }> }
 const assertRetryWindow = (started: number) => {

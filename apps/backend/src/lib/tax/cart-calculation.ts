@@ -1,4 +1,5 @@
 /** Sandbox comparison of Stripe's actual discounted cart amounts with Medusa totals. */
+import { decimalCents } from './cents'
 export type TaxCart = {
   id: string; currency_code: string; total: unknown; tax_total: unknown
   shipping_total: unknown; shipping_tax_total: unknown
@@ -13,7 +14,7 @@ function amount(value: unknown): number {
   return n
 }
 function cents(value: number) {
-  const n = Math.round(value * 100)
+  const n = decimalCents(value)
   if (!Number.isSafeInteger(n) || n < 0) throw Error('Invalid cart cents')
   return n
 }
