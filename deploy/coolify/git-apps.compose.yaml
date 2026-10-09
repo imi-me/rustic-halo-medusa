@@ -1,3 +1,5 @@
+# Retain the existing staging Compose identity so future deployments update its containers.
+name: x6vmshjb0lev27wu0tvteyto
 services:
   backend:
     image: rustic-halo-staging-backend:git
