@@ -20,7 +20,7 @@ export default class StripeTaxLiveService implements ITaxProvider {
     if (a.country_code.toLowerCase() !== 'us') throw Error('Launch shipping is US only.')
     if (!a.province_code || a.province_code.toLowerCase() !== 'nc') return []
     if (!a.address_1 || !a.city || !a.postal_code) throw Error('Complete NC shipping address required.')
-    if (!items.length) return []
+    if (!items.length && !shipping.length) return []
     // Medusa's provider DTO supplies extended taxable inputs separately from
     // promotion totals. The independent discounted-cart preflight must match.
     const lines = [
@@ -43,6 +43,14 @@ export default class StripeTaxLiveService implements ITaxProvider {
       params.set(`line_items[${i}][tax_code]`, l.shipping ? 'txcd_92010001' : 'txcd_99999999')
       params.set(`line_items[${i}][tax_behavior]`, 'exclusive')
     })
+    // Medusa requests shipping separately. Stripe requires a goods line;
+    // a zero-value physical-goods line preserves the shipping tax treatment.
+    if (!items.length) {
+      params.set('line_items[0][amount]', '0')
+      params.set('line_items[0][reference]', 'rh-shipping-tax-base')
+      params.set('line_items[0][tax_code]', 'txcd_99999999')
+      params.set('line_items[0][tax_behavior]', 'exclusive')
+    }
     if (shipping.length) {
       params.set('shipping_cost[amount]', String(decimalCents(lines.filter(l => l.shipping).reduce((sum, l) => sum + l.amount, 0))))
       params.set('shipping_cost[tax_code]', 'txcd_92010001')
@@ -64,7 +72,8 @@ export default class StripeTaxLiveService implements ITaxProvider {
     const calculation = await response.json()
     if (calculation.livemode !== true || calculation.currency !== 'usd' || typeof calculation.id !== 'string'
       || !calculation.id.startsWith('taxcalc_') || calculation.tax_amount_inclusive !== 0 || calculation.line_items?.has_more
-      || !Array.isArray(calculation.line_items?.data) || calculation.line_items.data.length !== items.length) {
+      || !Array.isArray(calculation.line_items?.data) || calculation.line_items.data.length !== Math.max(items.length, 1)
+      || (!items.length && calculation.line_items.data[0].reference !== 'rh-shipping-tax-base')) {
       throw Error('Unexpected live tax calculation.')
     }
     result = { expires: Date.now() + 15 * 60 * 1000, result: calculation }
@@ -77,7 +86,7 @@ export default class StripeTaxLiveService implements ITaxProvider {
       if (b.inclusive !== false) throw Error('Exclusive shipping tax required.')
       return { ...b, jurisdiction: { country: b.tax_rate_details?.country, state: b.tax_rate_details?.state } }
     })
-    const calculatedLines = [...calculation.line_items.data,
+    const calculatedLines = [...(items.length ? calculation.line_items.data : []),
       ...lines.filter(l => l.shipping).map(l => ({ reference: l.id, tax_breakdown: shippingBreakdown }))]
     const taxLines = calculatedLines.map((calculated: { reference: string; tax_breakdown: Array<{ taxability_reason: string; jurisdiction: { country: string; state: string }; tax_rate_details: { percentage_decimal: string } }> }) => {
       const line = lines.find(l => l.id === calculated.reference)

@@ -44,6 +44,16 @@ test('validation usage cap blocks additional requests', async () => {
   await expect(service.getTaxLines(items, [], { address: { ...address, city: 'Other' } })).rejects.toThrow('budget')
   expect(global.fetch).toHaveBeenCalledTimes(1)
 })
+test('shipping-only requests return tax for the shipping line', async () => {
+  ;(global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: async () => ({ id: 'taxcalc_shipping', currency: 'usd', livemode: true, tax_amount_inclusive: 0,
+    line_items: { has_more: false, data: [{ reference: 'rh-shipping-tax-base', amount: 0 }] },
+    tax_breakdown: [{ inclusive: false, taxability_reason: 'standard_rated', tax_rate_details: { country: 'US', state: 'NC', percentage_decimal: '7.25' } }] }) })
+  const shipping = [{ shipping_line: { id: 'shipping', shipping_option_id: 'option', currency_code: 'usd', unit_price: 5.27 }, rates: [] }]
+  expect(await new Service({}, { apiKey: 'sk_live_fake' }).getTaxLines([], shipping, { address })).toEqual([expect.objectContaining({ shipping_line_id: 'shipping', rate: 7.25 })])
+  const body = (global.fetch as jest.Mock).mock.calls[0][1].body as URLSearchParams
+  expect(body.get('line_items[0][amount]')).toBe('0')
+  expect(body.get('shipping_cost[amount]')).toBe('527')
+})
 test('missing registration, wrong mode and API failures block taxes', async () => {
   const service = new Service({}, { apiKey: 'sk_live_fake' })
   for (const result of [{ livemode: false }, { livemode: true, currency: 'usd', id: 'taxcalc_x', tax_amount_inclusive: 0, line_items: { has_more: false, data: [{ reference: 'item', tax_breakdown: [{ ...breakdown[0], taxability_reason: 'not_collecting' }] }] } }]) {
