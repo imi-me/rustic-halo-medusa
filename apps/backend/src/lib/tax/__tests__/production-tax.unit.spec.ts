@@ -4,7 +4,7 @@ const original = process.env
 const originalFetch = global.fetch
 const address = { country_code: 'us', province_code: 'nc', address_1: 'Street', city: 'City', postal_code: '27837' }
 const items = [{ line_item: { id: 'item', product_id: 'p', currency_code: 'usd', unit_price: 12, quantity: 2 }, rates: [] }]
-const breakdown = [{ taxability_reason: 'standard_rated', tax_rate_details: { country: 'US', state: 'NC', percentage_decimal: '7' } }]
+const breakdown = [{ taxability_reason: 'standard_rated', jurisdiction: { country: 'US', state: 'NC' }, tax_rate_details: { percentage_decimal: '7' } }]
 beforeEach(() => {
   process.env = { ...original, APP_ENV: 'production', DATABASE_URL: 'postgres://u:p@postgres-aw4sntlbsbfsukqtfvccduqm/rustic_halo_production',
     STRIPE_API_KEY: 'sk_live_fake', STRIPE_TAX_LIVE_ENABLED: 'true', STRIPE_TAX_REPORTING_LIVE_ENABLED: 'true', TAX_COLLECTION_STATE: 'NC', STRIPE_TEST_ENABLED: 'false', STRIPE_TAX_TEST_ENABLED: 'false' }

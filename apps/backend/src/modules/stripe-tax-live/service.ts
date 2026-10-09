@@ -72,14 +72,14 @@ export default class StripeTaxLiveService implements ITaxProvider {
     const seen = new Set<string>()
     const calculatedLines = [...calculation.line_items.data,
       ...lines.filter(l => l.shipping).map(l => ({ reference: l.id, tax_breakdown: calculation.shipping_cost?.tax_breakdown }))]
-    const taxLines = calculatedLines.map((calculated: { reference: string; tax_breakdown: Array<{ taxability_reason: string; tax_rate_details: { country: string; state: string; percentage_decimal: string } }> }) => {
+    const taxLines = calculatedLines.map((calculated: { reference: string; tax_breakdown: Array<{ taxability_reason: string; jurisdiction: { country: string; state: string }; tax_rate_details: { percentage_decimal: string } }> }) => {
       const line = lines.find(l => l.id === calculated.reference)
       if (!line || seen.has(line.id)) throw Error('Tax calculation line mismatch.')
       seen.add(line.id)
       const breakdown = calculated.tax_breakdown
       if (!Array.isArray(breakdown) || !breakdown.length || breakdown.some(b =>
-        b.taxability_reason !== 'standard_rated' || b.tax_rate_details.country !== 'US'
-        || b.tax_rate_details.state !== 'NC' || b.tax_rate_details.percentage_decimal == null)) {
+        b.taxability_reason !== 'standard_rated' || b.jurisdiction?.country !== 'US'
+        || b.jurisdiction?.state !== 'NC' || b.tax_rate_details.percentage_decimal == null)) {
         throw Error('NC tax registration or product treatment requires review.')
       }
       const rate = breakdown.reduce((sum, b) => sum + Number(b.tax_rate_details.percentage_decimal), 0)
