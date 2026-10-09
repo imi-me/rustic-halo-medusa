@@ -41,7 +41,7 @@ function OrdersIcon() {
     </svg>
   );
 }
-export default function OrdersWorkspace() {
+const OrdersWorkspace = () => {
   const [orders, setOrders] = useState<WorkspaceOrder[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -423,3 +423,5 @@ export const config = defineRouteConfig({
   label: "Orders workspace",
   icon: OrdersIcon,
 });
+
+export default OrdersWorkspace
