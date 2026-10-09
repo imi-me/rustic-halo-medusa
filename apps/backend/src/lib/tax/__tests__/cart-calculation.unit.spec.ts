@@ -26,6 +26,13 @@ test('rejects duplicate lines and unsupported gift cards', () => {
  expect(() => cartCalculationParameters({...cart, items:[{...cart.items[0],is_giftcard:true}]})).toThrow('physical-goods')
 })
 test('matches rounded cart total and tax', async () => { expect(await compareCartTax(cart,'sk_test_dummy')).toEqual(expect.objectContaining({matches:true,expectedTaxCents:177,expectedTotalCents:2704})) })
+test('rounds combined fractional goods and shipping tax once, matching actual Stripe allocation', async () => {
+ request.mockResolvedValue({ok:true,json:async()=>({id:'taxcalc_combined',livemode:false,currency:'usd',tax_amount_inclusive:0,tax_amount_exclusive:140,amount_total:2074})})
+ const combined={...cart,total:20.74215,tax_total:1.40215,shipping_total:5.72715,shipping_tax_total:.38715,items:[{id:'item',total:15.015,tax_total:1.015}]}
+ expect(await compareCartTax(combined,'sk_test_dummy')).toEqual(expect.objectContaining({matches:true,expectedTaxCents:140,expectedTotalCents:2074}))
+ expect(request.mock.calls[0][1].body.get('line_items[0][amount]')).toBe('1400')
+ expect(request.mock.calls[0][1].body.get('shipping_cost[amount]')).toBe('534')
+})
 test('reports one-cent mismatch without creating a transaction', async () => {
  expect(await compareCartTax({...cart,total:27.05},'sk_test_dummy')).toEqual(expect.objectContaining({matches:false}))
  expect(request).toHaveBeenCalledTimes(1)
