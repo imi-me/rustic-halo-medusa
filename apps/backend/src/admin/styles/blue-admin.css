@@ -119,3 +119,47 @@ body:has(.rh-login-brand) .max-w-\[280px\] > .mb-4 { display: none; }
 @media (max-width: 1200px) { .rh-metrics { gap: 12px; } .rh-card { padding: 18px; } .rh-metric-title { font-size: 11px; } .rh-metric > strong { font-size: 29px; } .rh-main-grid { grid-template-columns: minmax(0, 1.4fr) minmax(270px, 1fr); } }
 @media (max-width: 900px) { .rh-main-grid { grid-template-columns: 1fr; } .rh-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rh-overview-header { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 540px) { main > div { padding: 16px !important; } .rh-overview h1 { font-size: 36px; } .rh-controls { gap: 6px; } .rh-report-note { flex-direction: column; gap: 4px; } .rh-metric-title { font-size: 11px; gap: 7px; } .rh-metric > strong { font-size: 27px; } .rh-card { padding: 16px; } .rh-metric p { font-size: 9px; } .rh-overview-header p { font-size: 12px; } }
+
+/* Approved mockup appearance applied to the latest native/extension layout. */
+html:root, html.light {
+  --bg-subtle: #f3f6fa;
+  --bg-subtle-hover: #eaf2fc;
+  --border-base: #dce7f5;
+  --fg-base: #102542;
+  --fg-subtle: #526d91;
+  --button-inverted: #2868b2;
+  --button-inverted-hover: #1b5698;
+}
+aside {
+  background: linear-gradient(160deg, #153960 0%, #142d50 64%, #173a61 100%);
+  --bg-subtle: transparent;
+  --bg-base: #315e91;
+  --bg-subtle-hover: #244e7b;
+}
+aside > div > .sticky:first-child { background: #153960; }
+aside > div > .sticky:first-child > .p-3 { padding-top: 26px; padding-bottom: 20px; }
+aside > div > .sticky:first-child button .truncate { font-size: 0; line-height: 26px; text-overflow: clip; }
+aside > div > .sticky:first-child button .truncate::before { content: 'Rustic Halo'; font-family: Georgia, serif; font-size: 22px; font-weight: 400; color: #f7fbff; letter-spacing: -.5px; }
+aside > div > .sticky:first-child button > :first-child { align-self: center; background: transparent; box-shadow: none; height: 30px; overflow: visible; }
+aside > div > .sticky:first-child button > :first-child > span { font-size: 0; width: 23px; height: 30px; border-radius: 0; background: #eef6ff; mask: url('./deer-icon.svg') center / contain no-repeat; -webkit-mask: url('./deer-icon.svg') center / contain no-repeat; }
+aside nav a { color: #e3efff; border-radius: 8px; }
+aside nav a[aria-current='page'] { background: linear-gradient(100deg, #315e91, #326cad); box-shadow: 0 3px 12px rgba(5,22,43,.12); }
+aside nav a svg, aside nav button svg { color: inherit; }
+main { background: linear-gradient(135deg, #f3f7fc, #f3f6fa); }
+main h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; letter-spacing: -.65px; color: #102542; }
+.rh-overview-header p { font-family: Georgia, serif; font-size: 17px; color: #233e63; line-height: 1.5; }
+.rh-card { border-color: #dce7f5; border-radius: 12px; box-shadow: 0 2px 10px rgba(24,62,104,.025); }
+.rh-metric-title { font-family: Georgia, serif; font-size: 15px; font-weight: 400; }
+.rh-metric-title svg { color: #16345c; }
+.rh-metric > strong { color: #102542; }
+.rh-section-heading h2 { color: #102542; }
+.rh-priorities strong { font-family: Georgia, serif; font-size: 14px; font-weight: 400; }
+.rh-product a, .rh-product strong { font-family: Georgia, serif; font-size: 14px; font-weight: 400; }
+.rh-status { background: #e3efff; color: #185a9e; }
+.rh-status-amber { background: #fff1d7; color: #8c5b1c; }
+.rh-login-brand strong { color: #102542; font-size: 31px; }
+body:has(.rh-login-brand) { background: radial-gradient(ellipse at 25% 15%, #e5eefb, transparent 60%), #f3f6fa; }
+@media (max-width: 1200px) { .rh-metric-title { font-size: 13px; } }
+@media (max-width: 540px) { .rh-overview-header p { font-size: 15px; } .rh-metric-title { font-size: 12px; } .rh-priorities strong, .rh-product a, .rh-product strong { font-size: 13px; } }
+
+#medusa h1.h1-core { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; letter-spacing: -.35px; color: #102542; }
