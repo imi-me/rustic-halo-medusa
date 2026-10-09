@@ -4,11 +4,7 @@ import { limitPasswordReset } from '../lib/email/reset-rate-limit'
 import { guardResetReplay } from '../lib/email/reset-replay-guard'
 
 import { guardStripeWebhook } from '../lib/guard-stripe-webhook'
-import type { MedusaRequest, MedusaResponse, MedusaNextFunction } from '@medusajs/framework/http'
-function blockProductionPayment(req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) {
-  if (process.env.APP_ENV === 'production') return res.status(409).json({message: 'Checkout is not yet available.'})
-  return next()
-}
+import { validateProductionPayment } from '../lib/validate-production-payment'
 
 export default defineMiddlewares({
   routes: [{
@@ -17,7 +13,7 @@ export default defineMiddlewares({
   }, {
     matcher: '/store/payment-collections/:id/payment-sessions',
     method: ['POST'],
-    middlewares: [blockProductionPayment],
+    middlewares: [validateProductionPayment],
   }, {
     matcher: '/admin/hair-claw-media/upload',
     method: ['POST'],

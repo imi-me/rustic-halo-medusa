@@ -104,7 +104,7 @@ module.exports = defineConfig({
   }] : []), {
     resolve: '@medusajs/medusa/notification',
     options: { providers: [{ resolve: './src/modules/resend', id: 'resend', options: { channels: ['email'] } }] },
-  }, ...((stripeTestEnabled || stripeWebhookOnly) ? [{
+  }, ...((stripeTestEnabled || stripeWebhookOnly || liveCommerce.payment) ? [{
     resolve: '@medusajs/medusa/payment',
     options: {
       providers: [{
