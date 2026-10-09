@@ -48,6 +48,11 @@ describe('Overview reporting', () => {
     const original = global.fetch
     const fetchMock = jest.fn(async (path: string, options: RequestInit) => {
       expect(options.credentials).toBe('include')
+      if (path.startsWith('/admin/products?') && path.includes('status')) {
+        // Medusa's product-list validator requires an array, including one status.
+        expect(new URL(path, 'http://localhost').searchParams.get('status[]')).toBe('draft')
+        expect(new URL(path, 'http://localhost').searchParams.has('status')).toBe(false)
+      }
       const body = path.startsWith('/admin/orders?')
         ? { count: 2, orders: [order({ id: path.includes('offset=0') ? 'first' : 'second' })] }
         : { count: 3 }

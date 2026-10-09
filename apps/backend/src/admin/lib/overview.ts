@@ -98,7 +98,7 @@ export async function loadOverview(days: number, signal: AbortSignal): Promise<O
   const orders: OverviewOrder[] = []
   const [products, drafts, customers] = await Promise.all([
     read<{ count: number }>('/admin/products?limit=1&fields=id', signal),
-    read<{ count: number }>('/admin/products?limit=1&fields=id&status=draft', signal),
+    read<{ count: number }>('/admin/products?limit=1&fields=id&status%5B%5D=draft', signal),
     read<{ count: number }>(`/admin/customers?${new URLSearchParams({ ...dateQuery, limit: '1', fields: 'id' })}`, signal),
   ])
   let count = 0
