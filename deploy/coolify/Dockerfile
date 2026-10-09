@@ -10,7 +10,6 @@ ENV MEDUSA_DISABLE_TELEMETRY=true NEXT_TELEMETRY_DISABLED=1
 RUN pnpm install --frozen-lockfile
 
 FROM source AS backend
-RUN node /app/deploy/coolify/round-production-nc-tax.cjs --apply /app
 RUN apt-get update && apt-get install -y --no-install-recommends libheif-examples util-linux libpq5 && rm -rf /var/lib/apt/lists/*
 COPY --from=postgres_tools /usr/lib/postgresql/17/bin/pg_dump /usr/local/bin/pg_dump
 COPY --from=postgres_tools /usr/lib/x86_64-linux-gnu/libpq.so.5* /usr/lib/x86_64-linux-gnu/
