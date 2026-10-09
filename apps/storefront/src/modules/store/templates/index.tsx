@@ -2,7 +2,7 @@ import { Suspense } from "react"
 
 import { OptionValueIds } from "@lib/util/product-option-filters"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
+import CatalogHeading from "@modules/store/components/catalog-heading"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 import PaginatedProducts from "./paginated-products"
@@ -29,10 +29,7 @@ const StoreTemplate = ({
       data-testid="category-container"
     >
       <div className="w-full">
-        <div className="rh-catalog-heading">
-          <h1 data-testid="store-page-title">{query ? `Search results for “${query}”` : "All products"}</h1>
-          <RefinementList sortBy={sort} hideOptionsPicker />
-        </div>
+        <CatalogHeading title={query ? `Search results for “${query}”` : "Explore the collection"} subtitle={query ? undefined : "Find something that feels like you."} sortBy={sort} titleTestId="store-page-title" />
         <Suspense key={`${query}-${pageNumber}-${sort}`} fallback={<SkeletonProductGrid />}>
           <PaginatedProducts
             query={query}

@@ -41,16 +41,13 @@ export default function CategoryTemplate({
 
   return (
     <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
+      className="rh-catalog-page content-container"
       data-testid="category-container"
     >
-      <RefinementList
-        sortBy={sort}
-        data-testid="sort-by-container"
-        hideOptionsPicker
-      />
       <div className="w-full">
-        <div className="flex flex-row mb-8 text-2xl-semi gap-4">
+        <nav className="rh-breadcrumb" aria-label="Breadcrumb">
+          <LocalizedClientLink href="/">Home</LocalizedClientLink><span aria-hidden="true">/</span>
+          <LocalizedClientLink href="/store">Shop</LocalizedClientLink><span aria-hidden="true">/</span>
           {parents &&
             parents.map((parent) => (
               <span key={parent.id} className="text-ui-fg-subtle">
@@ -64,6 +61,9 @@ export default function CategoryTemplate({
                 /
               </span>
             ))}
+          <span aria-current="page">{category.name}</span>
+        </nav>
+        <div className="rh-catalog-heading">
           <h1 data-testid="category-page-title">{category.name}</h1>
         </div>
         {category.description && (
@@ -84,6 +84,7 @@ export default function CategoryTemplate({
             </ul>
           </div>
         )}
+        <div className="rh-catalog-toolbar"><LocalizedClientLink href="/store">All products</LocalizedClientLink><RefinementList sortBy={sort} hideOptionsPicker /></div>
         <Suspense
           fallback={
             <SkeletonProductGrid

@@ -7,17 +7,17 @@ export const metadata: Metadata = {
 
 export default function StoreTerms() {
   return (
-    <main className="content-container py-12 small:py-20">
+    <main className="rh-content-page content-container py-12 small:py-20">
       <div className="max-w-3xl mx-auto">
-        <p className="text-sm uppercase tracking-widest text-[#515c49] mb-3">Shopping with us</p>
-        <h1 className="font-serif text-4xl small:text-5xl text-[#30362c] mb-4">Store terms</h1>
-        <p className="text-sm text-[#6b7065] mb-10">
+        <p className="text-sm uppercase tracking-widest text-[var(--rh-ink)] mb-3">Shopping with us</p>
+        <h1 className="font-serif text-4xl small:text-5xl text-[var(--rh-ink)] mb-4">Store terms</h1>
+        <p className="text-sm text-[var(--rh-muted)] mb-10">
           Last updated September 22, 2026. Effective when the new Rustic Halo store launches.
         </p>
 
-        <div className="space-y-8 text-[#454b41]">
+        <div className="space-y-8 text-[var(--rh-ink)]">
           <section>
-            <h2 className="font-serif text-2xl text-[#30362c] mb-3">About these terms</h2>
+            <h2 className="font-serif text-2xl text-[var(--rh-ink)] mb-3">About these terms</h2>
             <p>
               These terms apply to purchases through this Rustic Halo online store, operated by Ebenstone Co LLC.
               Email <a className="underline underline-offset-4" href="mailto:hello@rustichalo.com">hello@rustichalo.com</a> with
@@ -26,7 +26,7 @@ export default function StoreTerms() {
           </section>
 
           <section>
-            <h2 className="font-serif text-2xl text-[#30362c] mb-3">Your order</h2>
+            <h2 className="font-serif text-2xl text-[var(--rh-ink)] mb-3">Your order</h2>
             <p>
               Please review the item, selected options, personalization details when offered, and delivery address
               before placing your order. Contact us promptly if something needs correcting. Because products are made
@@ -40,7 +40,7 @@ export default function StoreTerms() {
           </section>
 
           <section>
-            <h2 className="font-serif text-2xl text-[#30362c] mb-3">Preparation and delivery</h2>
+            <h2 className="font-serif text-2xl text-[var(--rh-ink)] mb-3">Preparation and delivery</h2>
             <p>We currently ship only within the United States. International shipping is not available at launch.</p>
             <p className="mt-3">
               Online products are made to order and normally ship in <strong>3–5 business days</strong>. This is
@@ -54,7 +54,7 @@ export default function StoreTerms() {
           </section>
 
           <section>
-            <h2 className="font-serif text-2xl text-[#30362c] mb-3">Returns and order concerns</h2>
+            <h2 className="font-serif text-2xl text-[var(--rh-ink)] mb-3">Returns and order concerns</h2>
             <p>We do not accept returns simply because you no longer want an item, including personalized items.</p>
             <h3 className="font-semibold mt-5 mb-2">Damaged, defective, or incorrect items</h3>
             <p>
@@ -76,7 +76,7 @@ export default function StoreTerms() {
           </section>
 
           <section>
-            <h2 className="font-serif text-2xl text-[#30362c] mb-3">Product information and availability</h2>
+            <h2 className="font-serif text-2xl text-[var(--rh-ink)] mb-3">Product information and availability</h2>
             <p>
               We work to present product descriptions, options, colors, and images accurately. Colors can look
               different across screens, and handmade or natural materials can have small variations. If an item or
@@ -85,7 +85,7 @@ export default function StoreTerms() {
           </section>
 
           <section>
-            <h2 className="font-serif text-2xl text-[#30362c] mb-3">Your account</h2>
+            <h2 className="font-serif text-2xl text-[var(--rh-ink)] mb-3">Your account</h2>
             <p>
               Keep your login details private and your account information accurate. Contact us if you believe someone
               has accessed your account without permission.

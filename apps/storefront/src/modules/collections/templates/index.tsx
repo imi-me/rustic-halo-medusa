@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
+import CatalogHeading from "@modules/store/components/catalog-heading"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import PaginatedProducts from "@modules/store/templates/paginated-products"
 import { HttpTypes } from "@medusajs/types"
@@ -26,10 +26,7 @@ export default function CollectionTemplate({
   return (
     <div className="rh-collection-page content-container">
       <div className="w-full">
-        <div className="rh-catalog-heading">
-          <p className="rh-eyebrow">The Rustic Halo collection</p><h1>{collection.title}</h1>
-          <RefinementList sortBy={sort} hideOptionsPicker />
-        </div>
+        <CatalogHeading title={collection.title} collectionHandle={collection.handle} sortBy={sort} />
         <Suspense
           fallback={
             <SkeletonProductGrid

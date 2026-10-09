@@ -2,7 +2,6 @@
 
 import {
   Popover,
-  PopoverButton,
   PopoverPanel,
   Transition,
 } from "@headlessui/react"
@@ -16,6 +15,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
+import BagIcon from "../bag-icon"
 
 const CartDropdown = ({
   cart: cartState,
@@ -80,13 +80,15 @@ const CartDropdown = ({
       onMouseLeave={close}
     >
       <Popover className="relative h-full">
-        <PopoverButton className="h-full">
           <LocalizedClientLink
-            className="hover:text-ui-fg-base"
+            className="rh-cart-link"
             href="/cart"
             data-testid="nav-cart-link"
-          >{`Cart (${totalItems})`}</LocalizedClientLink>
-        </PopoverButton>
+            aria-label={`Shopping cart, ${totalItems} ${totalItems === 1 ? "item" : "items"}`}
+          >
+            <BagIcon />
+            {totalItems > 0 && <span className="rh-cart-count" aria-hidden="true">{totalItems}</span>}
+          </LocalizedClientLink>
         <Transition
           show={cartDropdownOpen}
           as={Fragment}

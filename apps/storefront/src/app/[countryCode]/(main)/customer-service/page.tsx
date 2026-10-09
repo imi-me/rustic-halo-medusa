@@ -8,17 +8,17 @@ export const metadata: Metadata = {
 
 export default function CustomerService() {
   return (
-    <main className="content-container py-12 small:py-20">
+    <main className="rh-content-page content-container py-12 small:py-20">
       <div className="max-w-3xl mx-auto">
-        <p className="text-sm uppercase tracking-widest text-[#515c49] mb-3">Here to help</p>
-        <h1 className="font-serif text-4xl small:text-5xl text-[#30362c] mb-5">Customer service</h1>
-        <p className="text-lg text-[#596052] mb-10">
+        <p className="text-sm uppercase tracking-widest text-[var(--rh-ink)] mb-3">Here to help</p>
+        <h1 className="font-serif text-4xl small:text-5xl text-[var(--rh-ink)] mb-5">Customer service</h1>
+        <p className="text-lg text-[var(--rh-muted)] mb-10">
           Have a question about your order? Email{" "}
           <a className="underline underline-offset-4" href="mailto:hello@rustichalo.com">hello@rustichalo.com</a>.
           If you have already ordered, include your order number so we can help.
         </p>
         <div className="space-y-8">
-          <section className="bg-[#f5f2ec] border border-[#e3dfd5] rounded-lg p-6 small:p-8">
+          <section className="bg-[var(--rh-mist)] border border-[#e2e1e2] rounded-lg p-6 small:p-8">
             <h2 className="font-serif text-2xl mb-3">Made just for you</h2>
             <p>Online orders are made to order and ship in <strong>3–5 business days</strong>.</p>
             <p className="mt-3">This is the time we need to prepare your order before it leaves our shop. Carrier transit time is additional.</p>
@@ -40,7 +40,7 @@ export default function CustomerService() {
           <section>
             <h2 className="font-serif text-2xl mb-3">Need help with an order?</h2>
             <p>For questions about an item, an address correction, or a problem with your order, contact us so we can review the details with you.</p>
-            <a href="mailto:hello@rustichalo.com?subject=Order%20help" className="inline-block mt-5 rounded-md bg-[#515c49] px-6 py-3 text-white hover:bg-[#3f4938]">Email Rustic Halo</a>
+            <a href="mailto:hello@rustichalo.com?subject=Order%20help" className="rh-ui-button rh-ui-button-primary inline-flex items-center mt-5 px-6 py-3 text-white">Email Rustic Halo</a>
           </section>
         </div>
         <LocalizedClientLink href="/account/orders" className="inline-block mt-10 underline underline-offset-4">View orders in your account</LocalizedClientLink>

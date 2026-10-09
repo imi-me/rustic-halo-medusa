@@ -64,6 +64,7 @@ const RefinementList = ({
     })
 
   return (
+    hideOptionsPicker ? <div className="rh-sort-only"><SortProducts sortBy={sortBy} setQueryParams={setQueryParams} data-testid={dataTestId} /></div> :
     <details className="rh-filter-sort" open>
       <summary>Filter &amp; sort</summary>
       <div className="rh-filter-sort-content">

@@ -47,8 +47,8 @@ export default function ProductCard({ product }: { product: HttpTypes.StoreProdu
   return (
     <article className="rh-product-card">
       <LocalizedClientLink href={href} className="rh-product-card-media" aria-label={`View ${product.title}`}>
-        {primaryImage ? <Image src={primaryImage} alt={product.title || "Rustic Halo product"} fill sizes="(max-width: 480px) 46vw, (max-width: 760px) 30vw, (max-width: 1200px) 23vw, 300px" className="rh-product-card-image" /> : <span className="rh-product-card-fallback">Rustic Halo</span>}
-        {secondaryImage && <Image src={secondaryImage} alt="" aria-hidden fill sizes="(max-width: 480px) 46vw, (max-width: 760px) 30vw, (max-width: 1200px) 23vw, 300px" className="rh-product-card-image rh-product-card-image-secondary" />}
+        {primaryImage ? <Image src={primaryImage} alt={product.title || "Rustic Halo product"} fill sizes="(max-width: 640px) 46vw, 32vw" className="rh-product-card-image" /> : <span className="rh-product-card-fallback">Rustic Halo</span>}
+        {secondaryImage && <Image src={secondaryImage} alt="" aria-hidden fill sizes="(max-width: 640px) 46vw, 32vw" className="rh-product-card-image rh-product-card-image-secondary" />}
         {isProductSoldOut(product) && <span className="rh-stock-badge">Sold out</span>}
       </LocalizedClientLink>
       <div className="rh-product-card-body">
