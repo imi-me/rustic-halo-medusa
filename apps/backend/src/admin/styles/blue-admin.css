@@ -163,3 +163,30 @@ body:has(.rh-login-brand) { background: radial-gradient(ellipse at 25% 15%, #e5e
 @media (max-width: 540px) { .rh-overview-header p { font-size: 15px; } .rh-metric-title { font-size: 12px; } .rh-priorities strong, .rh-product a, .rh-product strong { font-size: 13px; } }
 
 #medusa h1.h1-core { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; letter-spacing: -.35px; color: #102542; }
+
+/* Owner-selected cool white and ivory palette; retain the latest admin layout. */
+html:root,html.light{--bg-base:#fff;--bg-subtle:#f4f1ea;--bg-subtle-hover:#ece9e2;--button-inverted:#465466;--button-inverted-hover:#303c4c;--border-base:#e0e3e7;--fg-base:#25303c;--fg-subtle:#65707c}
+body,main{background:#f4f1ea}
+aside{background:#efede7;color:#25303c;--bg-base:#fff;--bg-subtle:#efede7;--bg-subtle-hover:#e6e3dc;--fg-base:#25303c;--fg-subtle:#495460;--fg-muted:#717a84;--border-base:#d9d6ce}
+aside a,aside button,aside nav a{color:#495460}
+aside nav a:hover{background:#e6e3dc;color:#25303c}
+aside nav a[aria-current='page']{background:#fff;color:#25303c;box-shadow:0 2px 8px rgba(45,51,59,.06)}
+aside nav a:focus-visible,aside button:focus-visible{outline-color:#6d7888}
+aside > div > .sticky:first-child{background:#efede7}
+aside > div > .sticky:first-child button .truncate::before{color:#25303c}
+aside > div > .sticky:first-child button::after{color:#717a84}
+aside > div > .sticky:first-child button > :first-child > span{background:#465466}
+@media(min-width:1024px){.w-\[220px\]:has(aside){border-color:#ddd9d0}}
+#medusa h1.h1-core,.rh-overview,.rh-overview h1,.rh-metric > strong,.rh-section-heading h2,.rh-login-brand strong{color:#25303c}
+.rh-overview-header p{color:#495460}
+.rh-eyebrow,.rh-overview a,.rh-daily{color:#526174}
+.rh-card{border-color:#e0e3e7;box-shadow:0 2px 10px rgba(45,51,59,.025)}
+.rh-controls select{border-color:#e0e3e7;color:#495460}
+.rh-button{background:#465466;border-color:#465466}.rh-button:hover{background:#303c4c}
+.rh-metric-title svg{color:#495460}
+.rh-section-heading > span,.rh-priority-icon:not(.rh-priority-amber),.rh-status:not(.rh-status-amber){background:#edf0f4;color:#526174}
+.rh-priorities > a,.rh-product a,.rh-product strong{color:#25303c}
+.rh-chart path[stroke],.rh-chart circle{stroke:#65758a}.rh-chart circle{fill:#65758a}.rh-chart stop{stop-color:#65758a}
+.rh-login-brand{border-color:#e0e3e7}.rh-deer{background:#465466}
+body:has(.rh-login-brand){background:radial-gradient(ellipse at 25% 15%,#fbfaf7,transparent 60%),#f4f1ea}
+body:has(.rh-login-brand) .max-w-\[280px\]{border-color:#e0e3e7;box-shadow:0 16px 70px rgba(45,51,59,.07)}
