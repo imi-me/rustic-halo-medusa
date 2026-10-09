@@ -40,7 +40,7 @@ if (localHttpAdmin) {
 }
 
 module.exports = defineConfig({
-  modules: [{ resolve: './src/modules/etsy' }, { resolve: './src/modules/hair-claw-media' }, ...(r2Enabled ? [{
+  modules: [{ resolve: './src/modules/social-media' }, { resolve: './src/modules/etsy' }, { resolve: './src/modules/hair-claw-media' }, ...(r2Enabled ? [{
     resolve: '@medusajs/medusa/file',
     options: { providers: [{
       resolve: '@medusajs/medusa/file-s3',
