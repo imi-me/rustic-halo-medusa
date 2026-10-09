@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
             <h2 className="font-serif text-2xl text-[#30362c] mb-3">Who we are</h2>
             <p>
               Rustic Halo is a brand owned and operated by Ebenstone Co LLC. For privacy questions or requests,
-              email <a className="underline underline-offset-4" href="mailto:contact@rustichalo.com">contact@rustichalo.com</a>.
+              email <a className="underline underline-offset-4" href="mailto:hello@rustichalo.com">hello@rustichalo.com</a>.
             </p>
           </section>
 

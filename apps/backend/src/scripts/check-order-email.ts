@@ -47,14 +47,11 @@ async function check() {
     assert(lastBody.html.includes('&lt;Shawn&gt;'))
     assert(lastBody.text.includes('Total: $28.80') && lastBody.text.includes('Discount: -$3.00'))
     assert(lastBody.text.includes('3–5 business days'))
-    assert(!lastBody.html.includes('<img '))
-    process.env.EMAIL_LOGO_URL = 'https://example.com/brand/logo.png'
-    await service.send(notificationCalls[0])
-    assert(lastBody.html.includes('src="https://example.com/brand/logo.png"'))
-    assert(lastBody.html.includes('alt="Rustic Halo"'))
-    process.env.EMAIL_LOGO_URL = 'javascript:alert(1)'
-    await service.send(notificationCalls[0])
-    assert(!lastBody.html.includes('<img ') && !lastBody.html.includes('javascript:'))
+    assert(lastBody.html.includes('src="cid:rustic-halo-logo"'))
+    assert(lastBody.html.includes('Makers of laser cut, engraved, and handpainted products.'))
+    assert.equal(lastBody.attachments[0].content_id, 'rustic-halo-logo')
+    assert.equal(lastBody.attachments[0].content_type, 'image/png')
+    assert.equal(Buffer.from(lastBody.attachments[0].content, 'base64').subarray(0, 8).toString('hex'), '89504e470d0a1a0a')
     status = 429
     await assert.rejects(() => service.send(notificationCalls[0]), /HTTP 429/)
     console.log('Passed: disabled delivery, order mapping, totals, escaping, idempotency keys, and API error handling. No email sent.')

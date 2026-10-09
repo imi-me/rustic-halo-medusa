@@ -9,7 +9,7 @@ const Help = () => {
       <div className="text-base-regular my-2">
         <ul className="gap-y-2 flex flex-col">
           <li>
-            <a href="mailto:contact@rustichalo.com">Contact Rustic Halo</a>
+            <a href="mailto:hello@rustichalo.com">Contact Rustic Halo</a>
           </li>
           <li>
             <LocalizedClientLink href="/customer-service">

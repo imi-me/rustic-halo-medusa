@@ -84,7 +84,7 @@ const ShippingInfoTab = () => (
   <div className="text-small-regular py-8">
     <p className="mb-3">Online orders are made to order and ship in 3–5 business days. Transit time is additional.</p>
     <p className="mb-3">Returns are reviewed based on the circumstances. <LocalizedClientLink className="underline" href="/customer-service#returns">Read our return guidelines</LocalizedClientLink>.</p>
-    <p>For shipping or return questions, <a className="underline" href="mailto:contact@rustichalo.com">contact Rustic Halo</a>.</p>
+    <p>For shipping or return questions, <a className="underline" href="mailto:hello@rustichalo.com">contact Rustic Halo</a>.</p>
   </div>
 )
 

@@ -24,7 +24,7 @@ export default async function Orders() {
         <h1 className="text-2xl-semi">Orders</h1>
         <p className="text-base-regular">
           View your previous orders and their status. For help with an order,
-          email contact@rustichalo.com and include your order number.
+          email hello@rustichalo.com and include your order number.
         </p>
       </div>
       <div>

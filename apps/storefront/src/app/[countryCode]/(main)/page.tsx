@@ -15,8 +15,8 @@ const featuredHandles = [
 ]
 
 export const metadata: Metadata = {
-  title: "Rustic Halo | Nature-inspired accessories & home décor",
-  description: "Discover nature-inspired earrings, hair claws, and joyful accents for your home from Rustic Halo.",
+  title: "Rustic Halo | Laser cut, engraved, and handpainted products",
+  description: "Makers of laser cut, engraved, and handpainted products.",
 }
 export default async function Home(props: { params: Promise<{ countryCode: string }> }) {
   const { countryCode } = await props.params

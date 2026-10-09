@@ -4,7 +4,7 @@ import { sdk } from "@lib/config"
 
 export type ResetState = { success?: boolean; message: string } | null
 export async function requestPasswordReset(_state: ResetState, form: FormData): Promise<ResetState> {
- if (process.env.CUSTOMER_PASSWORD_RESET_ENABLED !== "true") return { message: "Password recovery is not available yet. Please contact contact@rustichalo.com for help." }
+ if (process.env.CUSTOMER_PASSWORD_RESET_ENABLED !== "true") return { message: "Password recovery is not available yet. Please contact hello@rustichalo.com for help." }
  const email = form.get("email")
  if (typeof email !== "string" || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return { message: "Enter a valid email address." }
  try { await sdk.auth.resetPassword("customer", "emailpass", { identifier: email.trim() }) }
