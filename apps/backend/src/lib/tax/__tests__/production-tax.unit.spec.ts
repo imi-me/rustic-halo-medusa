@@ -25,7 +25,8 @@ test('VA removes NC taxes without requesting a calculation', async () => {
 })
 test('shipping uses its dedicated tax field and identical requests are cached', async () => {
   ;(global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: async () => ({ id: 'taxcalc_fake', currency: 'usd', livemode: true, tax_amount_inclusive: 0,
-    line_items: { has_more: false, data: [{ reference: 'item', tax_breakdown: breakdown }] }, shipping_cost: { tax_breakdown: breakdown } }) })
+    line_items: { has_more: false, data: [{ reference: 'item', tax_breakdown: breakdown }] }, shipping_cost: { amount: 500, amount_tax: 35 },
+    tax_breakdown: [{ inclusive: false, taxability_reason: 'standard_rated', tax_rate_details: { country: 'US', state: 'NC', percentage_decimal: '7' } }] }) })
   const service = new Service({}, { apiKey: 'sk_live_fake' })
   const shipping = [{ shipping_line: { id: 'shipping', shipping_option_id: 'option', currency_code: 'usd', unit_price: 5 }, rates: [] }]
   const lines = await service.getTaxLines(items, shipping, { address })

@@ -70,8 +70,14 @@ export default class StripeTaxLiveService implements ITaxProvider {
     }
     const calculation = result.result
     const seen = new Set<string>()
+    // Stripe exposes shipping tax at calculation level, not a per-shipping
+    // breakdown. All launch goods and shipping share the NC sales rate.
+    const shippingBreakdown = calculation.tax_breakdown?.map((b: any) => {
+      if (b.inclusive !== false) throw Error('Exclusive shipping tax required.')
+      return { ...b, jurisdiction: { country: b.tax_rate_details?.country, state: b.tax_rate_details?.state } }
+    })
     const calculatedLines = [...calculation.line_items.data,
-      ...lines.filter(l => l.shipping).map(l => ({ reference: l.id, tax_breakdown: calculation.shipping_cost?.tax_breakdown }))]
+      ...lines.filter(l => l.shipping).map(l => ({ reference: l.id, tax_breakdown: shippingBreakdown }))]
     const taxLines = calculatedLines.map((calculated: { reference: string; tax_breakdown: Array<{ taxability_reason: string; jurisdiction: { country: string; state: string }; tax_rate_details: { percentage_decimal: string } }> }) => {
       const line = lines.find(l => l.id === calculated.reference)
       if (!line || seen.has(line.id)) throw Error('Tax calculation line mismatch.')
