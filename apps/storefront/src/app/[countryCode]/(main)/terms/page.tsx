@@ -20,7 +20,7 @@ export default function StoreTerms() {
             <h2 className="font-serif text-2xl text-[#30362c] mb-3">About these terms</h2>
             <p>
               These terms apply to purchases through this Rustic Halo online store, operated by Ebenstone Co LLC.
-              Email <a className="underline underline-offset-4" href="mailto:contact@rustichalo.com">contact@rustichalo.com</a> with
+              Email <a className="underline underline-offset-4" href="mailto:hello@rustichalo.com">hello@rustichalo.com</a> with
               questions about an order.
             </p>
           </section>

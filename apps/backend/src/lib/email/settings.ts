@@ -14,7 +14,7 @@ export function emailSettings() {
   return {
     apiKey: value('RESEND_API_KEY'),
     from: value('RESEND_FROM') || 'Rustic Halo <orders@send.rustichalo.com>',
-    replyTo: value('RESEND_REPLY_TO') || 'contact@rustichalo.com',
+    replyTo: value('RESEND_REPLY_TO') || 'hello@rustichalo.com',
     logoUrl: value('EMAIL_LOGO_URL'),
     enabled: value('EMAIL_DELIVERY_ENABLED') === 'true',
   }

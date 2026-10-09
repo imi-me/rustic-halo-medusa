@@ -7,7 +7,7 @@ export const brandAssets = {
 export const brandCollections = [
   {
     name: "Earrings",
-    description: "A little nature. A little personality.",
+    description: "Makers of laser cut, engraved, and handpainted products.",
     image: "https://cdn.rustichalo.com/catalog-cdaccde6f2aa05bc3a95-01M30JANXDPRGB6MZQK0BG078W.jpg",
     href: "https://rustichalo.com/collections/earrings",
     alt: "Wooden medallion earrings photographed in warm evening light",

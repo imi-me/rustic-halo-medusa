@@ -25,7 +25,7 @@ export default function Hero({ products, collections }: { products: HttpTypes.St
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>Small details. Big meaning.</p>
           <h1 id="home-heading">Made for you.<br />Made to be noticed.</h1>
-          <p className={styles.heroDescription}>Nature-inspired accessories, personalized gifts and little details that make something yours.</p>
+          <p className={styles.heroDescription}>Makers of laser cut, engraved, and handpainted products.</p>
           <div className={styles.heroActions}>
             <a href="#best-sellers" className={styles.primaryButton}>Shop best sellers</a>
             {hairClaws && <LocalizedClientLink href={`/collections/${hairClaws.handle}`} className={styles.secondaryButton}>Shop hair claws <span aria-hidden="true">→</span></LocalizedClientLink>}

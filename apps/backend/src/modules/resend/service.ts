@@ -1,3 +1,4 @@
+import { EMAIL_LOGO_BASE64, EMAIL_LOGO_CID } from '../../lib/email/branding'
 import { AbstractNotificationProviderService } from '@medusajs/framework/utils'
 import type { ProviderSendNotificationDTO, ProviderSendNotificationResultsDTO } from '@medusajs/framework/types'
 import { emailSettings } from '../../lib/email/settings'
@@ -20,7 +21,7 @@ export default class ResendNotificationService extends AbstractNotificationProvi
     }
     const email = reset
       ? passwordResetEmail(notification.data!.token as string, notification.to, process.env.CUSTOMER_PASSWORD_RESET_URL || '')
-      : orderConfirmation(notification.data!.order as ConfirmationOrder, { logoUrl: settings.logoUrl })
+      : orderConfirmation(notification.data!.order as ConfirmationOrder, { logoUrl: `cid:${EMAIL_LOGO_CID}` })
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -28,7 +29,7 @@ export default class ResendNotificationService extends AbstractNotificationProvi
         'Content-Type': 'application/json',
         'Idempotency-Key': reset ? passwordResetKey(notification.data!.token as string) : `order-confirmation/${notification.data!.orderId}`,
       },
-      body: JSON.stringify({ from: settings.from, to: [notification.to], reply_to: settings.replyTo, ...email }),
+      body: JSON.stringify({ from: settings.from, to: [notification.to], reply_to: settings.replyTo, ...email, attachments: [{ filename: 'rustic-halo-logo.png', content: EMAIL_LOGO_BASE64, content_type: 'image/png', content_id: EMAIL_LOGO_CID }] }),
       signal: AbortSignal.timeout(20_000),
     })
     // Do not log response bodies, which can contain customer information.

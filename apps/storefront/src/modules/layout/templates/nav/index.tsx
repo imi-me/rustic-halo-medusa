@@ -39,7 +39,7 @@ export default async function Nav() {
             <SideMenu regions={regions} locales={locales} currentLocale={currentLocale} links={mobileLinks} />
           </div>
           <LocalizedClientLink href="/" className="rh-brand-lockup rh-brand-with-caption" data-testid="nav-store-link" aria-label="Rustic Halo home">
-            <Image src="/brand/rustic-halo-circle-horizontal.svg" alt="Rustic Halo" width={516} height={88} className="rh-horizontal-logo" priority /><span className="rh-logo-tagline">Nature inspired. Uniquely you.</span>
+            <Image src="/brand/rustic-halo-circle-horizontal.svg" alt="Rustic Halo" width={516} height={88} className="rh-horizontal-logo" priority /><span className="rh-logo-tagline">Makers of laser cut, engraved, and handpainted products.</span>
           </LocalizedClientLink>
           <div className="rh-desktop-links">
             <details className="rh-shop-dropdown"><summary>Shop</summary><div className="rh-shop-dropdown-panel">
