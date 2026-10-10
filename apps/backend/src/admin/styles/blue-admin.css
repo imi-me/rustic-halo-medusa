@@ -212,3 +212,25 @@ html:root,html.light{--fg-interactive:#3546d8;--fg-interactive-hover:#2837b2}
 main h1,.rh-metric > strong,.rh-section-heading h2{font-family:Inter,ui-sans-serif,system-ui,sans-serif}
 aside nav .flex-col.gap-y-1 > div:has(a[href$='/overview']){order:-2}
 aside nav .flex-col.gap-y-1 > div:has(a[href$='/orders-workspace']){order:-1}
+
+/* Search selections follow the active sidebar's cool white and indigo treatment. */
+[cmdk-root] {
+  --bg-base-hover: #f0f2fc;
+  --bg-base-pressed: #edf0ff;
+  --tag-neutral-bg: #f5f7fb;
+  --tag-neutral-text: #697184;
+  --tag-neutral-icon: #697184;
+  --tag-neutral-border: #e4e7ef;
+}
+[cmdk-root] [cmdk-item][aria-selected='true'] {
+  background: #edf0ff;
+  color: #3546d8;
+  box-shadow: inset 3px 0 #3546d8;
+  --tag-neutral-bg: #fff;
+  --tag-neutral-text: #3546d8;
+  --tag-neutral-border: #d8ddfb;
+}
+[cmdk-root] [cmdk-item][aria-selected='true'] .text-ui-fg-subtle,
+[cmdk-root] [cmdk-item][aria-selected='true'] svg {
+  color: inherit;
+}
