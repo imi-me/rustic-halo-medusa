@@ -1,11 +1,17 @@
 import { defineMiddlewares } from '@medusajs/framework/http'
 import { guardAppleStaffActor } from '../lib/apple-admin/actor-guard'
+import { appleStart } from '../lib/apple-admin/http'
 import { limitPasswordReset } from '../lib/email/reset-rate-limit'
 
 import { guardResetReplay } from '../lib/email/reset-replay-guard'
 
 export default defineMiddlewares({
   routes: [{
+    // Medusa's native SSO button uses this route; use the same guarded start flow.
+    matcher: '/auth/user/apple-staff',
+    method: ['POST'],
+    middlewares: [(req, res) => appleStart(req, res, 'login')],
+  }, {
     matcher: '/auth/:actor_type/:auth_provider/callback',
     method: ['GET', 'POST'],
     middlewares: [guardAppleStaffActor],

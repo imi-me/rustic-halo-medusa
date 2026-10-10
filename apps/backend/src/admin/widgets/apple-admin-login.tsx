@@ -1,5 +1,5 @@
 import { defineWidgetConfig } from '@medusajs/admin-sdk'
-import { Button, Text } from '@medusajs/ui'
+import { Text } from '@medusajs/ui'
 import { useEffect, useRef, useState } from 'react'
 
 const AppleAdminLogin = () => {
@@ -30,18 +30,8 @@ const AppleAdminLogin = () => {
       } catch (error) { setMessage(error instanceof Error ? error.message : 'Apple sign-in failed. Please use your password.'); setBusy(false) }
     })()
   }, [])
-  const start = async () => {
-    setBusy(true); setMessage('')
-    try {
-      const response = await fetch('/staff-apple/start', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-      const data = await response.json()
-      if (!response.ok || !data.location) throw new Error('Apple sign-in is unavailable. Please use your password.')
-      window.location.assign(data.location)
-    } catch (error) { setMessage(error instanceof Error ? error.message : 'Apple sign-in failed.'); setBusy(false) }
-  }
   if (!available && !message && !busy) return null
-  return <div className="mt-4 flex w-full max-w-[280px] flex-col items-center gap-3">
-    {available && <Button type="button" variant="secondary" className="w-full" isLoading={busy} onClick={start}>Continue with Apple</Button>}
+  return <div className="mt-4 flex w-full flex-col items-center gap-3">
     {available && <Text size="small" className="text-ui-fg-subtle text-center">Invited staff only. Link Apple in your profile after your first password sign-in.</Text>}
     {message && <Text size="small" className="text-ui-fg-error text-center" role="alert">{message}</Text>}
   </div>
