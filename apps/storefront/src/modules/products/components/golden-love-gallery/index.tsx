@@ -2,10 +2,15 @@
 
 import { ReactNode, useId, useState } from "react"
 import { healingHeartsColors } from "@lib/brand/healing-hearts-colors"
+import { countrySkiesBorderFit } from "@lib/brand/country-skies-overlay"
 import { goldenLoveOverlay as template } from "@lib/brand/golden-love-overlay"
 import { goldenLoveBorderFit, goldenLoveEngravedBorder } from "@lib/brand/golden-love-border-fit"
 
-export default function GoldenLoveGallery({ children }: { children: ReactNode }) {
+export default function GoldenLoveGallery({ children, design = "golden-love" }: { children: ReactNode; design?: "golden-love" | "country-skies" }) {
+  const isCountrySkies = design === "country-skies"
+  const name = isCountrySkies ? "Country Skies" : "Golden Love"
+  const borderFit = isCountrySkies ? countrySkiesBorderFit : goldenLoveBorderFit
+  const imagePath = isCountrySkies ? "/images/hair-claws/country-skies/wood-overlay-v1.png" : "/images/hair-claws/golden-love/wood-overlay-v2.png"
   const [colorSlug, setColorSlug] = useState("taupe")
   const [failed, setFailed] = useState(false)
   const id = useId().replace(/:/g, "")
@@ -19,10 +24,10 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
   if (failed) return <>{children}</>
 
   return (
-    <div className="rh-golden-love-gallery" aria-label="Golden Love 4-inch color previews">
+    <div className={isCountrySkies ? "rh-country-skies-gallery" : "rh-golden-love-gallery"} aria-label={`${name} 4-inch color previews`}>
       <div style={{ width: "100%", aspectRatio: "1", background: "#fff" }}>
         <svg viewBox="-45 -12 125 125" role="img" aria-labelledby={`${id}-title`} style={{ width: "100%", height: "100%", display: "block" }}>
-          <title id={`${id}-title`}>{`Golden Love 4-inch hair claw in ${color.name}, with a 1/16-inch colored rim`}</title>
+          <title id={`${id}-title`}>{`${name} 4-inch hair claw in ${color.name}, with a 1/16-inch colored rim`}</title>
           <defs>
             <clipPath id={`${id}-wood`}><path d={template.cutPath} transform={pathTransform} /></clipPath>
             <clipPath id={`${id}-engraving`}><path d={goldenLoveEngravedBorder.path} transform={borderTransform} /></clipPath>
@@ -38,13 +43,13 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
               <path d={template.cutPath} transform={pathTransform} fill={color.hex} stroke={color.hex} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
               <path d={template.cutPath} transform={pathTransform} fill={`url(#${id}-plastic)`} stroke={`url(#${id}-plastic)`} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
               <g clipPath={`url(#${id}-wood)`}>
-                <path d={template.cutPath} transform={pathTransform} fill="#e8cd9f" />
-                <g clipPath={`url(#${id}-engraving)`}>{goldenLoveBorderFit.map((band, index) => (
+                <path d={template.cutPath} transform={pathTransform} fill={isCountrySkies ? "#eee0c5" : "#e8cd9f"} />
+                <g clipPath={`url(#${id}-engraving)`}>{borderFit.map((band, index) => (
                   <svg key={index} x={-20} y={band.y} width={80} height={band.height} viewBox={`-20 ${band.y} 80 ${band.height}`} overflow="hidden">
-                    <image href="/images/hair-claws/golden-love/wood-overlay-v2.png" x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
+                    <image href={imagePath} x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
                   </svg>
                 ))}</g>
-                <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke="#552914" strokeWidth={0.6} strokeLinejoin="round" />
+                <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies ? "#956234" : "#552914"} strokeWidth={0.6} strokeLinejoin="round" />
               </g>
             </g>
           </g>
@@ -53,7 +58,7 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
       <fieldset style={{ border: 0, padding: 0, minWidth: 0, margin: "16px 0" }}>
         <legend style={{ fontSize: 13, marginBottom: 12 }}>Base color preview: <strong>{color.name}</strong></legend>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {healingHeartsColors.map((item) => <button key={item.slug} type="button" aria-label={`Preview Golden Love in ${item.name}`} aria-pressed={item.slug === colorSlug} title={item.name} onClick={() => setColorSlug(item.slug)} style={{ width: 40, height: 40, borderRadius: "50%", background: item.hex, border: "4px solid #fff", boxShadow: item.slug === colorSlug ? "0 0 0 2px #444344" : "0 0 0 1px #b6b3b6", cursor: "pointer" }} />)}
+          {healingHeartsColors.map((item) => <button key={item.slug} type="button" aria-label={`Preview ${name} in ${item.name}`} aria-pressed={item.slug === colorSlug} title={item.name} onClick={() => setColorSlug(item.slug)} style={{ width: 40, height: 40, borderRadius: "50%", background: item.hex, border: "4px solid #fff", boxShadow: item.slug === colorSlug ? "0 0 0 2px #444344" : "0 0 0 1px #b6b3b6", cursor: "pointer" }} />)}
         </div>
       </fieldset>
       <p style={{ fontSize: 12, lineHeight: 1.6, color: "#676567", margin: "0 0 20px" }} role="status">{color.name} is a visual color preview. It does not change the item, price, or available options added to your cart.</p>
