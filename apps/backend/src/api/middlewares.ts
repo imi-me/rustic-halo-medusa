@@ -1,10 +1,20 @@
 import { defineMiddlewares } from '@medusajs/framework/http'
+import { guardAppleStaffActor } from '../lib/apple-admin/actor-guard'
 import { limitPasswordReset } from '../lib/email/reset-rate-limit'
 
 import { guardResetReplay } from '../lib/email/reset-replay-guard'
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/auth/:actor_type/:auth_provider/callback',
+    method: ['GET', 'POST'],
+    middlewares: [guardAppleStaffActor],
+  }, {
+    matcher: '/staff-apple/callback',
+    method: ['POST'],
+    bodyParser: { sizeLimit: '32kb' },
+    middlewares: [],
+  }, {
     matcher: '/admin/hair-claw-media/upload',
     method: ['POST'],
     bodyParser: { sizeLimit: '12mb' },

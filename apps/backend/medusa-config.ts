@@ -1,4 +1,5 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import { appleAdminConfig } from './src/lib/apple-admin/config'
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 
@@ -39,8 +40,13 @@ if (localHttpAdmin) {
   }
 }
 
+const appleAdmin = appleAdminConfig()
+
 module.exports = defineConfig({
-  modules: [{ resolve: './src/modules/social-media' }, { resolve: './src/modules/etsy' }, { resolve: './src/modules/hair-claw-media' }, ...(r2Enabled ? [{
+  modules: [...(appleAdmin ? [{ resolve: '@medusajs/medusa/auth', options: { providers: [
+    { resolve: '@medusajs/medusa/auth-emailpass', id: 'emailpass' },
+    { resolve: './src/modules/apple-staff', id: 'apple-staff' },
+  ] } }] : []), { resolve: './src/modules/social-media' }, { resolve: './src/modules/etsy' }, { resolve: './src/modules/hair-claw-media' }, ...(r2Enabled ? [{
     resolve: '@medusajs/medusa/file',
     options: { providers: [{
       resolve: '@medusajs/medusa/file-s3',
@@ -117,6 +123,7 @@ module.exports = defineConfig({
     databaseUrl: process.env.DATABASE_URL,
     redisUrl: process.env.REDIS_URL,
     http: {
+      authMethodsPerActor: { user: ['emailpass', ...(appleAdmin ? ['apple-staff'] : [])], customer: ['emailpass'] },
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
       authCors: process.env.AUTH_CORS!,

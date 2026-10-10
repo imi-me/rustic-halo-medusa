@@ -17,14 +17,20 @@ services:
       ADMIN_ASSISTANT_ENABLED: ${ADMIN_ASSISTANT_ENABLED:-false}
       ADMIN_ASSISTANT_OPENAI_API_KEY: ${ADMIN_ASSISTANT_OPENAI_API_KEY:-}
       ADMIN_ASSISTANT_MODEL: ${ADMIN_ASSISTANT_MODEL:-}
-      LOCAL_HTTP_ADMIN: "true"
+      LOCAL_HTTP_ADMIN: "false"
+      APPLE_ADMIN_ENABLED: ${APPLE_ADMIN_ENABLED:-false}
+      APPLE_ADMIN_ORIGIN: https://staging.rustichalo.com
+      APPLE_ADMIN_CLIENT_ID: ${APPLE_ADMIN_CLIENT_ID:-}
+      APPLE_ADMIN_TEAM_ID: ${APPLE_ADMIN_TEAM_ID:-}
+      APPLE_ADMIN_KEY_ID: ${APPLE_ADMIN_KEY_ID:-}
+      APPLE_ADMIN_PRIVATE_KEY_PEM: ${APPLE_ADMIN_PRIVATE_KEY_PEM:-}
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       PERSISTENT_JOBS_ENABLED: "true"
       MEDUSA_WORKER_MODE: shared
-      STORE_CORS: http://localhost:18000
-      ADMIN_CORS: http://localhost:19000
-      AUTH_CORS: http://localhost:18000,http://localhost:19000
+      STORE_CORS: https://staging.rustichalo.com,http://localhost:18000
+      ADMIN_CORS: https://staging.rustichalo.com,http://localhost:19000
+      AUTH_CORS: https://staging.rustichalo.com,http://localhost:18000,http://localhost:19000
       JWT_SECRET: ${JWT_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
       EMAIL_DELIVERY_ENABLED: "false"
@@ -57,6 +63,7 @@ services:
       MARKETSUITE_INVENTORY_READ_ENABLED: ${MARKETSUITE_INVENTORY_READ_ENABLED:-false}
       MARKETSUITE_INVENTORY_READ_KEY: ${MARKETSUITE_INVENTORY_READ_KEY}
     networks:
+      proxy: {}
       data: {}
       api:
         aliases:
@@ -81,6 +88,17 @@ services:
       dockerfile: deploy/coolify/Dockerfile
       target: backend
     labels:
+      - traefik.enable=true
+      - traefik.http.routers.rustic-halo-staging-admin-https.entrypoints=https
+      - traefik.http.routers.rustic-halo-staging-admin-https.rule=Host(`staging.rustichalo.com`) && (PathPrefix(`/app`) || PathPrefix(`/admin`) || PathPrefix(`/auth`) || PathPrefix(`/staff-apple`) || Path(`/health`))
+      - traefik.http.routers.rustic-halo-staging-admin-https.priority=100
+      - traefik.http.routers.rustic-halo-staging-admin-https.service=rustic-halo-staging-admin
+      - traefik.http.routers.rustic-halo-staging-admin-https.tls.certresolver=letsencrypt
+      - traefik.http.services.rustic-halo-staging-admin.loadbalancer.server.port=9000
+      - traefik.http.routers.rustic-halo-staging-admin-http.entrypoints=http
+      - traefik.http.routers.rustic-halo-staging-admin-http.rule=Host(`staging.rustichalo.com`) && (PathPrefix(`/app`) || PathPrefix(`/admin`) || PathPrefix(`/auth`) || PathPrefix(`/staff-apple`) || Path(`/health`))
+      - traefik.http.routers.rustic-halo-staging-admin-http.priority=100
+      - traefik.http.routers.rustic-halo-staging-admin-http.service=rustic-halo-staging-admin
       - coolify.managed=true
       - coolify.type=application
     volumes:
