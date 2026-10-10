@@ -3,6 +3,7 @@
 import { HttpTypes } from '@medusajs/types'
 import { useSearchParams } from 'next/navigation'
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import GoldenLoveGallery from '@modules/products/components/golden-love-gallery'
 
 const colors = ['Black','Espresso','Mocha','Chocolate','Caramel','Khaki','Taupe','Sand','Ivory','Gray','Terracotta','Rose','Purple']
 type Recipe = { url:string; width:number; height:number; scale:number; x:number; y:number; vertical:boolean; enabled:boolean }
@@ -37,6 +38,8 @@ export default function SharedClawGallery({product, children}: {product:HttpType
     return () => window.removeEventListener('message',ready)
   }, [send])
   // 2-inch geometry deliberately not synthesized from the 4-inch master.
+  // Owner-approved, explicitly 4-inch product; no inference from a missing Size option.
+  if (product.handle === 'golden-love-hair-claw-4') return <GoldenLoveGallery>{children}</GoldenLoveGallery>
   if (size !== '4' || !recipe?.enabled || failed) return <>{children}</>
   return <div>
     <iframe ref={frame} src="/previews/shared-hair-claw/embed.html?v=admin1" title={`${product.title} — ${previewColor} color preview`} style={{width:'100%',aspectRatio:'1',border:0}} onLoad={send} onError={()=>setFailed(true)} />
