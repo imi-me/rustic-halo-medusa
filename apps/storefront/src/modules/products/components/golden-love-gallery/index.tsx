@@ -3,7 +3,7 @@
 import { ReactNode, useId, useState } from "react"
 import { healingHeartsColors } from "@lib/brand/healing-hearts-colors"
 import { goldenLoveOverlay as template } from "@lib/brand/golden-love-overlay"
-import { goldenLoveBorderFit } from "@lib/brand/golden-love-border-fit"
+import { goldenLoveBorderFit, goldenLoveEngravedBorder } from "@lib/brand/golden-love-border-fit"
 
 export default function GoldenLoveGallery({ children }: { children: ReactNode }) {
   const [colorSlug, setColorSlug] = useState("taupe")
@@ -14,6 +14,7 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
   const length = template.woodLengthMm * scale
   // Turn the supplied outline, preserving its geometry, to match the upright dog photo.
   const pathTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${template.cutTransform}`
+  const borderTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${goldenLoveEngravedBorder.transform}`
 
   if (failed) return <>{children}</>
 
@@ -24,6 +25,7 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
           <title id={`${id}-title`}>{`Golden Love 4-inch hair claw in ${color.name}, with a 1/16-inch colored rim`}</title>
           <defs>
             <clipPath id={`${id}-wood`}><path d={template.cutPath} transform={pathTransform} /></clipPath>
+            <clipPath id={`${id}-engraving`}><path d={goldenLoveEngravedBorder.path} transform={borderTransform} /></clipPath>
             <linearGradient id={`${id}-plastic`} x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" stopColor="white" stopOpacity=".18" /><stop offset=".45" stopColor="white" stopOpacity="0" /><stop offset="1" stopColor="black" stopOpacity=".16" />
             </linearGradient>
@@ -37,11 +39,12 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
               <path d={template.cutPath} transform={pathTransform} fill={`url(#${id}-plastic)`} stroke={`url(#${id}-plastic)`} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
               <g clipPath={`url(#${id}-wood)`}>
                 <path d={template.cutPath} transform={pathTransform} fill="#e8cd9f" />
-                {goldenLoveBorderFit.map((band, index) => (
+                <g clipPath={`url(#${id}-engraving)`}>{goldenLoveBorderFit.map((band, index) => (
                   <svg key={index} x={-20} y={band.y} width={80} height={band.height} viewBox={`-20 ${band.y} 80 ${band.height}`} overflow="hidden">
                     <image href="/images/hair-claws/golden-love/wood-overlay-v2.png" x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
                   </svg>
-                ))}
+                ))}</g>
+                <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke="#552914" strokeWidth={0.6} strokeLinejoin="round" />
               </g>
             </g>
           </g>
