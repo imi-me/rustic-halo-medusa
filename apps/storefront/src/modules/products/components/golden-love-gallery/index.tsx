@@ -3,6 +3,7 @@
 import { ReactNode, useId, useState } from "react"
 import { healingHeartsColors } from "@lib/brand/healing-hearts-colors"
 import { goldenLoveOverlay as template } from "@lib/brand/golden-love-overlay"
+import { goldenLoveBorderFit } from "@lib/brand/golden-love-border-fit"
 
 export default function GoldenLoveGallery({ children }: { children: ReactNode }) {
   const [colorSlug, setColorSlug] = useState("taupe")
@@ -11,10 +12,6 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
   const color = healingHeartsColors.find((item) => item.slug === colorSlug)!
   const scale = (template.clipLengthMm - 2 * template.revealMm) / template.woodLengthMm
   const length = template.woodLengthMm * scale
-  const photo = template.image
-  const imageScale = Math.max(template.woodWidthMm / photo.bounds.width, template.woodLengthMm / photo.bounds.height)
-  const imageX = (template.woodWidthMm - photo.bounds.width * imageScale) / 2 - photo.bounds.x * imageScale
-  const imageY = (template.woodLengthMm - photo.bounds.height * imageScale) / 2 - photo.bounds.y * imageScale
   // Turn the supplied outline, preserving its geometry, to match the upright dog photo.
   const pathTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${template.cutTransform}`
 
@@ -40,7 +37,11 @@ export default function GoldenLoveGallery({ children }: { children: ReactNode })
               <path d={template.cutPath} transform={pathTransform} fill={`url(#${id}-plastic)`} stroke={`url(#${id}-plastic)`} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
               <g clipPath={`url(#${id}-wood)`}>
                 <path d={template.cutPath} transform={pathTransform} fill="#e8cd9f" />
-                <image href="/images/hair-claws/golden-love/wood-overlay-v2.png" x={imageX} y={imageY} width={photo.width * imageScale} height={photo.height * imageScale} preserveAspectRatio="xMidYMid meet" onError={() => setFailed(true)} />
+                {goldenLoveBorderFit.map((band, index) => (
+                  <svg key={index} x={-20} y={band.y} width={80} height={band.height} viewBox={`-20 ${band.y} 80 ${band.height}`} overflow="hidden">
+                    <image href="/images/hair-claws/golden-love/wood-overlay-v2.png" x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
+                  </svg>
+                ))}
               </g>
             </g>
           </g>
