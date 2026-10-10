@@ -63,7 +63,6 @@ services:
       MARKETSUITE_INVENTORY_READ_ENABLED: ${MARKETSUITE_INVENTORY_READ_ENABLED:-false}
       MARKETSUITE_INVENTORY_READ_KEY: ${MARKETSUITE_INVENTORY_READ_KEY}
     networks:
-      proxy: {}
       data: {}
       api:
         aliases:
@@ -89,6 +88,7 @@ services:
       target: backend
     labels:
       - traefik.enable=true
+      - traefik.docker.network=zt9mfml34oejgd5lrgffqzcy_api
       - traefik.http.routers.rustic-halo-staging-admin-https.entrypoints=https
       - traefik.http.routers.rustic-halo-staging-admin-https.rule=Host(`staging.rustichalo.com`) && (PathPrefix(`/app`) || PathPrefix(`/admin`) || PathPrefix(`/auth`) || PathPrefix(`/staff-apple`) || Path(`/health`))
       - traefik.http.routers.rustic-halo-staging-admin-https.priority=100
