@@ -234,3 +234,32 @@ aside nav .flex-col.gap-y-1 > div:has(a[href$='/orders-workspace']){order:-1}
 [cmdk-root] [cmdk-item][aria-selected='true'] svg {
   color: inherit;
 }
+
+/* Admin hover states use the same pale indigo treatment as the left navigation. */
+html:root {
+  color-scheme: light;
+  --rh-control-hover-bg: #f0f2fc;
+  --rh-control-hover-fg: #3546d8;
+  --bg-base-hover: #f0f2fc;
+  --bg-base-pressed: #edf0ff;
+  --bg-subtle-hover: #f0f2fc;
+  --bg-subtle-pressed: #edf0ff;
+  --bg-component: #fff;
+  --bg-component-hover: #f0f2fc;
+  --bg-component-pressed: #edf0ff;
+  --bg-field: #fff;
+  --bg-field-hover: #f0f2fc;
+  --button-neutral-hover: #f0f2fc;
+  --button-neutral-pressed: #edf0ff;
+  --button-transparent-hover: #f0f2fc;
+  --button-transparent-pressed: #edf0ff;
+  --button-inverted-hover: #f0f2fc;
+  --button-inverted-pressed: #edf0ff;
+}
+#medusa :is(button, input, select, textarea, [role='option'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):not([class*='danger']):not([class*='error']):hover {
+  background-color: var(--rh-control-hover-bg);
+  color: var(--rh-control-hover-fg);
+}
+#medusa :is(button, [role='option'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):hover > svg {
+  color: inherit;
+}
