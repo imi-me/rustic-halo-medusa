@@ -38,9 +38,9 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
               {/* Preserve the original 0.3 mm inner edge; the wider stroke grows outward. */}
               <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="black" stroke="white" strokeWidth={0.6} strokeLinejoin="round" />
             </mask>
-            <linearGradient id={`${id}-plastic`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="black" stopOpacity=".16" /><stop offset=".55" stopColor="white" stopOpacity="0" /><stop offset="1" stopColor="white" stopOpacity=".20" />
-            </linearGradient>
+            <filter id={`${id}-rounded-edge`} x="-30%" y="-10%" width="160%" height="120%">
+              <feGaussianBlur stdDeviation=".12" />
+            </filter>
             <linearGradient id={`${id}-handle`} gradientUnits="userSpaceOnUse" x1={-16} y1={0} x2={2} y2={0}>
               <stop offset="0" stopColor="white" stopOpacity=".16" /><stop offset=".12" stopColor="black" stopOpacity=".05" /><stop offset=".6" stopColor="black" stopOpacity=".16" /><stop offset="1" stopColor="black" stopOpacity=".42" />
             </linearGradient>
@@ -53,8 +53,7 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
             <path d={handlePath} fill={color.hex} />
             <path d={handlePath} fill={`url(#${id}-handle)`} />
             <g transform={`scale(${scale})`}>
-              <path d={template.cutPath} transform={pathTransform} fill={color.hex} stroke={color.hex} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
-              <path d={template.cutPath} transform={pathTransform} fill={`url(#${id}-plastic)`} stroke={`url(#${id}-plastic)`} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
+              <path d={template.cutPath} transform={pathTransform} fill={color.hex} stroke={color.hex} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" filter={`url(#${id}-rounded-edge)`} />
               <g clipPath={`url(#${id}-wood)`}>
                 <path d={template.cutPath} transform={pathTransform} fill={isCountrySkies ? "#eee0c5" : "#e8cd9f"} />
                 <g clipPath={`url(#${id}-engraving)`}>{borderFit.map((band, index) => (
