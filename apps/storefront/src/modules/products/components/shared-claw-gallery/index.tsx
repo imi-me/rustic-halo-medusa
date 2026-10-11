@@ -4,6 +4,8 @@ import { HttpTypes } from '@medusajs/types'
 import { useSearchParams } from 'next/navigation'
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import GoldenLoveGallery from '@modules/products/components/golden-love-gallery'
+import ApprovedClawGallery from '@modules/products/components/approved-claw-gallery'
+import { approvedClawPreviews, ApprovedClawHandle } from '@lib/brand/approved-claw-previews'
 
 const colors = ['Black','Espresso','Mocha','Chocolate','Caramel','Khaki','Taupe','Sand','Ivory','Gray','Terracotta','Rose','Purple']
 type Recipe = { url:string; width:number; height:number; scale:number; x:number; y:number; vertical:boolean; enabled:boolean }
@@ -39,6 +41,7 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   }, [send])
   // 2-inch geometry deliberately not synthesized from the 4-inch master.
   // Owner-approved, explicitly 4-inch product; no inference from a missing Size option.
+  if (product.handle && Object.prototype.hasOwnProperty.call(approvedClawPreviews, product.handle)) return <ApprovedClawGallery handle={product.handle as ApprovedClawHandle}>{children}</ApprovedClawGallery>
   if (product.handle === 'golden-love-hair-claw-4') return <GoldenLoveGallery>{children}</GoldenLoveGallery>
   if (product.handle === 'every-paw-matters-hair-claw') return <GoldenLoveGallery design="every-paw">{children}</GoldenLoveGallery>
   if (product.handle === 'country-skies-hair-claw') return <GoldenLoveGallery design="country-skies">{children}</GoldenLoveGallery>
