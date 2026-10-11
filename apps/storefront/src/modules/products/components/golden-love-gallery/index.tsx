@@ -17,6 +17,8 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
   const color = healingHeartsColors.find((item) => item.slug === colorSlug)!
   const scale = (template.clipLengthMm - 2 * template.revealMm) / template.woodLengthMm
   const length = template.woodLengthMm * scale
+  // Mirror the upper curve around the horizontal center for an even handle.
+  const handlePath = `M 2 ${length * .33} C -4 ${length * .34} -9 ${length * .30} -13 ${length * .28} Q -16 ${length * .27} -16 ${length * .31} L -16 ${length * .69} Q -16 ${length * .73} -13 ${length * .72} C -9 ${length * .70} -4 ${length * .66} 2 ${length * .67} Z`
   // Turn the supplied outline, preserving its geometry, to match the upright dog photo.
   const pathTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${template.cutTransform}`
   const borderTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${goldenLoveEngravedBorder.transform}`
@@ -37,13 +39,19 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
               <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="black" stroke="white" strokeWidth={0.6} strokeLinejoin="round" />
             </mask>
             <linearGradient id={`${id}-plastic`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="white" stopOpacity=".18" /><stop offset=".45" stopColor="white" stopOpacity="0" /><stop offset="1" stopColor="black" stopOpacity=".16" />
+              <stop offset="0" stopColor="black" stopOpacity=".16" /><stop offset=".55" stopColor="white" stopOpacity="0" /><stop offset="1" stopColor="white" stopOpacity=".20" />
             </linearGradient>
-            <filter id={`${id}-shadow`} x="-40%" y="-10%" width="180%" height="130%"><feDropShadow dx="1" dy="1.5" stdDeviation="1" floodOpacity=".18" /></filter>
+            <linearGradient id={`${id}-handle`} gradientUnits="userSpaceOnUse" x1={-16} y1={0} x2={2} y2={0}>
+              <stop offset="0" stopColor="white" stopOpacity=".16" /><stop offset=".12" stopColor="black" stopOpacity=".05" /><stop offset=".6" stopColor="black" stopOpacity=".16" /><stop offset="1" stopColor="black" stopOpacity=".42" />
+            </linearGradient>
+            <filter id={`${id}-shadow`} x="-80%" y="-20%" width="260%" height="160%">
+              <feDropShadow in="SourceGraphic" dx="-3" dy="2" stdDeviation="3.5" floodOpacity=".22" result="ambient" />
+              <feDropShadow in="ambient" dx="-.6" dy=".8" stdDeviation=".55" floodOpacity=".18" />
+            </filter>
           </defs>
           <g filter={`url(#${id}-shadow)`}>
-            <path d={`M 2 ${length * .33} C -4 ${length * .34} -9 ${length * .30} -13 ${length * .28} Q -16 ${length * .27} -16 ${length * .31} L -16 ${length * .68} Q -16 ${length * .72} -12 ${length * .71} L 2 ${length * .68} Z`} fill={color.hex} />
-            <path d={`M 2 ${length * .33} C -4 ${length * .34} -9 ${length * .30} -13 ${length * .28} Q -16 ${length * .27} -16 ${length * .31} L -16 ${length * .68} Q -16 ${length * .72} -12 ${length * .71} L 2 ${length * .68} Z`} fill={`url(#${id}-plastic)`} />
+            <path d={handlePath} fill={color.hex} />
+            <path d={handlePath} fill={`url(#${id}-handle)`} />
             <g transform={`scale(${scale})`}>
               <path d={template.cutPath} transform={pathTransform} fill={color.hex} stroke={color.hex} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
               <path d={template.cutPath} transform={pathTransform} fill={`url(#${id}-plastic)`} stroke={`url(#${id}-plastic)`} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" />
