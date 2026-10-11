@@ -54,7 +54,9 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
                     <image href={imagePath} x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
                   </svg>
                 ))}</g>
-                <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies ? "#956234" : "#552914"} strokeWidth={1.8} mask={`url(#${id}-outward-border)`} strokeLinejoin="round" />
+                <g mask={`url(#${id}-outward-border)`}>
+                  <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies ? "#956234" : "#552914"} strokeWidth={1.8} strokeLinejoin="round" />
+                </g>
               </g>
             </g>
           </g>
