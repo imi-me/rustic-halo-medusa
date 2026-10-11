@@ -3,6 +3,7 @@ import type { AdminProduct, DetailWidgetProps } from '@medusajs/framework/types'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { InlineEditor } from '../components/inline-editor'
 import '../styles/product-workspace.css'
 
 const steps = [
@@ -29,6 +30,8 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
   const [expandedDescription, setExpandedDescription] = useState(false)
   const [host, setHost] = useState<HTMLElement | null>(null)
   const [descriptionHost, setDescriptionHost] = useState<HTMLElement | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [editRequest, setEditRequest] = useState(0)
   const layout = useRef<HTMLElement | null>(null)
   const tabs = useRef<Array<HTMLButtonElement | null>>([])
   const panelId = useId()
@@ -36,6 +39,7 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
   const imageCount = new Set([product.thumbnail, ...(product.images ?? []).map(image => image.url)].filter(Boolean)).size
 
   useEffect(() => { setStep('basics'); setExpandedDescription(false) }, [product.id])
+  useEffect(() => { if (editing) setEditRequest(0) }, [editing])
 
   useEffect(() => {
     const main = document.querySelector('main')
@@ -105,6 +109,7 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
       root?.classList.remove('rh-pd-layout')
       if (root) {
         delete root.dataset.rhProductView; delete root.dataset.rhProductExpanded
+        delete root.dataset.rhProductEditing
         root.removeAttribute('role'); root.removeAttribute('id'); root.removeAttribute('aria-labelledby')
       }
       layout.current = null
@@ -116,10 +121,11 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
     if (!root || !host) return
     root.dataset.rhProductView = step
     root.dataset.rhProductExpanded = String(expandedDescription)
+    root.dataset.rhProductEditing = String(editing)
     root.id = panelId
     root.setAttribute('role', 'tabpanel')
     root.setAttribute('aria-labelledby', `${panelId}-${step}`)
-  }, [host, step, expandedDescription, panelId])
+  }, [host, step, expandedDescription, panelId, editing])
 
   if (!host) return null
   return <>
@@ -131,7 +137,8 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
         </div>
         <Link to="/products" className="rh-pd-back">← All products</Link>
       </div>
-      <div className="rh-pd-tabs" role="tablist" aria-label="Product editing steps">
+      <InlineEditor kind="products" id={product.id} onEditingChange={setEditing} editRequest={editRequest}/>
+      {!editing && <><div className="rh-pd-tabs" role="tablist" aria-label="Product editing steps">
         {steps.map((item, index) => <button key={item.id} ref={element => { tabs.current[index] = element }} type="button" role="tab"
           id={`${panelId}-${item.id}`} aria-selected={step === item.id} aria-controls={panelId} tabIndex={step === item.id ? 0 : -1}
           onClick={() => setStep(item.id)} onKeyDown={event => {
@@ -140,8 +147,8 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
           }}><span>{index + 1}</span>{item.label}</button>)}
       </div>
       <div className="rh-pd-stage"><div><h2>{current.label}</h2><p>{current.description}</p></div><div className="rh-pd-actions">
-        {current.actions.map(([label, route], index) => <Link key={route} className={index === 0 ? 'rh-pd-action primary' : 'rh-pd-action'} to={`/products/${product.id}/${route}`}>{label}</Link>)}
-      </div></div>
+        {current.actions.map(([label, route], index) => route === 'edit' || route === 'prices' ? <button key={route} type="button" className="rh-pd-action primary" onClick={() => setEditRequest(value => value + 1)}>{route === 'edit' ? 'Edit all fields' : 'Edit fields & prices'}</button> : <Link key={route} className={index === 0 ? 'rh-pd-action primary' : 'rh-pd-action'} to={`/products/${product.id}/${route}`}>{label}</Link>)}
+      </div></div></>}
     </section>, host)}
     {descriptionHost && product.description && product.description.length > 240 && createPortal(<button className="rh-pd-description-toggle" type="button" aria-expanded={expandedDescription} onClick={() => setExpandedDescription(value => !value)}>{expandedDescription ? 'Show less' : 'Show full description'}</button>, descriptionHost)}
   </>

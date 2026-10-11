@@ -42,5 +42,6 @@
 .rh-pd-layout [data-rh-product-section='media'] img { object-fit: contain; background: #f8f9fc; }
 .rh-pd-layout [data-rh-product-section='specialized'] { background: #fff; padding: 16px 20px; }
 .rh-pd-layout [data-rh-product-section='specialized'] > summary { color: #3546d8; font-size: 14px; font-weight: 600; cursor: pointer; }
+#medusa .rh-pd-layout[data-rh-product-editing='true'] { display: none; }
 @media (max-width: 1000px) { #medusa .rh-pd-layout { grid-template-columns: minmax(0, 1fr); } .rh-pd-hero { padding: 18px; gap: 12px; } .rh-pd-back { display: none; } }
 @media (max-width: 600px) { .rh-pd-hero > img, .rh-pd-no-image { width: 54px; height: 54px; } .rh-pd-summary > span:last-child { display: none; } .rh-pd-stage { align-items: flex-start; } .rh-pd-tabs { padding-top: 12px; } #medusa .rh-pd-tabs button { padding: 9px 10px; } }
