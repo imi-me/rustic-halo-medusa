@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from 'react-router-dom'
-import { addressFields, adminRequest, hasChanges, isBasePrice, orderDraft, productDraft, saveInline, type Entity, type OrderDraft, type Price, type ProductDraft } from '../lib/inline-edit'
+import { addressFields, adminRequest, hasChanges, inlineRecordUrl, isBasePrice, orderDraft, productDraft, saveInline, type Entity, type OrderDraft, type Price, type ProductDraft } from '../lib/inline-edit'
 import '../styles/inline-editor.css'
 
 const labels: Record<string, string> = { title: 'Title', subtitle: 'Subtitle', handle: 'Handle', material: 'Material', weight: 'Weight (g)', length: 'Length (mm)', width: 'Width (mm)', height: 'Height (mm)', origin_country: 'Origin country code', hs_code: 'HS code', mid_code: 'MID code', sku: 'SKU', barcode: 'Barcode', ean: 'EAN', upc: 'UPC', first_name: 'First name', last_name: 'Last name', company: 'Company', address_1: 'Street address', address_2: 'Apartment / suite', city: 'City', province: 'State / province', postal_code: 'Postal code', country_code: 'Country code', phone: 'Phone' }
@@ -78,7 +78,7 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0 }: Pro
     const token = ++generation.current
     setLoading(true); setError(''); setNotice(''); setDiscard(false)
     try {
-      const data = await adminRequest(`/admin/${kind}/${id}${kind === 'products' ? '?fields=*categories,*shipping_profile' : ''}`)
+      const data = await adminRequest(inlineRecordUrl(kind, id))
       if (token !== generation.current) return
       const next = data[kind === 'products' ? 'product' : 'order']
       if (!next) throw new Error('This record could not be loaded.')

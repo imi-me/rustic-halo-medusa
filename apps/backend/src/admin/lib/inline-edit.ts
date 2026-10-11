@@ -114,11 +114,13 @@ export async function adminRequest(url: string, body?: Entity) {
   return data
 }
 
+export const inlineRecordUrl = (kind: 'products' | 'orders', id: string) => `/admin/${kind}/${id}?${new URLSearchParams({ fields: kind === 'products' ? '*categories,*shipping_profile' : '+email' })}`
+
 export async function saveInline(kind: 'products' | 'orders', initial: Entity, draft: ProductDraft | OrderDraft) {
   const normalize = kind === 'products' ? productDraft : orderDraft
   const update = kind === 'products' ? productUpdate(initial, draft as ProductDraft) : orderUpdate(initial, draft as OrderDraft)
   if (!Object.keys(update).length) return initial
-  const url = `/admin/${kind}/${initial.id}${kind === 'products' ? '?fields=*categories,*shipping_profile' : ''}`
+  const url = inlineRecordUrl(kind, initial.id)
   const key = kind === 'products' ? 'product' : 'order'
   const fresh = (await adminRequest(url))[key]
   const priceRevision = (product: Entity) => (product.variants ?? []).map((variant: Entity) => ({ id: variant.id, updated_at: variant.updated_at,

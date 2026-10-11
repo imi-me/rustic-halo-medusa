@@ -1,4 +1,4 @@
-import { hasChanges, orderDraft, orderUpdate, productDraft, productUpdate, saveInline } from '../inline-edit'
+import { hasChanges, inlineRecordUrl, orderDraft, orderUpdate, productDraft, productUpdate, saveInline } from '../inline-edit'
 
 const product = () => ({ id: 'prod_one', title: 'Claw', handle: 'claw', status: 'draft', discountable: true, updated_at: '2026-10-10', metadata: { artwork: 'preserve' }, categories: [{ id: 'cat_one' }],
   variants: [
@@ -11,6 +11,10 @@ const product = () => ({ id: 'prod_one', title: 'Claw', handle: 'claw', status: 
   ],
 })
 afterEach(() => jest.restoreAllMocks())
+it('requests email explicitly because Medusa omits it from default order fields', () => {
+  expect(new URL(inlineRecordUrl('orders', 'order_one'), 'https://staging.example.invalid').searchParams.get('fields')).toBe('+email')
+  expect(new URL(inlineRecordUrl('products', 'prod_one'), 'https://staging.example.invalid').searchParams.get('fields')).toBe('*categories,*shipping_profile')
+})
 it('does not send untouched product fields, variants, metadata or inventory settings', () => {
   const source = product(), draft = productDraft(source)
   expect(productUpdate(source, draft)).toEqual({})
