@@ -31,6 +31,11 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
           <defs>
             <clipPath id={`${id}-wood`}><path d={template.cutPath} transform={pathTransform} /></clipPath>
             <clipPath id={`${id}-engraving`}><path d={goldenLoveEngravedBorder.path} transform={borderTransform} /></clipPath>
+            <mask id={`${id}-outward-border`} maskUnits="userSpaceOnUse" x={-20} y={-10} width={80} height={130}>
+              <rect x={-20} y={-10} width={80} height={130} fill="white" />
+              {/* Preserve the original 0.3 mm inner edge; the wider stroke grows outward. */}
+              <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="black" stroke="white" strokeWidth={0.6} strokeLinejoin="round" />
+            </mask>
             <linearGradient id={`${id}-plastic`} x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" stopColor="white" stopOpacity=".18" /><stop offset=".45" stopColor="white" stopOpacity="0" /><stop offset="1" stopColor="black" stopOpacity=".16" />
             </linearGradient>
@@ -49,7 +54,7 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
                     <image href={imagePath} x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
                   </svg>
                 ))}</g>
-                <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies ? "#956234" : "#552914"} strokeWidth={0.6} strokeLinejoin="round" />
+                <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies ? "#956234" : "#552914"} strokeWidth={1.8} mask={`url(#${id}-outward-border)`} strokeLinejoin="round" />
               </g>
             </g>
           </g>
