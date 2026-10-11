@@ -2,16 +2,18 @@
 
 import { ReactNode, useId, useState } from "react"
 import { healingHeartsColors } from "@lib/brand/healing-hearts-colors"
+import { everyPawOverlay } from "@lib/brand/every-paw-overlay"
 import { countrySkiesBorderFit } from "@lib/brand/country-skies-overlay"
 import { goldenLoveOverlay as template } from "@lib/brand/golden-love-overlay"
 import { goldenLoveBorderFit, goldenLoveEngravedBorder } from "@lib/brand/golden-love-border-fit"
 
-export default function GoldenLoveGallery({ children, design = "golden-love" }: { children: ReactNode; design?: "golden-love" | "country-skies" }) {
+export default function GoldenLoveGallery({ children, design = "golden-love" }: { children: ReactNode; design?: "golden-love" | "country-skies" | "every-paw" }) {
+  const isEveryPaw = design === "every-paw"
   const isCountrySkies = design === "country-skies"
-  const name = isCountrySkies ? "Country Skies" : "Golden Love"
+  const name = isEveryPaw ? "Every Paw Matters" : isCountrySkies ? "Country Skies" : "Golden Love"
   const borderFit = isCountrySkies ? countrySkiesBorderFit : goldenLoveBorderFit
-  const imagePath = isCountrySkies ? "/images/hair-claws/country-skies/wood-overlay-v1.png" : "/images/hair-claws/golden-love/wood-overlay-v2.png"
-  const [colorSlug, setColorSlug] = useState("taupe")
+  const imagePath = isEveryPaw ? "/images/hair-claws/every-paw/wood-overlay-v1.png" : isCountrySkies ? "/images/hair-claws/country-skies/wood-overlay-v1.png" : "/images/hair-claws/golden-love/wood-overlay-v2.png"
+  const [colorSlug, setColorSlug] = useState(isEveryPaw ? "black" : "taupe")
   const [failed, setFailed] = useState(false)
   const id = useId().replace(/:/g, "")
   const color = healingHeartsColors.find((item) => item.slug === colorSlug)!
@@ -26,9 +28,9 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
   if (failed) return <>{children}</>
 
   return (
-    <div className={isCountrySkies ? "rh-country-skies-gallery" : "rh-golden-love-gallery"} aria-label={`${name} 4-inch color previews`}>
+    <div className={isEveryPaw ? "rh-every-paw-gallery" : isCountrySkies ? "rh-country-skies-gallery" : "rh-golden-love-gallery"} aria-label={`${name} 4-inch color previews`}>
       <div style={{ width: "100%", aspectRatio: "1", background: "#fff" }}>
-        <svg viewBox="-45 -12 125 125" role="img" aria-labelledby={`${id}-title`} style={{ width: "100%", height: "100%", display: "block" }}>
+        <svg viewBox={isEveryPaw ? "-12 -51 125 125" : "-45 -12 125 125"} role="img" aria-labelledby={`${id}-title`} style={{ width: "100%", height: "100%", display: "block" }}>
           <title id={`${id}-title`}>{`${name} 4-inch hair claw in ${color.name}, with a 1/16-inch colored rim`}</title>
           <defs>
             <clipPath id={`${id}-wood`}><path d={template.cutPath} transform={pathTransform} /></clipPath>
@@ -49,6 +51,7 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
               <feDropShadow in="ambient" dx="-.6" dy=".8" stdDeviation=".55" floodOpacity=".18" />
             </filter>
           </defs>
+          <g transform={isEveryPaw ? `translate(${length} 0) rotate(90)` : undefined}>
           <g filter={`url(#${id}-shadow)`}>
             <g filter={`url(#${id}-rounded-edge)`}>
               <path d={handlePath} fill={color.hex} />
@@ -57,17 +60,24 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
             <g transform={`scale(${scale})`}>
               <path d={template.cutPath} transform={pathTransform} fill={color.hex} stroke={color.hex} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" filter={`url(#${id}-rounded-edge)`} />
               <g clipPath={`url(#${id}-wood)`}>
-                <path d={template.cutPath} transform={pathTransform} fill={isCountrySkies ? "#eee0c5" : "#e8cd9f"} />
-                <g clipPath={`url(#${id}-engraving)`}>{borderFit.map((band, index) => (
+                <path d={template.cutPath} transform={pathTransform} fill={isCountrySkies || isEveryPaw ? "#eee0c5" : "#e8cd9f"} />
+                <g clipPath={`url(#${id}-engraving)`}>{isEveryPaw ? (
+                  <g transform={everyPawOverlay.transform}>
+                    <defs><clipPath id={`${id}-source-interior`}><polygon points={everyPawOverlay.sourceInterior} /></clipPath></defs>
+                    <image clipPath={`url(#${id}-source-interior)`} href={imagePath} width={everyPawOverlay.width} height={everyPawOverlay.height} onError={() => setFailed(true)} />
+                    <path d={everyPawOverlay.ecgJoin} fill="#73330c" />
+                  </g>
+                ) : borderFit.map((band, index) => (
                   <svg key={index} x={-20} y={band.y} width={80} height={band.height} viewBox={`-20 ${band.y} 80 ${band.height}`} overflow="hidden">
                     <image href={imagePath} x={band.imageX} y={band.imageY} width={band.imageWidth} height={band.imageHeight} preserveAspectRatio="none" onError={() => setFailed(true)} />
                   </svg>
                 ))}</g>
                 <g mask={`url(#${id}-outward-border)`}>
-                  <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies ? "#956234" : "#552914"} strokeWidth={1.8} strokeLinejoin="round" />
+                  <path d={goldenLoveEngravedBorder.path} transform={borderTransform} fill="none" stroke={isCountrySkies || isEveryPaw ? "#956234" : "#552914"} strokeWidth={1.8} strokeLinejoin="round" />
                 </g>
               </g>
             </g>
+          </g>
           </g>
         </svg>
       </div>

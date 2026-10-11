@@ -40,6 +40,7 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   // 2-inch geometry deliberately not synthesized from the 4-inch master.
   // Owner-approved, explicitly 4-inch product; no inference from a missing Size option.
   if (product.handle === 'golden-love-hair-claw-4') return <GoldenLoveGallery>{children}</GoldenLoveGallery>
+  if (product.handle === 'every-paw-matters-hair-claw') return <GoldenLoveGallery design="every-paw">{children}</GoldenLoveGallery>
   if (product.handle === 'country-skies-hair-claw') return <GoldenLoveGallery design="country-skies">{children}</GoldenLoveGallery>
   if (size !== '4' || !recipe?.enabled || failed) return <>{children}</>
   return <div>
