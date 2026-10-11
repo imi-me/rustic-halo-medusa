@@ -18,7 +18,7 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
   const scale = (template.clipLengthMm - 2 * template.revealMm) / template.woodLengthMm
   const length = template.woodLengthMm * scale
   // Mirror the upper curve around the horizontal center for an even handle.
-  const handlePath = `M 2 ${length * .33} C -4 ${length * .34} -9 ${length * .30} -13 ${length * .28} Q -16 ${length * .27} -16 ${length * .31} L -16 ${length * .69} Q -16 ${length * .73} -13 ${length * .72} C -9 ${length * .70} -4 ${length * .66} 2 ${length * .67} Z`
+  const handlePath = `M 4 ${length * .33} C -4 ${length * .34} -9 ${length * .30} -13 ${length * .28} Q -16 ${length * .27} -16 ${length * .31} L -16 ${length * .69} Q -16 ${length * .73} -13 ${length * .72} C -9 ${length * .70} -4 ${length * .66} 4 ${length * .67} Z`
   // Turn the supplied outline, preserving its geometry, to match the upright dog photo.
   const pathTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${template.cutTransform}`
   const borderTransform = `translate(${template.woodWidthMm} ${template.woodLengthMm}) rotate(180) translate(${-template.originX} ${-template.originY}) ${goldenLoveEngravedBorder.transform}`
@@ -42,7 +42,7 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
               <feGaussianBlur stdDeviation=".12" />
             </filter>
             <linearGradient id={`${id}-handle`} gradientUnits="userSpaceOnUse" x1={-16} y1={0} x2={2} y2={0}>
-              <stop offset="0" stopColor="white" stopOpacity=".16" /><stop offset=".12" stopColor="black" stopOpacity=".05" /><stop offset=".6" stopColor="black" stopOpacity=".16" /><stop offset="1" stopColor="black" stopOpacity=".42" />
+              <stop offset="0" stopColor="white" stopOpacity=".16" /><stop offset=".12" stopColor="black" stopOpacity=".05" /><stop offset=".4" stopColor="black" stopOpacity=".12" /><stop offset=".7" stopColor="black" stopOpacity="0" /><stop offset="1" stopColor="black" stopOpacity="0" />
             </linearGradient>
             <filter id={`${id}-shadow`} x="-80%" y="-20%" width="260%" height="160%">
               <feDropShadow in="SourceGraphic" dx="-3" dy="2" stdDeviation="3.5" floodOpacity=".22" result="ambient" />
@@ -50,8 +50,10 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
             </filter>
           </defs>
           <g filter={`url(#${id}-shadow)`}>
-            <path d={handlePath} fill={color.hex} />
-            <path d={handlePath} fill={`url(#${id}-handle)`} />
+            <g filter={`url(#${id}-rounded-edge)`}>
+              <path d={handlePath} fill={color.hex} />
+              <path d={handlePath} fill={`url(#${id}-handle)`} />
+            </g>
             <g transform={`scale(${scale})`}>
               <path d={template.cutPath} transform={pathTransform} fill={color.hex} stroke={color.hex} strokeWidth={2 * template.revealMm / scale} strokeLinejoin="round" filter={`url(#${id}-rounded-edge)`} />
               <g clipPath={`url(#${id}-wood)`}>
