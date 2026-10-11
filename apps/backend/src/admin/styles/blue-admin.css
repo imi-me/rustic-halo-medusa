@@ -263,3 +263,12 @@ html:root {
 #medusa :is(button, [role='option'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):hover > svg {
   color: inherit;
 }
+
+/* Match controls to the owner-approved 12px Overview card corners. */
+html:root { --rh-control-radius: 12px; }
+#medusa :is(button, a[class*='shadow-buttons'], .rh-button):not([role='checkbox']):not([role='switch']):not([role='radio']):not(.rounded-full):not(.rh-products-search-submit):not(.rh-products-search-clear):not(.rh-products-search-all) {
+  border-radius: var(--rh-control-radius);
+}
+#medusa :is(input[type='search'], input[cmdk-input], input[placeholder*='Search'], input[placeholder*='search']) {
+  border-radius: var(--rh-control-radius);
+}
