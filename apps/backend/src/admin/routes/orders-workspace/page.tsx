@@ -185,12 +185,14 @@ const OrdersWorkspace = () => {
                 <Link to="/orders">Native orders ↗</Link>
               </div>
               <div className="ow-filters">
+                <div className="rh-order-search">
                 <input
                   aria-label="Search orders"
                   placeholder="Search order number or customer…"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
+                </div>
                 <select
                   aria-label="Payment status"
                   value={payment}

@@ -1,0 +1,14 @@
+.rh-suggestions-host { position: relative; overflow: visible; }
+.ow-filters > .rh-order-search { flex: 1 1 200px; min-width: 0; }
+.rh-order-search input { width: 100%; }
+.rh-search-suggestions { position: absolute; right: 0; top: calc(100% + 8px); width: min(420px, calc(100vw - 32px)); z-index: 50; overflow: hidden; border: 1px solid #e0e4ee; border-radius: var(--rh-control-radius, 12px); background: #fff; box-shadow: 0 14px 36px #1621441a; }
+.rh-suggestions-caption, .rh-suggestions-help { padding: 11px 14px; color: #7b8497; font-size: 12px; }
+.rh-suggestions-caption { border-bottom: 1px solid #edf0f6; }
+.rh-search-suggestions [role='listbox'] { max-height: min(400px, 50vh); overflow-y: auto; }
+#medusa .rh-suggestion { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid #f0f2f7; background: #fff; color: #253047; text-decoration: none; }
+#medusa .rh-suggestion:hover, #medusa .rh-suggestion[aria-selected='true'] { background: #f0f2fc; color: #3546d8; }
+.rh-suggestion img { width: 36px; height: 42px; object-fit: cover; border-radius: 6px; }
+.rh-suggestion > span:first-of-type { flex: 1; min-width: 0; }
+.rh-suggestion strong, .rh-suggestion small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rh-suggestion strong { font-size: 14px; font-weight: 600; }
+.rh-suggestion small { margin-top: 3px; color: #7b8497; font-size: 12px; }
