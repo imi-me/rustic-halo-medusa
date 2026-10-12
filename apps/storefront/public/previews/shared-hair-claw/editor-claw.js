@@ -1,5 +1,5 @@
 import { geometry as g } from './editor-geometry.js'
-import { validCorners, projectiveTriangles } from './editor-transform.js?v=editor4'
+import { validCorners, projectiveTriangles } from './editor-transform.js?v=editor5'
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))
 const finite = (n,min,max) => Number.isFinite(n) && n >= min && n <= max
 export function placement(recipe) {
@@ -23,10 +23,10 @@ export function placement(recipe) {
   const corners=recipe.corners||[corner(-w/2,-h/2),corner(w/2,-h/2),corner(w/2,h/2),corner(-w/2,h/2)]
   return {x,y,w,h,cx,cy,corners,transform:`translate(${cx} ${cy}) rotate(${rotation}) skewX(${skewX}) skewY(${skewY}) scale(${s}) rotate(${turn}) translate(${-x-w/2} ${-y-h/2})`}
 }
-function artwork(recipe,p,id,url) {
+function artwork(recipe,p,id,url,interactive) {
   const mx=recipe.mirror_x?-1:1,my=recipe.mirror_y?-1:1
   if (!recipe.corners) return `<g data-artwork transform="${p.transform}"><g clip-path="url(#${id}-crop)"><image data-artwork-mirror="${mx},${my}" transform="translate(${p.x+p.w/2} ${p.y+p.h/2}) scale(${mx} ${my}) translate(${-p.x-p.w/2} ${-p.y-p.h/2})" href="${esc(url)}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="xMidYMid meet"/></g></g>`
-  const tiles=projectiveTriangles(p.corners,p.w,p.h)
+  const tiles=projectiveTriangles(p.corners,p.w,p.h,{interactive})
   const face=p.corners.map(point=>`${point.x},${point.y}`).join(' ')
   const clips=tiles.map((tile,i)=>{
     const center=tile.target.reduce((sum,point)=>({x:sum.x+point.x/3,y:sum.y+point.y/3}),{x:0,y:0})
@@ -38,7 +38,7 @@ function artwork(recipe,p,id,url) {
   const mirror=`translate(${p.w/2} ${p.h/2}) scale(${mx} ${my}) translate(${-p.w/2} ${-p.h/2})`
   return `<g data-artwork data-corner-fit="true" pointer-events="none"><defs><clipPath id="${id}-face"><polygon points="${face}"/></clipPath><g id="${id}-source" data-artwork-mirror="${mx},${my}" transform="${mirror}"><image href="${esc(url)}" x="${-p.x}" y="${-p.y}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="none"/></g>${clips}</defs><g clip-path="url(#${id}-face)">${tiles.map((tile,i)=>`<g clip-path="url(#${id}-tile-${i})"><use href="#${id}-source" transform="matrix(${tile.transform.join(' ')})"/></g>`).join('')}</g></g>`
 }
-export function renderEditorClaw({recipe,color,outline=false,id='uploaded'}) {
+export function renderEditorClaw({recipe,color,outline=false,id='uploaded',interactive=false}) {
   if (!/^[a-z0-9-]+$/i.test(id)||!/^#[a-f0-9]{6}$/i.test(color.hex)) throw Error('Invalid renderer')
   const url=new URL(recipe.url)
   if (!['https:','http:'].includes(url.protocol)||url.username||url.password) throw Error('Invalid image URL')
@@ -64,7 +64,7 @@ export function renderEditorClaw({recipe,color,outline=false,id='uploaded'}) {
     <g filter="url(#${id}-shadow)"><path d="${handle}" fill="${color.hex}" filter="url(#${id}-rounded)"/><path d="${handle}" fill="url(#${id}-handle)"/>
     <path data-fixed-cut d="${g.cutPath}" transform="${cut}" fill="${color.hex}" stroke="${color.hex}" stroke-width="${2*g.reveal/scale}" stroke-linejoin="round" filter="url(#${id}-rounded)"/>
     <g clip-path="url(#${id}-wood)"><path d="${g.cutPath}" transform="${cut}" fill="#e8d6ba"/>
-      ${artwork(recipe,p,id,url.href)}
+      ${artwork(recipe,p,id,url.href,interactive)}
       ${recipe.border==='template'?`<g mask="url(#${id}-outward)"><path data-fixed-border d="${g.borderPath}" transform="${border}" fill="none" stroke="#956234" stroke-width="1.8" stroke-linejoin="round" filter="url(#${id}-grain)"/></g>`:''}
     </g></g>
     ${outline?`<path data-cut-guide d="${g.cutPath}" transform="${cut}" fill="none" stroke="#527c96" stroke-width=".2" stroke-dasharray="1.3 .8" pointer-events="none"/><path data-border-guide d="${g.borderPath}" transform="${border}" fill="none" stroke="#444344" stroke-width=".15" stroke-dasharray=".7 .7" pointer-events="none"/>`:''}

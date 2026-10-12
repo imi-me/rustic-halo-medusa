@@ -1,17 +1,21 @@
-import { renderClaw } from './compositor.js?v=editor4'
-import { placement } from './editor-claw.js?v=editor4'
-import { validCorners } from './editor-transform.js?v=editor4'
+import { renderClaw } from './compositor.js?v=editor5'
+import { placement } from './editor-claw.js?v=editor5'
+import { validCorners } from './editor-transform.js?v=editor5'
 const stage=document.getElementById('preview')
 let data=null,parentOrigin=null,drag=null
+let animation=0,pendingPatch=null,renderedState='',editRevision=0
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,n))
 const round=n=>Math.round(n*1000)/1000
 function send(type,extra={}) {if(parentOrigin)window.parent.postMessage({type,...extra},parentOrigin)}
 function draw() {
+  const signature=JSON.stringify([data?.recipe,data?.size,data?.color,data?.outline,data?.editable,Boolean(drag)])
+  if(signature===renderedState)return
+  renderedState=signature
   if(!data?.recipe){stage.textContent='Choose an image to begin fitting.';return}
   if(data.size!=='4'){stage.textContent='2-inch preview awaits its measured physical template. Save placement as a draft.';return}
   try {
     const focusedCorner=stage.contains(document.activeElement)?document.activeElement?.dataset?.corner:undefined
-    stage.innerHTML=renderClaw({colorSlug:data.color,uploaded:data.recipe,scale:data.recipe.scale,vertical:data.recipe.vertical,showOutline:data.outline===true,id:'uploaded'})
+    stage.innerHTML=renderClaw({colorSlug:data.color,uploaded:data.recipe,scale:data.recipe.scale,vertical:data.recipe.vertical,showOutline:data.outline===true,id:'uploaded',interactive:Boolean(drag)})
     stage.dataset.editable=String(data.editable===true)
     stage.querySelector('image,img')?.addEventListener('error',()=>{stage.textContent='Source image could not load.';send('hair-claw-preview-error')},{once:true})
     if(data.editable&&data.recipe.editor_version===2) {
@@ -21,12 +25,31 @@ function draw() {
     }
   } catch {stage.textContent='This overlay could not be displayed. Check its image and alignment.';send('hair-claw-preview-error')}
 }
+function scheduleDraw() {
+  if(animation)return
+  animation=requestAnimationFrame(()=>{
+    animation=0
+    draw()
+    if(pendingPatch){const patch=pendingPatch;pendingPatch=null;send('hair-claw-placement',{patch,editRevision})}
+  })
+}
 window.addEventListener('message',event=>{
   if(event.source!==window.parent||event.data?.type!=='hair-claw-preview'||event.origin==='null')return
   if(parentOrigin&&event.origin!==parentOrigin)return
-  parentOrigin=event.origin;data=event.data;if(!data.editable)drag=null;draw()
+  parentOrigin=event.origin
+  // A delayed parent echo must not rewind a newer move still being dragged.
+  const older=Number.isSafeInteger(event.data.editRevision)&&event.data.editRevision<editRevision
+  const recipe=(drag||pendingPatch||older)&&event.data.editable&&data ? data.recipe : event.data.recipe
+  data={...event.data,recipe}
+  if(!data.editable){drag=null;pendingPatch=null}
+  scheduleDraw()
 })
-function edit(patch) {data={...data,recipe:{...data.recipe,...patch}};draw();send('hair-claw-placement',{patch})}
+function edit(patch) {
+  data={...data,recipe:{...data.recipe,...patch}}
+  editRevision++
+  pendingPatch={...pendingPatch,...patch}
+  scheduleDraw()
+}
 function point(event,matrix) {return new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix)}
 function movePatch(r,dx,dy) {
   dx=clamp(dx,-120-r.x,120-r.x);dy=clamp(dy,-120-r.y,120-r.y)
@@ -47,6 +70,7 @@ stage.addEventListener('pointerdown',event=>{
   const handle=event.target.closest('[data-action]')
   drag={id:event.pointerId,inverse,start,recipe:{...r},corners:p.corners,corner:Number(handle?.dataset.corner),cx:p.cx,cy:p.cy,action:handle?.dataset.action||'move'}
   event.preventDefault();stage.setPointerCapture(event.pointerId);stage.focus({preventScroll:true})
+  scheduleDraw()
 })
 stage.addEventListener('pointermove',event=>{
   if(drag?.id!==event.pointerId)return
@@ -59,7 +83,12 @@ stage.addEventListener('pointermove',event=>{
     edit({rotation:round(((r.rotation||0)+delta+540)%360-180)})
   } else edit(movePatch(r,p.x-drag.start.x,p.y-drag.start.y))
 })
-for(const name of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(name,()=>{drag=null})
+for(const name of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(name,()=>{
+  if(!drag)return
+  drag=null
+  // Releasing a handle flushes the latest placement at full review quality.
+  scheduleDraw()
+})
 stage.addEventListener('keydown',event=>{
   if(data?.editable&&event.key==='Escape'){event.preventDefault();send('hair-claw-editor-close');return}
   if(!data?.editable||!data.recipe||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return

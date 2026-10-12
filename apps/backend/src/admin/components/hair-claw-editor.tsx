@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { TooltipProvider } from '@medusajs/ui'
 import HairClawPhotoUpload from './hair-claw-photo-upload'
 import { FitHelp, FitHint, FitIcon } from './hair-claw-ui'
+import { adminFetch } from '../lib/admin-fetch'
 
 type Crop = { top:number; bottom:number; left:number; right:number }
 type Corner = {x:number;y:number}
@@ -28,10 +29,7 @@ function Numeric({label,value,min,max,step=.5,disabled=false,onChange}:{label:st
   return <input className="rh-fit-number" disabled={disabled} aria-label={label} type="number" value={draft} min={min} max={max} step={step} onBlur={()=>setDraft(String(value))} onChange={e=>{const raw=e.target.value;setDraft(raw);if(raw==='')return;const n=Number(raw);if(Number.isFinite(n)&&n>=min&&n<=max)onChange(n)}}/>
 }
 async function api(path:string, body?:unknown) {
-  const response = await fetch(path,{credentials:'include',...(body === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})})
-  const data = await response.json()
-  if (!response.ok) throw Error(data.message || 'Request failed')
-  return data
+  return adminFetch(path,{...(body === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})})
 }
 export default function HairClawEditor({productId,onStateChange,onRequestClose,headerAction}:{productId:string;onStateChange?:(state:{dirty:boolean;busy:boolean})=>void;onRequestClose?:()=>void;headerAction?:ReactNode}) {
   const [settings,setSettings] = useState<Settings>({revision:null,recipes:{}})
@@ -47,6 +45,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
   const [guides,setGuides] = useState(true)
   const [errorLabel,setErrorLabel] = useState<string|null>(null)
   const frame = useRef<HTMLIFrameElement>(null)
+  const previewRevision = useRef(0)
   const canvas = useRef<HTMLDivElement>(null)
   useEffect(()=>onStateChange?.({dirty,busy}),[dirty,busy,onStateChange])
   useEffect(()=>{
@@ -56,7 +55,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     return()=>window.removeEventListener('beforeunload',warn)
   },[dirty])
   let previewUrl=''
-  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor4`} catch {}
+  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor5`} catch {}
   const previewOrigin = previewUrl ? new URL(previewUrl).origin : ''
   useEffect(()=>{
     let active=true
@@ -97,7 +96,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     return()=>{cancelAnimationFrame(animation);observer.disconnect();window.removeEventListener('resize',measure);window.removeEventListener('scroll',measure);window.visualViewport?.removeEventListener('resize',measure)}
   },[productId])
   const preview = useCallback(()=>{
-    if (previewOrigin && recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color,outline:guides,editable:!busy},previewOrigin)
+    if (previewOrigin && recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color,outline:guides,editable:!busy,editRevision:previewRevision.current},previewOrigin)
   },[recipe,size,color,previewOrigin,busy,guides])
   const change = useCallback((patch:Partial<Recipe>)=>{
     setRecipe(current=>{
@@ -119,6 +118,8 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
       if (event.data?.type === 'hair-claw-preview-ready') preview()
       if (event.data?.type === 'hair-claw-preview-error') {setNotice('Preview could not load. Choose another photo or check the preview connection.');setErrorLabel('Preview unavailable')}
       if (event.data?.type === 'hair-claw-placement' && !busy) {
+        const revision=event.data.editRevision
+        if (!Number.isSafeInteger(revision)||revision<previewRevision.current)return
         const p=event.data.patch
         if (!p || typeof p !== 'object') return
         const patch:Partial<Recipe>={}
@@ -126,7 +127,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
           if (typeof p[key] === 'number' && Number.isFinite(p[key])) patch[key]=Math.min(max,Math.max(min,p[key]))
         }
         if (validCorners(p.corners)) patch.corners=p.corners.map((p:Corner)=>({x:p.x,y:p.y}))
-        if (Object.keys(patch).length) change(patch)
+        if (Object.keys(patch).length){previewRevision.current=revision;change(patch)}
       }
     }
     window.addEventListener('message',receive)
@@ -173,7 +174,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
           <div className="rh-fit-color-select"><span className="rh-fit-swatch" style={{background:colorHex}}/><select aria-label="Preview color" value={color} onChange={e=>{setColor(e.target.value);setView('preview')}}>{palette.map(name=><option key={name} value={name.toLowerCase()}>{name}</option>)}</select><FitHelp label="Preview color">Preview the fit on each claw color. This does not change purchase options or the color added to a cart.</FitHelp></div>
         </div>
         <div className="rh-fit-canvas" ref={canvas}>
-          {recipe && size==='4' && previewUrl && <iframe ref={frame} src={previewUrl} title="Interactive hair-claw image fitting" onLoad={preview} hidden={view==='original'}/>}
+          {recipe && size==='4' && previewUrl && <iframe ref={frame} src={previewUrl} title="Interactive hair-claw image fitting" onLoad={()=>{previewRevision.current=0;preview()}} hidden={view==='original'}/>}
           {recipe && view==='original' && <img className="rh-fit-original" src={recipe.url} alt="Original source before placement adjustments"/>}
           {view==='preview'&&(!recipe||size==='2'||!previewUrl)&&<div className="rh-fit-empty"><FitIcon name="image"/><span>{!recipe?'Choose a photo':size==='2'?'2-inch draft':'Connect preview'}</span><FitHelp label="Preview availability">{!recipe?'Choose a photo in the Photo panel, or upload new artwork.':size==='2'?'Save the fit as a draft. Preview is unavailable until the measured 2-inch plastic template is approved.':'Set the storefront origin under Connection to load the fitting canvas.'}</FitHelp></div>}
         </div>

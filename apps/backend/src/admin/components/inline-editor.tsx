@@ -148,7 +148,8 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
         catch (failure) { throw new Error(`Product fields and images saved. Remaining stock changes need attention: ${(failure as Error).message}`) }
       }
       // Medusa's native sections and list caches use these shared prefixes.
-      await Promise.all([kind, ...(kind === 'products' ? ['product_variants', 'rh-product-suggestions', 'inventory_items', 'inventory_levels'] : ['order_preview', 'rh-order-suggestions'])].map(key => queryClient.invalidateQueries({ queryKey: [key] })))
+      // Confirmed saves must not wait for unrelated native cards to refetch.
+      void Promise.all([kind, ...(kind === 'products' ? ['product_variants', 'rh-product-suggestions', 'inventory_items', 'inventory_levels'] : ['order_preview', 'rh-order-suggestions'])].map(key => queryClient.invalidateQueries({ queryKey: [key] }))).catch(() => { /* Native queries report their own refresh errors. */ })
       if (persistent) { setRecord(saved); setDraft(normalizer(saved)); setDiscard(false) }
       else close()
       if (kind === 'products') await stock.load(id)

@@ -21,7 +21,7 @@ export function perspectiveMatrix(points,width,height) {
 // Render the same four-corner homography using native SVG triangles. Embedded
 // HTML/CSS 3D transforms do not consistently respect SVG clipping in WebKit.
 // The source photo is defined once and reused, without a canvas/CORS download.
-export function projectiveTriangles(points,width,height) {
+export function projectiveTriangles(points,width,height,{interactive=false}={}) {
   const matrix=perspectiveMatrix(points,width,height)
   const map=({x,y})=>{
     const z=matrix[3]*x+matrix[7]*y+1
@@ -33,7 +33,7 @@ export function projectiveTriangles(points,width,height) {
     const target=source.map(map)
     const mids=source.map((p,i)=>middle(p,source[(i+1)%3]))
     const error=Math.max(...mids.map((p,i)=>{const actual=map(p),approx=middle(target[i],target[(i+1)%3]);return Math.hypot(actual.x-approx.x,actual.y-approx.y)}))
-    if(error>.025&&depth<5) {
+    if(error>(interactive ? .2 : .025)&&depth<(interactive?3:5)) {
       const [a,b,c]=source,[ab,bc,ca]=mids
       for(const triangle of [[a,ab,ca],[ab,b,bc],[ca,bc,c],[ab,bc,ca]])add(triangle,depth+1)
       return

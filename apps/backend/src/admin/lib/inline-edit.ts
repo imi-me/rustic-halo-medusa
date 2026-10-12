@@ -1,4 +1,5 @@
 import { priceRows, pricePayload, type PriceRow } from './product-prices'
+import { adminFetch } from './admin-fetch'
 export type Entity = Record<string, any>
 export type Price = { id: string; amount: number; currency_code: string; min_quantity?: number | null; max_quantity?: number | null; rules?: Record<string, string> }
 export type ProductDraft = {
@@ -111,12 +112,9 @@ export function orderUpdate(order: Entity, draft: OrderDraft): Entity {
 }
 
 export async function adminRequest(url: string, body?: Entity, method: 'POST' | 'DELETE' = 'POST') {
-  const response = await fetch(url, { credentials: 'include', cache: 'no-store',
+  return adminFetch(url, { cache: 'no-store',
     ...(body ? { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
   })
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(data.message ?? `Request failed (${response.status}). Your draft is still here.`)
-  return data
 }
 
 export const inlineRecordUrl = (kind: 'products' | 'orders', id: string) => `/admin/${kind}/${id}?${new URLSearchParams({ fields: kind === 'products' ? '*categories,*shipping_profile' : '+email' })}`
