@@ -1,7 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from 'react-router-dom'
-import { addressFields, adminRequest, hasChanges, inlineRecordUrl, isBasePrice, orderDraft, productDraft, saveInline, type Entity, type OrderDraft, type Price, type ProductDraft } from '../lib/inline-edit'
+import { addressFields, adminRequest, hasChanges, inlineRecordUrl, isBasePrice, orderDraft, productDraft, productUpdate, saveInline, type Entity, type OrderDraft, type Price, type ProductDraft } from '../lib/inline-edit'
+import { useProductStock } from './product-stock'
+import { DescriptionEditor } from './description-editor'
+import { ProductImages, uploadProductImage } from './product-images'
 import '../styles/inline-editor.css'
 
 const labels: Record<string, string> = { title: 'Title', subtitle: 'Subtitle', handle: 'Handle', material: 'Material', weight: 'Weight (g)', length: 'Length (mm)', width: 'Width (mm)', height: 'Height (mm)', origin_country: 'Origin country code', hs_code: 'HS code', mid_code: 'MID code', sku: 'SKU', barcode: 'Barcode', ean: 'EAN', upc: 'UPC', first_name: 'First name', last_name: 'Last name', company: 'Company', address_1: 'Street address', address_2: 'Apartment / suite', city: 'City', province: 'State / province', postal_code: 'Postal code', country_code: 'Country code', phone: 'Phone' }
@@ -60,7 +63,11 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
   const form = useRef<HTMLFormElement>(null)
   const generation = useRef(0)
   const normalizer = kind === 'products' ? productDraft : orderDraft
-  const dirty = Boolean(record && draft && hasChanges(normalizer(record), draft))
+  const stock = useProductStock()
+  const pendingImages = useRef(new Map<string, { file: File; preview: string; uploaded?: string }>())
+  const clearImages = () => { pendingImages.current.forEach(image => URL.revokeObjectURL(image.preview)); pendingImages.current.clear() }
+  useEffect(() => () => clearImages(), [])
+  const dirty = stock.dirty || Boolean(record && draft && hasChanges(normalizer(record), draft))
   const active = loading || Boolean(record && draft)
   useEffect(() => { onEditingChange?.(active) }, [active, onEditingChange])
   useEffect(() => { setRecord(null); setDraft(null); setLoading(false); setError(''); setNotice(''); setDiscard(false) }, [id])
@@ -76,6 +83,7 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
 
   const begin = async () => {
     const token = ++generation.current
+    clearImages()
     setLoading(true); setError(''); setNotice(''); setDiscard(false)
     try {
       const data = await adminRequest(inlineRecordUrl(kind, id))
@@ -85,6 +93,7 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
       setRecord(next); setDraft(normalizer(next))
       if (kind === 'products') {
         const results = await Promise.allSettled(lookups.map(loadChoices))
+        await stock.load(id)
         if (token !== generation.current) return
         const options: Record<string, Choice[]> = {}
         const missing: string[] = []
@@ -107,9 +116,31 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
     if (!record || !draft || saving || !dirty) return
     setSaving(true); setError(''); setNotice('')
     try {
-      const saved = await saveInline(kind, record, draft)
+      let prepared = draft
+      if (kind === 'products') {
+        stock.validate()
+        const product = draft as ProductDraft
+        // Validate common fields before uploading. Uploads are staged until the
+        // product POST attaches them; retry reuses each confirmed upload URL.
+        productUpdate(record, { ...product, images: productDraft(record).images, thumbnail: record.thumbnail ?? '' })
+        prepared = { ...product, images: product.images.map(image => ({ ...image })) }
+        for (const image of (prepared as ProductDraft).images) {
+          const pending = pendingImages.current.get(image.key)
+          if (!pending) continue
+          pending.uploaded ??= await uploadProductImage(pending.file)
+          if ((prepared as ProductDraft).thumbnail === image.url) (prepared as ProductDraft).thumbnail = pending.uploaded
+          image.url = pending.uploaded
+          setDraft({ ...(prepared as ProductDraft), images: (prepared as ProductDraft).images.map(row => ({ ...row })) })
+        }
+      }
+      const saved = await saveInline(kind, record, prepared)
+      if (persistent) { setRecord(saved); setDraft(normalizer(saved)); clearImages() }
+      if (kind === 'products') {
+        try { await stock.save() }
+        catch (failure) { throw new Error(`Product fields and images saved. Remaining stock changes need attention: ${(failure as Error).message}`) }
+      }
       // Medusa's native sections and list caches use these shared prefixes.
-      await Promise.all([kind, ...(kind === 'products' ? ['product_variants', 'rh-product-suggestions'] : ['order_preview', 'rh-order-suggestions'])].map(key => queryClient.invalidateQueries({ queryKey: [key] })))
+      await Promise.all([kind, ...(kind === 'products' ? ['product_variants', 'rh-product-suggestions', 'inventory_items', 'inventory_levels'] : ['order_preview', 'rh-order-suggestions'])].map(key => queryClient.invalidateQueries({ queryKey: [key] })))
       if (persistent) { setRecord(saved); setDraft(normalizer(saved)); setDiscard(false) }
       else close()
       setNotice('Changes saved.')
@@ -120,6 +151,18 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
     finally { setSaving(false) }
   }
   const discardDraft = () => { if (persistent) void begin(); else close() }
+  const addImages = (files: FileList) => {
+    const selected = Array.from(files)
+    if (selected.some(file => !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size > 10 * 1024 * 1024)) { setError('Choose JPEG, PNG, WebP or GIF images under 10 MB each.'); return }
+    const images = selected.map(file => {
+      const key = `pending-${crypto.randomUUID()}`
+      const url = URL.createObjectURL(file)
+      pendingImages.current.set(key, { file, preview: url })
+      return { key, url }
+    })
+    setDraft(previous => ({ ...(previous as ProductDraft), images: [...(previous as ProductDraft).images, ...images], thumbnail: (previous as ProductDraft).thumbnail || images[0]?.url || '' }))
+    setError('')
+  }
   const p = draft as ProductDraft
   const o = draft as OrderDraft
   const setProductField = (key: string, value: string | boolean) => setDraft(previous => ({ ...(previous as ProductDraft), fields: { ...(previous as ProductDraft).fields, [key]: value } }))
@@ -139,27 +182,23 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
   return <div className={`rh-inline-editor ${active ? 'is-editing' : ''} ${persistent ? 'rh-product-editor' : ''}`}>
     <div className="rh-inline-toolbar">
       {persistent ? <div className="rh-inline-identity">{(record?.thumbnail ?? workspace?.thumbnail) && <img src={record?.thumbnail ?? workspace?.thumbnail} alt=""/>}<div><h1>{record?.title ?? workspace?.title}</h1><span role="status">{loading ? 'Loading product…' : saving ? 'Saving changes…' : dirty ? 'Unsaved changes' : notice || 'Edit fields below, then save your changes.'}</span></div></div> : <div><strong>{active ? kind === 'products' ? 'Edit all product fields' : 'Edit contact & addresses' : kind === 'products' ? 'Quick edit' : 'Order quick edit'}</strong><span>{loading ? 'Loading current values…' : active ? dirty ? 'Unsaved changes' : 'No changes yet' : kind === 'products' ? 'Review and edit the product together.' : 'Edit customer email and both addresses here.'}</span></div>}
-      <div className="rh-inline-buttons">{persistent ? <><button type="button" disabled={saving || loading || !dirty} onClick={() => setDiscard(true)}>Discard</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button>{!active && !loading && <button type="button" onClick={begin}>Retry loading</button>}</> : active ? <><button type="button" disabled={saving} onClick={() => dirty ? setDiscard(true) : close()}>Cancel</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button></> : <button type="button" className="primary" onClick={begin}>Edit all</button>}</div>
+      <div className="rh-inline-buttons">{persistent && record?.status === 'published' && <a className="rh-preview-button" href={`/us/products/${encodeURIComponent(record.handle)}`} target="_blank" rel="noopener noreferrer">Storefront preview ↗</a>}{persistent ? <><button type="button" disabled={saving || loading || !dirty} onClick={() => setDiscard(true)}>Discard</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button>{!active && !loading && <button type="button" onClick={begin}>Retry loading</button>}</> : active ? <><button type="button" disabled={saving} onClick={() => dirty ? setDiscard(true) : close()}>Cancel</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button></> : <button type="button" className="primary" onClick={begin}>Edit all</button>}</div>
     </div>
     {notice && !persistent && <p role="status" className="rh-inline-success">{notice}</p>}
     {error && <p role="alert" className="rh-inline-error">{error}</p>}
     {discard && <div role="alert" className="rh-inline-discard"><span>Discard your unsaved changes?</span><button type="button" onClick={() => setDiscard(false)}>Keep editing</button><button type="button" onClick={discardDraft}>Discard changes</button></div>}
     {record && draft && <><DraftGuard dirty={dirty} saving={saving} onDiscard={close}/><form id={formId} ref={form} onSubmit={event => { event.preventDefault(); void save() }} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') { event.preventDefault(); form.current?.requestSubmit() } }}><fieldset disabled={loading || saving} className="rh-inline-body">
       {kind === 'products' ? <>
-        <div className="rh-inline-column">
-          <section className="rh-inline-card"><h2>Product details</h2><div className="rh-inline-grid"><div className="wide">{textField('title', p.fields, setProductField)}</div>{['subtitle', 'material'].map(key => textField(key, p.fields, setProductField))}<label className="rh-inline-field wide"><span>Description</span><textarea aria-label="Description" rows={6} value={String(p.fields.description)} onChange={event => setProductField('description', event.target.value)}/></label><div className="wide">{textField('handle', p.fields, setProductField)}</div></div></section>
-          <section className="rh-inline-card"><div className="rh-inline-section-heading"><h2>Variants & prices</h2><Link onClick={openTool} to={`/products/${id}/variants/create`}>+ Add variant</Link></div>{!p.variants.length && <p>No variants yet. Add a variant to set a SKU and price.</p>}{p.variants.map((variant, index) => {
+        <section className="rh-inline-card"><h2>Product details</h2><div className="rh-inline-grid"><div className="wide">{textField('title', p.fields, setProductField)}</div>{['subtitle', 'material'].map(key => textField(key, p.fields, setProductField))}<DescriptionEditor value={String(p.fields.description)} onChange={value => setProductField('description', value)}/><div className="wide">{textField('handle', p.fields, setProductField)}</div></div></section>
+        <ProductImages draft={p} change={value => setDraft(value)} add={addImages}/>
+        <section className="rh-inline-card wide rh-variants-card"><div className="rh-inline-section-heading"><h2>Variants, pricing & stock</h2><Link onClick={openTool} to={`/products/${id}/variants/create`}>+ Add variant</Link></div>{stock.error && <p className="rh-inline-error" role="status">Stock could not be loaded. Other fields can still be saved. {stock.error}</p>}{!p.variants.length && <p>No variants yet. Add a variant to set a SKU and price.</p>}<div className="rh-variant-table" role="table" aria-label="Variants, pricing and stock">{p.variants.map((variant, index) => {
             const source = record.variants.find((item: Entity) => item.id === variant.id)
             const suffix = ` — variant ${index + 1}`
             const change = (key: string, value: string, price = false) => setDraft(previous => ({ ...(previous as ProductDraft), variants: (previous as ProductDraft).variants.map(item => item.id === variant.id ? { ...item, [price ? 'prices' : 'fields']: { ...item[price ? 'prices' : 'fields'], [key]: value } } : item) }))
-            return <div className="rh-inline-variant" key={variant.id}><h3>{source.title || `Variant ${index + 1}`}<small> {source.manage_inventory ? 'Inventory tracked' : 'Inventory not tracked'}</small></h3><div className="rh-inline-grid">{['sku', 'barcode'].map(key => textField(key, variant.fields, change, suffix))}{(source.prices ?? []).filter(isBasePrice).map((price: Price) => <label className="rh-inline-field" key={price.id}><span>Price ({price.currency_code.toUpperCase()})</span><input aria-label={`Price ${price.currency_code.toUpperCase()}${suffix}`} type="number" min="0" step="any" required value={variant.prices[price.id]} onChange={event => change(price.id, event.target.value, true)}/></label>)}{['title', 'ean', 'upc'].map(key => textField(key, variant.fields, change, suffix))}</div>{!(source.prices ?? []).some(isBasePrice) && <p className="rh-inline-empty-price">No base price. Use advanced pricing to add one.</p>}</div>
-          })}<div className="rh-inline-links"><Link onClick={openTool} to={`/products/${id}/stock`}>Manage stock</Link><Link onClick={openTool} to={`/products/${id}/prices`}>Advanced pricing</Link></div></section>
-        </div>
-        <div className="rh-inline-column">
-          <section className="rh-inline-card"><div className="rh-inline-section-heading"><h2>Images</h2><Link onClick={openTool} to={`/products/${id}/media?view=edit`}>Manage images</Link></div><div className="rh-inline-photos">{(record.images ?? []).map((image: Entity) => <img key={image.id ?? image.url} src={image.url} alt={record.title}/>)}</div>{!record.images?.length && <p>Add images to show this product in your store.</p>}</section>
-          <section className="rh-inline-card"><h2>Publishing & organization</h2>{missingChoices.length > 0 && <p className="rh-inline-error" role="status">Could not load {missingChoices.join(', ')} options. Those fields are kept unchanged.</p>}<div className="rh-inline-grid"><label className="rh-inline-field"><span>Status</span><select aria-label="Status" value={String(p.fields.status)} onChange={event => setProductField('status', event.target.value)}>{['draft', 'proposed', 'published', 'rejected'].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select></label><label className="rh-inline-check"><input type="checkbox" checked={Boolean(p.fields.discountable)} onChange={event => setProductField('discountable', event.target.checked)}/>Allow discounts</label>{lookups.filter(lookup => lookup.key !== 'shipping_profile_id').map(relationField)}</div></section>
-          <section className="rh-inline-card"><h2>Shipping</h2><div className="rh-inline-grid"><div className="wide">{relationField(lookups.find(lookup => lookup.key === 'shipping_profile_id')!)}</div>{['weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code'].map(key => textField(key, p.fields, setProductField))}</div></section>
-        </div>
+            return <div className="rh-variant-row" role="row" key={variant.id}><div role="cell">{textField('title', variant.fields, change, suffix)}<details><summary>Additional identifiers</summary>{['ean', 'upc'].map(key => textField(key, variant.fields, change, suffix))}</details></div><div role="cell">{textField('sku', variant.fields, change, suffix)}{textField('barcode', variant.fields, change, suffix)}</div><div role="cell">{(source.prices ?? []).filter(isBasePrice).map((price: Price) => <label className="rh-inline-field" key={price.id}><span>Price ({price.currency_code.toUpperCase()})</span><input aria-label={`Price ${price.currency_code.toUpperCase()}${suffix}`} type="number" min="0" step="any" required value={variant.prices[price.id]} onChange={event => change(price.id, event.target.value, true)}/></label>)}{!(source.prices ?? []).some(isBasePrice) && <small>No base price. Use advanced pricing.</small>}</div><div role="cell">{stock.fields(variant.id)}</div></div>
+          })}</div><div className="rh-inline-links"><Link onClick={openTool} to={`/products/${id}/stock`}>Inventory tools</Link><Link onClick={openTool} to={`/products/${id}/prices`}>Advanced pricing</Link></div></section>
+        <section className="rh-inline-card"><h2>Publishing & organization</h2>{missingChoices.length > 0 && <p className="rh-inline-error" role="status">Could not load {missingChoices.join(', ')} options. Those fields are kept unchanged.</p>}<div className="rh-inline-grid"><label className="rh-inline-field"><span>Status</span><select aria-label="Status" value={String(p.fields.status)} onChange={event => setProductField('status', event.target.value)}>{['draft', 'proposed', 'published', 'rejected'].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select></label><label className="rh-inline-check"><input type="checkbox" checked={Boolean(p.fields.discountable)} onChange={event => setProductField('discountable', event.target.checked)}/>Allow discounts</label>{lookups.filter(lookup => lookup.key !== 'shipping_profile_id').map(relationField)}</div></section>
+        <section className="rh-inline-card"><h2>Shipping</h2><div className="rh-inline-grid"><div className="wide">{relationField(lookups.find(lookup => lookup.key === 'shipping_profile_id')!)}</div>{['weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code'].map(key => textField(key, p.fields, setProductField))}</div></section>
       </> : <>
         <section className="rh-inline-card wide"><h2>Customer contact</h2><label className="rh-inline-field"><span>Email</span><input aria-label="Customer email" type="email" required value={o.email} onChange={event => setDraft(previous => ({ ...(previous as OrderDraft), email: event.target.value }))}/></label><p>Updates the contact email for this order.</p></section>
         {(['shipping_address', 'billing_address'] as const).map(key => <section className="rh-inline-card" key={key}><h2>{key === 'shipping_address' ? 'Shipping address' : 'Billing address'}</h2><div className="rh-inline-grid">{addressFields.map(field => textField(field, o[key], (name, value) => setDraft(previous => ({ ...(previous as OrderDraft), [key]: { ...(previous as OrderDraft)[key], [name]: value } })), ` — ${key === 'shipping_address' ? 'shipping' : 'billing'}`))}</div></section>)}

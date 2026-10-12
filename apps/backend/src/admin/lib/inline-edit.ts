@@ -1,6 +1,8 @@
 export type Entity = Record<string, any>
 export type Price = { id: string; amount: number; currency_code: string; min_quantity?: number | null; max_quantity?: number | null; rules?: Record<string, string> }
 export type ProductDraft = {
+  images: Array<{ key: string; id?: string; url: string }>
+  thumbnail: string
   fields: Record<string, string | boolean>
   relations: Record<string, string[]>
   variants: Array<{ id: string; fields: Record<string, string>; prices: Record<string, string> }>
@@ -16,6 +18,8 @@ export const isBasePrice = (price: Price) => !Object.keys(price.rules ?? {}).len
 
 export function productDraft(product: Entity): ProductDraft {
   return {
+    images: (product.images ?? []).map((image: Entity) => ({ key: image.id ?? image.url, ...(image.id ? { id: image.id } : {}), url: image.url })),
+    thumbnail: product.thumbnail ?? '',
     fields: { ...Object.fromEntries(productTextFields.map(key => [key, text(key === 'shipping_profile_id' ? product.shipping_profile?.id ?? product[key] : product[key])])), discountable: Boolean(product.discountable) },
     relations: Object.fromEntries(['categories', 'tags', 'sales_channels'].map(key => [key, ids(product[key])])),
     variants: (product.variants ?? []).map((variant: Entity) => ({ id: variant.id,
@@ -29,6 +33,11 @@ export const hasChanges = (initial: unknown, draft: unknown) => !equal(initial, 
 export function productUpdate(product: Entity, draft: ProductDraft): Entity {
   const initial = productDraft(product)
   const update: Entity = {}
+  if (!equal(initial.images, draft.images)) {
+    if (draft.images.some(image => !/^https?:\/\//.test(image.url))) throw new Error('Image upload is incomplete. Your draft is kept.')
+    update.images = draft.images.map(({ id, url }) => ({ ...(id ? { id } : {}), url }))
+  }
+  if (draft.thumbnail !== initial.thumbnail) update.thumbnail = draft.thumbnail || null
   for (const key of productTextFields.concat('discountable')) {
     if (draft.fields[key] === initial.fields[key]) continue
     let value: string | boolean | number | null = draft.fields[key]

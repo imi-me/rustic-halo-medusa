@@ -1,3 +1,4 @@
+import { PolicyOperation } from '@medusajs/framework/utils'
 import { defineMiddlewares } from '@medusajs/framework/http'
 import { guardAppleStaffActor } from '../lib/apple-admin/actor-guard'
 import { appleStart } from '../lib/apple-admin/http'
@@ -7,6 +8,11 @@ import { guardResetReplay } from '../lib/email/reset-replay-guard'
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/inventory-items/:id/inline-level/:location_id',
+    method: ['POST'],
+    policies: [{ resource: 'inventory_level', operation: PolicyOperation.update }],
+    middlewares: [],
+  }, {
     // Medusa's native SSO button uses this route; use the same guarded start flow.
     matcher: '/auth/user/apple-staff',
     method: ['POST'],
