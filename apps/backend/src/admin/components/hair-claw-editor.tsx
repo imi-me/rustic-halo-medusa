@@ -42,7 +42,6 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
   const [notice,setNotice] = useState('Loading…')
   const [busy,setBusy] = useState(true)
   const [dirty,setDirty] = useState(false)
-  const [view,setView] = useState<'preview'|'original'|'crop'>('preview')
   const [interacting,setInteracting]=useState(false)
   const [guides,setGuides] = useState(true)
   const [errorLabel,setErrorLabel] = useState<string|null>(null)
@@ -57,14 +56,14 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     return()=>window.removeEventListener('beforeunload',warn)
   },[dirty])
   let previewUrl=''
-  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor6`} catch {}
+  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor7`} catch {}
   const previewOrigin = previewUrl ? new URL(previewUrl).origin : ''
   useEffect(()=>{
     let active=true
     setBusy(true)
     api(`/admin/products/${productId}/hair-claw-media`).then(data=>{
       if (!active) return
-      setSettings(data.settings);setImages(data.images || []);setRecipe(editable(savedFor(data.settings,'4')));setSize('4');setDirty(false);setView('preview')
+      setSettings(data.settings);setImages(data.images || []);setRecipe(editable(savedFor(data.settings,'4')));setSize('4');setDirty(false)
       setOrigin(data.preview_origin || '');setNotice('Choose a current product photo or upload wood artwork, then adjust its fit and save.')
       requestAnimationFrame(()=>{
         const studio=canvas.current?.closest('.rh-fit-studio')
@@ -85,7 +84,9 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
         const save=studio.querySelector('.rh-fit-savebar')?.getBoundingClientRect().height||65
         const available=viewport-Math.max(18,element.getBoundingClientRect().top)-foot-save-24
         const width=element.parentElement?.clientWidth||540
-        element.style.setProperty('--fit-canvas-size',`${Math.floor(Math.max(240,Math.min(540,width,available)))}px`)
+        const height=`${Math.floor(Math.max(240,Math.min(540,width,available)))}px`
+        element.style.setProperty('--fit-canvas-size',height)
+        element.closest('.rh-fit-edit-surfaces')?.setAttribute('style',`--fit-canvas-size:${height}`)
       })
     }
     const observer=new ResizeObserver(measure)
@@ -98,8 +99,8 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     return()=>{cancelAnimationFrame(animation);observer.disconnect();window.removeEventListener('resize',measure);window.removeEventListener('scroll',measure);window.visualViewport?.removeEventListener('resize',measure)}
   },[productId])
   const preview = useCallback(()=>{
-    if (previewOrigin && recipe && view==='preview') frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color,outline:guides,editable:!busy,editRevision:previewRevision.current},previewOrigin)
-  },[recipe,size,color,previewOrigin,busy,guides,view])
+    if (previewOrigin && recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color,outline:guides,editable:!busy,workspacePhoto:true,editRevision:previewRevision.current},previewOrigin)
+  },[recipe,size,color,previewOrigin,busy,guides])
   const change = useCallback((patch:Partial<Recipe>)=>{
     setRecipe(current=>{
       if (!current) return null
@@ -110,7 +111,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
         if(!validCorners(next.corners))return current
       }
       return next
-    });setDirty(true);setErrorLabel(null);setView('preview')
+    });setDirty(true);setErrorLabel(null)
   },[])
   useEffect(()=>{
     preview()
@@ -146,17 +147,17 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
       })
       if (!dimensions.width || !dimensions.height || Math.max(dimensions.width,dimensions.height)>6000) throw Error('Use a photo no larger than 6000 pixels per side.')
       setRecipe({...defaults,...dimensions,image_id:photo.id,url:photo.url,source_rotation:0,vertical:true})
-      setDirty(true);setView('crop');setErrorLabel(null);setNotice('Drag a crop around the wood, then choose Edit to place its corners. Fit view keeps all four handles accessible.')
+      setDirty(true);setErrorLabel(null);setNotice('Crop the source photo and fit its corners in this workspace. One placement is shared by every preview color.')
     } catch(error) {setNotice((error as Error).message);setErrorLabel('Photo unavailable')} finally {setBusy(false)}
   }
-  async function save() {
+  async function save(enable=false) {
     setBusy(true)
     try {
-      const clean=recipe ? Object.fromEntries(Object.entries(recipe).filter(([key])=>!['url','template'].includes(key))) : null
+      const clean=recipe ? {...Object.fromEntries(Object.entries(recipe).filter(([key])=>!['url','template'].includes(key))),enabled:enable&&size==='4'} : null
       const result=await api(`/admin/products/${productId}/hair-claw-media`,{size,revision:settings.revision,recipe:clean})
       setSettings(result.settings);setRecipe(editable(savedFor(result.settings,size)));setDirty(false)
       setErrorLabel(null)
-      setNotice(!recipe ? 'Overlay setting removed. Original photos and the approved gallery remain available.' : recipe.enabled ? 'Saved and enabled for every color preview of this size.' : 'Draft saved. The current storefront preview stays in place until you enable the reviewed fit.')
+      setNotice(!recipe ? 'Overlay setting removed. Original photos and the approved gallery remain available.' : enable&&size==='4' ? 'Saved and enabled for every color preview of this size.' : 'Draft saved. The current storefront preview stays in place until you enable the reviewed fit.')
     } catch(error) {setNotice((error as Error).message);setErrorLabel('Save failed')} finally {setBusy(false)}
   }
   const locked=!!recipe?.corners
@@ -168,23 +169,30 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
   return <TooltipProvider><section className="rh-fit-studio" aria-label="Hair-claw image fitting">
     <header className="rh-fit-header">
       <div className="rh-fit-heading"><span className="rh-fit-heading-mark"><FitIcon name="corners"/></span><h2>Image fitting</h2><FitHelp label="Image fitting">Choose a current product photo or upload artwork. Crop to the wood, place the corners, then save. Your original photos stay unchanged.</FitHelp></div>
-      <div className="rh-fit-header-actions"><label className="rh-fit-size"><span>Size</span><select aria-label="Physical size" disabled={busy||dirty} value={size} onChange={e=>{setSize(e.target.value);setRecipe(editable(savedFor(settings,e.target.value)));setView('preview');setErrorLabel(null)}}><option value="2">2 inch</option><option value="4">4 inch</option></select><FitHelp label="Physical size">{dirty?'Save or discard your changes before switching size.':size==='2'?'2-inch fits can be saved as drafts. Color previews are pending the measured plastic template.':'Each physical size has its own saved fit.'}</FitHelp></label>{headerAction}</div>
+      <div className="rh-fit-header-actions"><label className="rh-fit-size"><span>Size</span><select aria-label="Physical size" disabled={busy||dirty} value={size} onChange={e=>{setSize(e.target.value);setRecipe(editable(savedFor(settings,e.target.value)));setErrorLabel(null)}}><option value="2">2 inch</option><option value="4">4 inch</option></select><FitHelp label="Physical size">{dirty?'Save or discard your changes before switching size.':size==='2'?'2-inch fits can be saved as drafts. Color previews are pending the measured plastic template.':'Each physical size has its own saved fit.'}</FitHelp></label>{headerAction}</div>
     </header>
     <div className="rh-fit-workspace">
-      <section className="rh-fit-canvas-panel" aria-label="Adjusted claw preview">
+      <section className="rh-fit-canvas-panel" aria-label="Photo cropping and corner fitting">
         <div className="rh-fit-canvas-bar">
-          <div className="rh-fit-segment" aria-label="Image view"><FitHint tip="Place each corner independently. The view keeps all handles accessible."><button type="button" aria-pressed={view==='preview'} onClick={()=>setView('preview')}>Edit</button></FitHint><FitHint tip="Draw a crop on the original photo, or move its four crop handles."><button type="button" disabled={!recipe||busy} aria-pressed={view==='crop'} onClick={()=>setView('crop')}>Crop</button></FitHint><FitHint tip="See the untouched source photo for comparison."><button type="button" disabled={!recipe} aria-pressed={view==='original'} onClick={()=>setView('original')}>Original</button></FitHint></div>
-          <div className="rh-fit-color-select"><span className="rh-fit-swatch" style={{background:colorHex}}/><select aria-label="Preview color" value={color} onChange={e=>{setColor(e.target.value);setView('preview')}}>{palette.map(name=><option key={name} value={name.toLowerCase()}>{name}</option>)}</select><FitHelp label="Preview color">Preview the fit on each claw color. This does not change purchase options or the color added to a cart.</FitHelp></div>
+          <div className="rh-fit-mode"><FitIcon name="image"/><span>Source & fit</span><FitHelp label="Source and fit">Crop the untouched photo on the left, then drag the fitted artwork corners on the right. Both stay open; changing guides or color keeps this workspace.</FitHelp></div>
+          <div className="rh-fit-color-select"><span className="rh-fit-swatch" style={{background:colorHex}}/><select aria-label="Preview color" value={color} onChange={e=>setColor(e.target.value)}>{palette.map(name=><option key={name} value={name.toLowerCase()}>{name}</option>)}</select><FitHelp label="Preview color">The same artwork fit is used for every claw color. The wood and engraving stay unchanged.</FitHelp></div>
         </div>
-        <div className="rh-fit-canvas" ref={canvas}>
-          {recipe && size==='4' && previewUrl && <iframe ref={frame} src={previewUrl} title="Interactive hair-claw image fitting" onLoad={()=>{previewRevision.current=0;preview()}} hidden={view!=='preview'}/>}
-          {recipe && view==='original' && <img className="rh-fit-original" src={recipe.url} alt="Original source before placement adjustments"/>}
-          {view==='crop'&&recipe&&<HairClawCrop url={recipe.url} width={recipe.width} height={recipe.height} value={recipe.crop||emptyCrop} disabled={busy} onCommit={crop=>{change({crop});setView('crop')}}/>}
-          {view==='preview'&&(!recipe||size==='2'||!previewUrl)&&<div className="rh-fit-empty"><FitIcon name="image"/><span>{!recipe?'Choose a photo':size==='2'?'2-inch draft':'Connect preview'}</span><FitHelp label="Preview availability">{!recipe?'Choose a photo in the Photo panel, or upload new artwork.':size==='2'?'Save the fit as a draft. Preview is unavailable until the measured 2-inch plastic template is approved.':'Set the storefront origin under Connection to load the fitting canvas.'}</FitHelp></div>}
+        <div className="rh-fit-edit-surfaces">
+          <section className="rh-fit-surface" aria-label="Source crop">
+            <div className="rh-fit-surface-title"><FitIcon name="crop"/><span>Crop photo</span><FitHelp label="Crop photo">Draw around the wood or drag the crop squares. The original file is preserved. Cropping updates the fitted artwork without moving its pinned corners.</FitHelp></div>
+            <div className="rh-fit-source-canvas">{recipe?<HairClawCrop url={recipe.url} width={recipe.width} height={recipe.height} value={recipe.crop||emptyCrop} disabled={busy} onWorking={setInteracting} onCommit={crop=>change({crop})}/>:<div className="rh-fit-empty">Choose a photo</div>}</div>
+          </section>
+          <section className="rh-fit-surface" aria-label="Fitted artwork">
+            <div className="rh-fit-surface-title"><FitIcon name="corners"/><span>Fit artwork</span><FitHelp label="Fit artwork">Drag one square at a time. Your photo stays visible over the fixed claw guides. Fit view changes only the camera.</FitHelp></div>
+            <div className="rh-fit-canvas" ref={canvas}>
+              {recipe&&size==='4'&&previewUrl&&<iframe ref={frame} src={previewUrl} title="Interactive hair-claw image fitting" onLoad={()=>{previewRevision.current=0;preview()}}/>}
+              {(!recipe||size==='2'||!previewUrl)&&<div className="rh-fit-empty"><FitIcon name="image"/><span>{!recipe?'Choose a photo':size==='2'?'2-inch draft':'Connect preview'}</span><FitHelp label="Preview availability">{!recipe?'Choose a current product photo.':size==='2'?'Color previews await the measured 2-inch physical template.':'Set the storefront origin under Connection.'}</FitHelp></div>}
+            </div>
+          </section>
         </div>
         <div className="rh-fit-canvas-foot">
           <div className="rh-fit-mode"><FitIcon name="corners"/><span>{locked?'Corners pinned':'Place corners'}</span><FitHelp label="Corner fitting">{cornerHelp}</FitHelp></div>
-          <div className="rh-fit-toolrow"><FitHint tip="Fit the claw and all four corner handles in view without changing your artwork."><button type="button" className="rh-fit-button" disabled={busy||!recipe} onClick={()=>{setView('preview');frame.current?.contentWindow?.postMessage({type:'hair-claw-fit-view'},previewOrigin)}}>Fit view</button></FitHint><FitHint tip="Show or hide the fixed cut and engraving guides."><button type="button" className="rh-fit-button" aria-pressed={guides} onClick={()=>{setGuides(!guides);setView('preview')}}>Guides</button></FitHint><FitHint tip="Remove the corner fit and return to scale and rotation controls."><button type="button" className="rh-fit-quiet" aria-label="Reset corner fit" disabled={busy||!locked} onClick={()=>change({corners:undefined})}><FitIcon name="reset"/>Reset corners</button></FitHint></div>
+          <div className="rh-fit-toolrow"><FitHint tip="Bring the claw and all four artwork corners into view. Crop and placement stay unchanged."><button type="button" className="rh-fit-button" disabled={busy||!recipe} onClick={()=>frame.current?.contentWindow?.postMessage({type:'hair-claw-fit-view'},previewOrigin)}>Fit view</button></FitHint><FitHint tip="Toggle fixed cut and engraving guides in this workspace."><button type="button" className="rh-fit-button" aria-pressed={guides} onClick={()=>setGuides(!guides)}>Guides</button></FitHint><FitHint tip="Remove corner pinning to use scale and rotation again."><button type="button" className="rh-fit-quiet" aria-label="Reset corner fit" disabled={busy||!locked} onClick={()=>change({corners:undefined})}><FitIcon name="reset"/>Reset corners</button></FitHint></div>
         </div>
       </section>
       <section className="rh-fit-inspector" aria-label="Image adjustments">
@@ -204,7 +212,6 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
             <div className="rh-fit-mirrors"><FitHint tip="Mirror the artwork horizontally. The handle side and corner placement stay unchanged."><button type="button" className="rh-fit-button" disabled={busy} aria-label="Mirror artwork horizontally" aria-pressed={recipe.mirror_x===true} onClick={()=>change({mirror_x:!recipe.mirror_x})}><FitIcon name="flipH"/>Flip H</button></FitHint><FitHint tip="Mirror the artwork vertically. The handle side and corner placement stay unchanged."><button type="button" className="rh-fit-button" disabled={busy} aria-label="Mirror artwork vertically" aria-pressed={recipe.mirror_y===true} onClick={()=>change({mirror_y:!recipe.mirror_y})}><FitIcon name="flipV"/>Flip V</button></FitHint></div>
           </section>
           <details className="rh-fit-accordion"><summary><span><FitIcon name="crop"/>Crop</span><FitIcon name="arrow"/></summary><div className="rh-fit-accordion-body">
-            <button type="button" className="rh-fit-button" disabled={busy} onClick={()=>setView('crop')}><FitIcon name="crop"/>Crop on photo</button>
             <div className="rh-fit-subtitle">Source edges<FitHelp label="Crop source">Trim the source background and original plastic handle before fitting the wood. Percentages are measured from the original photo. Your original stays unchanged.</FitHelp></div>
             {(['top','bottom','left','right'] as const).map(edge=>{
               const crop=recipe.crop||emptyCrop,other={top:'bottom',bottom:'top',left:'right',right:'left'}[edge] as keyof Crop
@@ -223,14 +230,14 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
             <button type="button" className="rh-fit-quiet" disabled={busy||locked} onClick={()=>change({skew_x:0,skew_y:0})}><FitIcon name="reset"/>Reset skew</button>
           </div></details>
         </>}
-        <details className="rh-fit-accordion"><summary><span><FitIcon name="upload"/>Upload photo</span><FitIcon name="arrow"/></summary><div className="rh-fit-accordion-body"><HairClawPhotoUpload key={`${productId}-${size}`} size={size} disabled={busy} onWorking={setBusy} onAccept={result=>{setRecipe({...result,...defaults,source_rotation:result.vertical?270:0,vertical:true});setDirty(true);setView('preview');setErrorLabel(null);setNotice('Prepared overlay loaded. Adjust its fit, then review and save.')}}/></div></details>
-        <details className="rh-fit-accordion"><summary><span><FitIcon name="link"/>Connection</span><FitIcon name="arrow"/></summary><div className="rh-fit-accordion-body"><div className="rh-fit-subtitle">Storefront<FitHelp label="Preview connection">The storefront origin serves the shared fitting canvas. Use the local or staging storefront address.</FitHelp></div><label className="rh-fit-field">Origin<input type="url" aria-label="Storefront origin" value={origin} onChange={e=>setOrigin(e.target.value)} placeholder="https://staging.rustichalo.com"/></label><FitHint tip="Remove only the saved fit for this size when you next save. Product photos and original files are kept."><button type="button" className="rh-fit-quiet" disabled={busy||(!recipe&&!savedFor(settings,size))} onClick={()=>{setRecipe(null);setView('preview');setDirty(true);setErrorLabel(null)}}><FitIcon name="trash"/>Remove fit</button></FitHint></div></details>
+        <details className="rh-fit-accordion"><summary><span><FitIcon name="upload"/>Upload photo</span><FitIcon name="arrow"/></summary><div className="rh-fit-accordion-body"><HairClawPhotoUpload key={`${productId}-${size}`} size={size} disabled={busy} onWorking={setBusy} onAccept={result=>{setRecipe({...result,...defaults,source_rotation:result.vertical?270:0,vertical:true});setDirty(true);setErrorLabel(null);setNotice('Prepared overlay loaded. Adjust its fit, then review and save.')}}/></div></details>
+        <details className="rh-fit-accordion"><summary><span><FitIcon name="link"/>Connection</span><FitIcon name="arrow"/></summary><div className="rh-fit-accordion-body"><div className="rh-fit-subtitle">Storefront<FitHelp label="Preview connection">The storefront origin serves the shared fitting canvas. Use the local or staging storefront address.</FitHelp></div><label className="rh-fit-field">Origin<input type="url" aria-label="Storefront origin" value={origin} onChange={e=>setOrigin(e.target.value)} placeholder="https://staging.rustichalo.com"/></label><FitHint tip="Remove only the saved fit for this size when you next save. Product photos and original files are kept."><button type="button" className="rh-fit-quiet" disabled={busy||(!recipe&&!savedFor(settings,size))} onClick={()=>{setRecipe(null);setDirty(true);setErrorLabel(null)}}><FitIcon name="trash"/>Remove fit</button></FitHint></div></details>
       </section>
     </div>
     <footer className="rh-fit-savebar">
       <div className="rh-fit-status" data-state={state}><span className="rh-fit-status-dot"/><span>{stateLabel}</span><FitHelp label="Status">{notice}</FitHelp><span className="rh-fit-sr" role={errorLabel?'alert':'status'} aria-live={errorLabel?'assertive':'polite'}>{notice}</span></div>
-      <div className="rh-fit-toolrow"><label className="rh-fit-publish"><input disabled={busy||size==='2'||!recipe} type="checkbox" aria-label="Enable reviewed preview" checked={recipe?.enabled||false} onChange={e=>change({enabled:e.target.checked})}/>Enable preview</label><FitHelp label="Enable preview">{size==='2'?'The 2-inch size is draft-only until its measured plastic template is approved.':'Check only after reviewing the fit. Saving will enable it for every preview color of this size. Saving a draft keeps the last enabled storefront fit in place.'}</FitHelp></div>
-      <div className="rh-fit-save-actions"><FitHint tip="Restore the last saved fit or draft and discard current adjustments."><button type="button" className="rh-fit-quiet" disabled={busy||interacting||!dirty} onClick={()=>{setRecipe(editable(savedFor(settings,size)));setDirty(false);setErrorLabel(null);setNotice('Saved settings restored.')}}>Discard</button></FitHint><button type="button" className="rh-fit-button rh-fit-primary" disabled={busy||interacting||!dirty} onClick={save}>{busy?'Working…':!recipe?'Save changes':recipe.enabled?'Save & enable':'Save draft'}</button></div>
+      <div className="rh-fit-mode"><FitIcon name="check"/><span>{size==='4'?'One fit · all colors':'2-inch draft'}</span><FitHelp label="All colors">Save all colors enables this fitted artwork across the complete preview palette for this product. The same corners, crop and mirrors are reused. Save draft keeps it private until you finish.</FitHelp></div>
+      <div className="rh-fit-save-actions"><FitHint tip="Restore the last saved fit or draft."><button type="button" className="rh-fit-quiet" disabled={busy||interacting||!dirty} onClick={()=>{setRecipe(editable(savedFor(settings,size)));setDirty(false);setErrorLabel(null);setNotice('Saved settings restored.')}}>Discard</button></FitHint>{size==='4'&&recipe&&<button type="button" className="rh-fit-button" disabled={busy||interacting||!dirty} onClick={()=>void save(false)}>Save draft</button>}<button type="button" className="rh-fit-button rh-fit-primary" disabled={busy||interacting||!dirty} onClick={()=>void save(size==='4')}>{busy?'Working…':!recipe?'Save changes':size==='4'?'Save all colors':'Save draft'}</button></div>
     </footer>
   </section></TooltipProvider>
 }

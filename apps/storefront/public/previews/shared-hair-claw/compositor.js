@@ -1,6 +1,6 @@
 // Prototype: one solid shared 13-color body and one photo per design.
 // SVG clipping preserves the source photographs; no per-design recolors are made.
-import { renderEditorClaw } from './editor-claw.js?v=editor6'
+import { renderEditorClaw } from './editor-claw.js?v=editor7'
 import { overlayOutline } from './overlay-outline.js?v=20260928-svg5'
 import { polygon, bounds, fitPhoto } from './fit-outline.js?v=20260929-batch9'
 export const colors = [
@@ -71,8 +71,8 @@ const fixedOutline = target.map(([x,y],i)=>`${i?'L':'M'}${x},${y}`).join(' ')+' 
 const fittedPhotos = Object.fromEntries(Object.entries(designs).map(([key, design])=>[key,fitPhoto(design,target)]))
 
 // The ids must be unique when several previews appear on the same page.
-export function renderClaw({ designId, colorSlug, showOverlay = true, showOutline = true, vertical = false, scale = 1, id = "preview", uploaded = null, interactive = false }) {
-  if (uploaded?.editor_version === 2) return renderEditorClaw({recipe:uploaded,color:colors.find(c=>c.slug===colorSlug)||colors[6],outline:showOutline,id,interactive})
+export function renderClaw({ designId, colorSlug, showOverlay = true, showOutline = true, vertical = false, scale = 1, id = "preview", uploaded = null, interactive = false, editing = false }) {
+  if (uploaded?.editor_version === 2) return renderEditorClaw({recipe:uploaded,color:colors.find(c=>c.slug===colorSlug)||colors[6],outline:showOutline,id,interactive,editing})
   const design = uploaded ? { name: 'Uploaded wood overlay' } : designs[designId]
   const color = colors.find((item) => item.slug === colorSlug)
   if (!design || !color || !/^[a-z0-9-]+$/i.test(id)) throw new Error("Invalid preview recipe")

@@ -3,7 +3,7 @@ type Crop = {top:number;bottom:number;left:number;right:number}
 const clamp=(n:number,min:number,max:number)=>Math.min(max,Math.max(min,n))
 
 // Direct DOM updates keep cropping independent of the expensive claw preview.
-export default function HairClawCrop({url,width,height,value,disabled,onCommit}:{url:string;width:number;height:number;value:Crop;disabled:boolean;onCommit:(crop:Crop)=>void}) {
+export default function HairClawCrop({url,width,height,value,disabled,onCommit,onWorking}:{url:string;width:number;height:number;value:Crop;disabled:boolean;onWorking?:(active:boolean)=>void;onCommit:(crop:Crop)=>void}) {
   const outer=useRef<HTMLDivElement>(null),photo=useRef<HTMLDivElement>(null),box=useRef<HTMLDivElement>(null)
   const draft=useRef(value),frame=useRef(0)
   const drag=useRef<{id:number;corner:string;rect:DOMRect;start:{x:number;y:number};crop:Crop}|null>(null)
@@ -26,14 +26,14 @@ export default function HairClawCrop({url,width,height,value,disabled,onCommit}:
   },[width,height])
   const finish=()=>{
     if(!drag.current)return
-    drag.current=null;cancelAnimationFrame(frame.current);frame.current=0;draw();onCommit({...draft.current})
+    drag.current=null;cancelAnimationFrame(frame.current);frame.current=0;draw();onCommit({...draft.current});onWorking?.(false)
   }
   return <div className="rh-fit-crop-view" ref={outer}>
     <div className="rh-fit-crop-photo" ref={photo} onPointerDown={event=>{
       if(disabled||event.button!==0||!photo.current)return
       const rect=photo.current.getBoundingClientRect(),target=event.target as HTMLElement
       const corner=target.closest<HTMLElement>('[data-crop-corner]')?.dataset.cropCorner||'new'
-      event.preventDefault();photo.current.setPointerCapture(event.pointerId)
+      event.preventDefault();photo.current.setPointerCapture(event.pointerId);onWorking?.(true)
       drag.current={id:event.pointerId,corner,rect,crop:{...draft.current},start:{x:clamp((event.clientX-rect.left)/rect.width*100,0,100),y:clamp((event.clientY-rect.top)/rect.height*100,0,100)}}
     }} onPointerMove={event=>{
       const d=drag.current;if(!d||d.id!==event.pointerId)return
