@@ -1,0 +1,76 @@
+import { renderClaw } from './compositor.js?v=editor3'
+import { placement } from './editor-claw.js?v=editor3'
+import { validCorners } from './editor-transform.js'
+const stage=document.getElementById('preview')
+let data=null,parentOrigin=null,drag=null
+const clamp=(n,min,max)=>Math.min(max,Math.max(min,n))
+const round=n=>Math.round(n*1000)/1000
+function send(type,extra={}) {if(parentOrigin)window.parent.postMessage({type,...extra},parentOrigin)}
+function draw() {
+  if(!data?.recipe){stage.textContent='Choose an image to begin fitting.';return}
+  if(data.size!=='4'){stage.textContent='2-inch preview awaits its measured physical template. Save placement as a draft.';return}
+  try {
+    const focusedCorner=stage.contains(document.activeElement)?document.activeElement?.dataset?.corner:undefined
+    stage.innerHTML=renderClaw({colorSlug:data.color,uploaded:data.recipe,scale:data.recipe.scale,vertical:data.recipe.vertical,showOutline:data.outline===true,id:'uploaded'})
+    stage.dataset.editable=String(data.editable===true)
+    stage.querySelector('image,img')?.addEventListener('error',()=>{stage.textContent='Source image could not load.';send('hair-claw-preview-error')},{once:true})
+    if(data.editable&&data.recipe.editor_version===2) {
+      const {corners}=placement(data.recipe),top={x:(corners[0].x+corners[1].x)/2,y:(corners[0].y+corners[1].y)/2-6}
+      stage.querySelector('[data-selection]').innerHTML=`<polygon points="${corners.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="#527c96" stroke-width=".3" stroke-dasharray="1 1" pointer-events="none"/>${corners.map((p,i)=>`<rect data-action="corner" data-corner="${i}" tabindex="0" role="button" aria-label="Artwork corner ${i+1}. Drag or use arrow keys to place this corner." x="${p.x-2.4}" y="${p.y-2.4}" width="4.8" height="4.8" rx=".6" fill="white" stroke="#527c96" stroke-width=".4"/>`).join('')}${!data.recipe.corners?`<circle data-action="rotate" cx="${top.x}" cy="${top.y}" r="2" fill="white" stroke="#527c96" stroke-width=".4"/>`:''}`
+      if(focusedCorner!==undefined)stage.querySelector(`[data-corner="${focusedCorner}"]`)?.focus({preventScroll:true})
+    }
+  } catch {stage.textContent='This overlay could not be displayed. Check its image and alignment.';send('hair-claw-preview-error')}
+}
+window.addEventListener('message',event=>{
+  if(event.source!==window.parent||event.data?.type!=='hair-claw-preview'||event.origin==='null')return
+  if(parentOrigin&&event.origin!==parentOrigin)return
+  parentOrigin=event.origin;data=event.data;if(!data.editable)drag=null;draw()
+})
+function edit(patch) {data={...data,recipe:{...data.recipe,...patch}};draw();send('hair-claw-placement',{patch})}
+function point(event,matrix) {return new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix)}
+function movePatch(r,dx,dy) {
+  dx=clamp(dx,-120-r.x,120-r.x);dy=clamp(dy,-120-r.y,120-r.y)
+  if(r.corners) {
+    dx=clamp(dx,-240-Math.min(...r.corners.map(p=>p.x)),240-Math.max(...r.corners.map(p=>p.x)))
+    dy=clamp(dy,-240-Math.min(...r.corners.map(p=>p.y)),240-Math.max(...r.corners.map(p=>p.y)))
+  }
+  return {x:round(r.x+dx),y:round(r.y+dy),...(r.corners?{corners:r.corners.map(p=>({x:p.x+dx,y:p.y+dy}))}:{})}
+}
+function cornerPatch(corners,index,dx,dy) {
+  const next=corners.map((p,i)=>i===index?{x:round(clamp(p.x+dx,-240,240)),y:round(clamp(p.y+dy,-240,240))}:{...p})
+  return validCorners(next)?{corners:next}:null
+}
+stage.addEventListener('pointerdown',event=>{
+  if(!data?.editable||data.recipe.editor_version!==2||event.button!==0)return
+  const assembly=stage.querySelector('[data-assembly]');if(!assembly)return
+  const inverse=assembly.getScreenCTM().inverse(),start=point(event,inverse),r=data.recipe,p=placement(r)
+  const handle=event.target.closest('[data-action]')
+  drag={id:event.pointerId,inverse,start,recipe:{...r},corners:p.corners,corner:Number(handle?.dataset.corner),cx:p.cx,cy:p.cy,action:handle?.dataset.action||'move'}
+  event.preventDefault();stage.setPointerCapture(event.pointerId);stage.focus({preventScroll:true})
+})
+stage.addEventListener('pointermove',event=>{
+  if(drag?.id!==event.pointerId)return
+  const p=point(event,drag.inverse),r=drag.recipe
+  if(drag.action==='corner') {
+    const patch=cornerPatch(drag.corners,drag.corner,p.x-drag.start.x,p.y-drag.start.y)
+    if(patch)edit(patch)
+  } else if(drag.action==='rotate') {
+    const delta=(Math.atan2(p.y-drag.cy,p.x-drag.cx)-Math.atan2(drag.start.y-drag.cy,drag.start.x-drag.cx))*180/Math.PI
+    edit({rotation:round(((r.rotation||0)+delta+540)%360-180)})
+  } else edit(movePatch(r,p.x-drag.start.x,p.y-drag.start.y))
+})
+for(const name of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(name,()=>{drag=null})
+stage.addEventListener('keydown',event=>{
+  if(!data?.editable||!data.recipe||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return
+  event.preventDefault();const r=data.recipe,n=event.shiftKey?1:.1
+  const assembly=stage.querySelector('[data-assembly]');if(!assembly)return
+  const inverse=assembly.getScreenCTM().inverse(),dx=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0,dy=event.key==='ArrowUp'?-1:event.key==='ArrowDown'?1:0
+  const vx=inverse.a*dx+inverse.c*dy,vy=inverse.b*dx+inverse.d*dy,length=Math.hypot(vx,vy)
+  const corner=event.target.closest('[data-corner]')
+  const patch=corner?cornerPatch(placement(r).corners,Number(corner.dataset.corner),n*vx/length,n*vy/length):movePatch(r,n*vx/length,n*vy/length)
+  if(patch) {
+    edit(patch)
+    if(corner)stage.querySelector(`[data-corner="${corner.dataset.corner}"]`)?.focus({preventScroll:true})
+  }
+})
+window.parent.postMessage({type:'hair-claw-preview-ready'},'*')

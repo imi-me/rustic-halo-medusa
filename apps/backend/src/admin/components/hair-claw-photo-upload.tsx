@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Text } from '@medusajs/ui'
+import { FitHelp, FitIcon, FitHint } from './hair-claw-ui'
 
 type Candidate={content:string;original_preview:string;width:number;height:number;vertical:boolean;warnings:string[]}
 const initial={tolerance:40,rotation:0,crop:{top:0,bottom:0,left:0,right:0}}
@@ -41,34 +41,30 @@ export default function HairClawPhotoUpload({size,disabled,onAccept,onWorking}:{
     } catch(error){setMessage((error as Error).message)}finally{working(false)}
   }
   function adjust(next:typeof options){setOptions(next);setChanged(true);setReviewed(false)}
-  return <section aria-label="Upload and prepare a wood photo" className="space-y-4">
-    <div style={{border:'2px dashed #aaa',borderRadius:12,padding:24}} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(!busy&&!disabled)void choose(e.dataTransfer.files[0])}}>
-      <label style={{display:'block',fontWeight:600}}>Upload a photo
-        <input className="block mt-3" disabled={busy||disabled} type="file" accept="image/heic,image/heif,image/jpeg,image/png,.heic,.heif,.jpg,.jpeg,.png" onChange={e=>{void choose(e.target.files?.[0]);e.target.value=''}} />
-      </label>
-      <Text>Choose from Photos or drop a HEIC, JPG, or PNG here (up to 24 MB / 60 MP).</Text>
-      <Text>Photograph the wood alone, straight-on, on a plain contrasting surface. Leave background visible around every edge.</Text>
-      <Text>Your original stays in Photos. The server processes it temporarily; only the approved, metadata-free cutout is stored as product media.</Text>
-    </div>
-    <p role="status" aria-live="polite">{message}{name ? ` — ${name}`:''}</p>
-    {source && <details><summary>Adjust background cleanup or crop</summary>
-      <label className="block">Cleanup strength: {options.tolerance}<input disabled={busy} type="range" min="10" max="100" value={options.tolerance} onChange={e=>adjust({...options,tolerance:Number(e.target.value)})}/></label>
-      <label className="block">Straighten: {options.rotation}°<input disabled={busy} type="range" min="-15" max="15" step="0.5" value={options.rotation} onChange={e=>adjust({...options,rotation:Number(e.target.value)})}/></label>
-      <Text>Crop percentages are measured from the upright original photo. Keep a little background around the wood.</Text>
-      {(['top','bottom','left','right'] as const).map(edge=><label className="block" key={edge}>Crop {edge}: {options.crop[edge]}%<input disabled={busy} type="range" min="0" max="45" value={options.crop[edge]} onChange={e=>adjust({...options,crop:{...options.crop,[edge]:Number(e.target.value)}})}/></label>)}
-      <Button disabled={busy} variant="secondary" onClick={()=>prepare()}>Apply cleanup</Button>
-    </details>}
-    {candidate && <>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16}}>
-        <figure><figcaption>Original photo (crop)</figcaption><img src={`data:image/png;base64,${candidate.original_preview}`} alt="Original wood photo before background removal" style={{width:'100%',maxHeight:350,objectFit:'contain'}}/></figure>
-        <figure><figcaption>Prepared wood overlay</figcaption><div style={checker}><img src={`data:image/png;base64,${candidate.content}`} alt="Prepared transparent wood cutout for edge review" style={{width:'100%',maxHeight:350,objectFit:'contain'}}/></div></figure>
+  return <section aria-label="Upload and prepare a wood photo" style={{display:'grid',gap:12}}>
+    <label className="rh-fit-drop" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();if(!busy&&!disabled)void choose(e.dataTransfer.files[0])}}>
+      <FitIcon name="upload"/><span>Choose or drop a photo</span>
+      <input className="rh-fit-sr" aria-label="Upload a photo" disabled={busy||disabled} type="file" accept="image/heic,image/heif,image/jpeg,image/png,.heic,.heif,.jpg,.jpeg,.png" onChange={e=>{void choose(e.target.files?.[0]);e.target.value=''}}/>
+    </label>
+    <div className="rh-fit-upload-status"><span>{name||'HEIC · JPG · PNG'}</span><FitHelp label="Photo upload">Use a photo up to 24 MB / 60 MP. Photograph the wood alone, straight-on, on a plain contrasting surface with background around each edge. Your original stays unchanged; only the reviewed, metadata-free cutout is stored.</FitHelp></div>
+    {message&&<div className="rh-fit-upload-status"><span>{busy?'Preparing…':candidate?'Ready to review':source?'Check photo':'Photo status'}</span><FitHelp label="Photo status">{message}</FitHelp><span className="rh-fit-sr" role="status" aria-live="polite">{message}</span></div>}
+    {source&&<details className="rh-fit-accordion"><summary><span><FitIcon name="tune"/>Cleanup</span><FitIcon name="arrow"/></summary><div className="rh-fit-accordion-body">
+      <div className="rh-fit-subtitle">Background<FitHelp label="Background cleanup">Crop percentages are measured from the upright original photo. Keep a little background around the wood. Apply changes before accepting the cutout.</FitHelp></div>
+      <label className="rh-fit-adjustment"><span>Strength</span><span style={{textAlign:'right'}}>{options.tolerance}</span><input aria-label="Cleanup strength" disabled={busy} type="range" min="10" max="100" value={options.tolerance} onChange={e=>adjust({...options,tolerance:Number(e.target.value)})}/></label>
+      <label className="rh-fit-adjustment"><span>Straighten (°)</span><span style={{textAlign:'right'}}>{options.rotation}</span><input aria-label="Photo straightening" disabled={busy} type="range" min="-15" max="15" step="0.5" value={options.rotation} onChange={e=>adjust({...options,rotation:Number(e.target.value)})}/></label>
+      {(['top','bottom','left','right'] as const).map(edge=><label className="rh-fit-adjustment" key={edge}><span>{edge[0].toUpperCase()+edge.slice(1)} (%)</span><span style={{textAlign:'right'}}>{options.crop[edge]}</span><input aria-label={`Cleanup crop ${edge}`} disabled={busy} type="range" min="0" max="45" value={options.crop[edge]} onChange={e=>adjust({...options,crop:{...options.crop,[edge]:Number(e.target.value)}})}/></label>)}
+      <button type="button" className="rh-fit-button" disabled={busy} onClick={()=>prepare()}>Apply cleanup</button>
+    </div></details>}
+    {candidate&&<>
+      <div className="rh-fit-upload-comparison">
+        <figure><figcaption>Original</figcaption><img src={`data:image/png;base64,${candidate.original_preview}`} alt="Original wood photo before background removal"/></figure>
+        <figure><figcaption>Cutout</figcaption><div style={checker}><img src={`data:image/png;base64,${candidate.content}`} alt="Prepared transparent wood cutout for edge review"/></div></figure>
       </div>
-      {candidate.warnings.map(w=><p key={w} style={{color:'#92400e'}}>{w}</p>)}
-      <Text>Check all edges and engraving. Plain-background cleanup is not guaranteed on patterned backgrounds or photos of the whole assembled claw.</Text>
-      {changed && <Text>Apply your cleanup changes before accepting.</Text>}
-      <label className="block"><input type="checkbox" disabled={busy||changed} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/> I checked the edges and the complete wood design.</label>
-      <Button disabled={busy||changed||!reviewed} onClick={accept}>Use this overlay</Button>
+      {candidate.warnings.length>0&&<div className="rh-fit-warning">Review edges<FitHelp label="Cutout warnings">{candidate.warnings.join(' ')}</FitHelp></div>}
+      {changed&&<div className="rh-fit-warning">Cleanup changed<FitHelp label="Pending cleanup">Apply your cleanup changes before accepting the cutout.</FitHelp></div>}
+      <div className="rh-fit-toolrow"><label className="rh-fit-publish"><input type="checkbox" disabled={busy||changed} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Edges reviewed</label><FitHelp label="Review cutout">Check every edge and the complete wood design. Plain-background cleanup may be unsuitable for patterned backgrounds or assembled-claw photos.</FitHelp></div>
+      <FitHint tip="Use the reviewed cutout in the fitting canvas. Save the fit separately when ready."><button type="button" className="rh-fit-button rh-fit-primary" disabled={busy||changed||!reviewed} onClick={accept}>Use cutout</button></FitHint>
     </>}
-    {source && <Button variant="secondary" disabled={busy} onClick={()=>{setCandidate(null);setSource('');setMessage('Photo discarded; saved overlay unchanged.');setName('')}}>Cancel photo</Button>}
+    {source&&<button type="button" className="rh-fit-quiet" disabled={busy} onClick={()=>{setCandidate(null);setSource('');setMessage('Photo discarded; saved overlay unchanged.');setName('')}}>Cancel photo</button>}
   </section>
 }
