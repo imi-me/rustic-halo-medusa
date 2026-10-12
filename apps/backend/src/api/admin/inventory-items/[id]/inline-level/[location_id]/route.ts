@@ -1,8 +1,8 @@
 import type { AuthenticatedMedusaRequest, MedusaResponse } from '@medusajs/framework/http'
 import { Modules } from '@medusajs/framework/utils'
-import { updateInventoryLevelsWorkflow } from '@medusajs/medusa/core-flows'
+import { updateInventoryLevelsWorkflow, deleteInventoryLevelsWorkflow } from '@medusajs/medusa/core-flows'
 import { allowedOrigin } from '../../../../assistant/route'
-import { validateStockEdit, assertStockRevision } from '../../../../../../lib/product-stock-edit'
+import { validateStockEdit, assertStockRevision, assertStockRemoval } from '../../../../../../lib/product-stock-edit'
 
 export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResponse) {
   res.setHeader('Cache-Control', 'no-store')
@@ -26,4 +26,20 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
   } catch (error) {
     return res.status((error as Error).name === 'StockConflict' ? 409 : 400).json({ message: (error as Error).message || 'Stock could not be confirmed. Reload quantities before retrying.' })
   }
+}
+
+export async function DELETE(req: AuthenticatedMedusaRequest<any>, res: MedusaResponse) {
+  res.setHeader('Cache-Control', 'no-store')
+  if (!req.auth_context?.actor_id || req.auth_context.actor_type !== 'user') return res.sendStatus(401)
+  if (!allowedOrigin(req)) return res.sendStatus(403)
+  try {
+    const edit = validateStockEdit({ ...req.body, stocked_quantity: 0 })
+    const inventory = req.scope.resolve(Modules.INVENTORY)
+    await req.scope.resolve(Modules.LOCKING).execute(req.params.id, async () => {
+      const level = await inventory.retrieveInventoryLevelByItemAndLocation(req.params.id, req.params.location_id)
+      assertStockRevision(level, edit); assertStockRemoval(level)
+      await deleteInventoryLevelsWorkflow(req.scope).run({ input: { id: [level.id] } })
+    })
+    return res.json({ deleted: true })
+  } catch (error) { return res.status((error as Error).name === 'StockConflict' ? 409 : 400).json({ message: (error as Error).message || 'Location removal could not be confirmed. Reload stock before retrying.' }) }
 }

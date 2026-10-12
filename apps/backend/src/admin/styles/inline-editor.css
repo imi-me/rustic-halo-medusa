@@ -85,3 +85,17 @@
 .rh-stock-fields small { display: block; }
 @media(max-width: 950px) { .rh-variant-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media(max-width: 600px) { .rh-variant-row { grid-template-columns: minmax(0, 1fr); } }
+.rh-price-rules-cell { grid-column: 1 / -1; border-top: 1px dashed #dce1eb; padding-top: 14px; }
+.rh-variant-pricing .rh-inline-section-heading h3 { margin: 0; font-size: 13px; }
+.rh-price-rule-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px 0; }
+.rh-price-rule-row > button { align-self: end; }
+.rh-price-base-note { align-self: center; }
+.rh-stock-fields fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.rh-stock-fields .rh-stock-check { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+#medusa .rh-stock-check input { width: 16px; height: 16px; accent-color: #3546d8; padding: 0; }
+.rh-stock-item { border-top: 1px solid #e0e5ef; padding: 12px 0; }
+.rh-stock-item > strong { display: block; margin-bottom: 8px; font-size: 12px; }
+#medusa .rh-stock-item button { padding: 5px 8px; font-size: 11px; margin-bottom: 10px; }
+.rh-stock-removing { background: #fff8ee; border-radius: 12px; padding: 10px; }
+.rh-stock-search button { display: block; width: 100%; text-align: left; margin-top: 6px; }
+@media(max-width: 600px) { .rh-price-rule-row { grid-template-columns: minmax(0, 1fr); } }

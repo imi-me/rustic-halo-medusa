@@ -1,3 +1,4 @@
+import { priceRows, pricePayload, type PriceRow } from './product-prices'
 export type Entity = Record<string, any>
 export type Price = { id: string; amount: number; currency_code: string; min_quantity?: number | null; max_quantity?: number | null; rules?: Record<string, string> }
 export type ProductDraft = {
@@ -5,7 +6,7 @@ export type ProductDraft = {
   thumbnail: string
   fields: Record<string, string | boolean>
   relations: Record<string, string[]>
-  variants: Array<{ id: string; fields: Record<string, string>; prices: Record<string, string> }>
+  variants: Array<{ id: string; fields: Record<string, string | boolean>; prices: Record<string, string>; priceRows: PriceRow[] }>
 }
 export const productTextFields = ['title', 'subtitle', 'handle', 'description', 'material', 'status', 'weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code', 'collection_id', 'type_id', 'shipping_profile_id']
 export const variantTextFields = ['title', 'sku', 'barcode', 'ean', 'upc']
@@ -23,8 +24,9 @@ export function productDraft(product: Entity): ProductDraft {
     fields: { ...Object.fromEntries(productTextFields.map(key => [key, text(key === 'shipping_profile_id' ? product.shipping_profile?.id ?? product[key] : product[key])])), discountable: Boolean(product.discountable) },
     relations: Object.fromEntries(['categories', 'tags', 'sales_channels'].map(key => [key, ids(product[key])])),
     variants: (product.variants ?? []).map((variant: Entity) => ({ id: variant.id,
-      fields: Object.fromEntries(variantTextFields.map(key => [key, text(variant[key])])),
-      prices: Object.fromEntries((variant.prices ?? []).filter(isBasePrice).map((price: Price) => [price.id, text(price.amount)])),
+      fields: { ...Object.fromEntries(variantTextFields.map(key => [key, text(variant[key])])), manage_inventory: Boolean(variant.manage_inventory), allow_backorder: Boolean(variant.allow_backorder) },
+      prices: Object.fromEntries((variant.prices ?? []).map((price: Price) => [price.id, text(price.amount)])),
+      priceRows: priceRows(variant.prices),
     })),
   }
 }
@@ -67,24 +69,18 @@ export function productUpdate(product: Entity, draft: ProductDraft): Entity {
     const patch: Entity = { id: variant.id }
     for (const key of variantTextFields) {
       if (edited.fields[key] === before.fields[key]) continue
-      const value = edited.fields[key].trim()
+      const value = String(edited.fields[key]).trim()
       if (key === 'title' && !value) throw new Error('Every variant needs a title.')
       patch[key] = value || null
       variantChanged = true
     }
-    if (!equal(before.prices, edited.prices)) {
-      if (!equal(Object.keys(before.prices).sort(), Object.keys(edited.prices).sort())) throw new Error('Prices changed. Reload this product before editing.')
-      // Keep regional and quantity-tier prices intact. Blank values are rejected
-      // rather than interpreted as deletions or free products.
-      patch.prices = (variant.prices ?? []).map((price: Price) => {
-        let amount = price.amount
-        if (isBasePrice(price)) {
-          const value = edited.prices[price.id].trim()
-          if (!value || !Number.isFinite(Number(value)) || Number(value) < 0) throw new Error('Each price must be zero or a positive number. To remove a price, use the pricing tool.')
-          amount = Number(value)
-        }
-        return { id: price.id, amount, currency_code: price.currency_code, min_quantity: price.min_quantity, max_quantity: price.max_quantity, rules: price.rules ?? {} }
-      })
+    for (const key of ['manage_inventory', 'allow_backorder']) {
+      if (edited.fields[key] !== before.fields[key]) { patch[key] = Boolean(edited.fields[key]); variantChanged = true }
+    }
+    if (!equal(before.prices, edited.prices) || !equal(before.priceRows, edited.priceRows)) {
+      // The price array replaces normal variant prices; retain every untouched
+      // regional and tier row, with its existing ID and rules.
+      patch.prices = pricePayload(variant.prices ?? [], edited.priceRows, edited.prices)
       variantChanged = true
     }
     return patch
@@ -114,9 +110,9 @@ export function orderUpdate(order: Entity, draft: OrderDraft): Entity {
   return update
 }
 
-export async function adminRequest(url: string, body?: Entity) {
+export async function adminRequest(url: string, body?: Entity, method: 'POST' | 'DELETE' = 'POST') {
   const response = await fetch(url, { credentials: 'include', cache: 'no-store',
-    ...(body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+    ...(body ? { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(data.message ?? `Request failed (${response.status}). Your draft is still here.`)

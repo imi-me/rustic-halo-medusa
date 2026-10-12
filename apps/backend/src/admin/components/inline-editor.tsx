@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from 'react-router-dom'
-import { addressFields, adminRequest, hasChanges, inlineRecordUrl, isBasePrice, orderDraft, productDraft, productUpdate, saveInline, type Entity, type OrderDraft, type Price, type ProductDraft } from '../lib/inline-edit'
+import { addressFields, adminRequest, hasChanges, inlineRecordUrl, orderDraft, productDraft, productUpdate, saveInline, type Entity, type OrderDraft, type ProductDraft } from '../lib/inline-edit'
+import { ProductPricing, type PricingOptions } from './product-pricing'
+import { baseRow } from '../lib/product-prices'
 import { useProductStock } from './product-stock'
 import { DescriptionEditor } from './description-editor'
 import { ProductImages, uploadProductImage } from './product-images'
@@ -57,6 +59,7 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
   const [notice, setNotice] = useState('')
   const [choices, setChoices] = useState<Record<string, Choice[]>>({})
   const [missingChoices, setMissingChoices] = useState<string[]>([])
+  const [pricingOptions, setPricingOptions] = useState<PricingOptions>({ regions: [], currencies: [], error: '' })
   const [discard, setDiscard] = useState(false)
   const queryClient = useQueryClient()
   const formId = useId()
@@ -93,7 +96,12 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
       setRecord(next); setDraft(normalizer(next))
       if (kind === 'products') {
         const results = await Promise.allSettled(lookups.map(loadChoices))
-        await stock.load(id)
+        await Promise.all([stock.load(id), (async () => {
+          try {
+            const [regions, stores] = await Promise.all([adminRequest('/admin/regions?limit=9999&fields=id,name,currency_code'), adminRequest('/admin/stores')])
+            if (token === generation.current) setPricingOptions({ regions: regions.regions, currencies: (stores.stores?.[0]?.supported_currencies ?? []).map((currency: Entity) => currency.currency_code), error: '' })
+          } catch { if (token === generation.current) setPricingOptions({ regions: [], currencies: [], error: 'Could not load currencies and regions. Existing price amounts remain editable.' }) }
+        })()])
         if (token !== generation.current) return
         const options: Record<string, Choice[]> = {}
         const missing: string[] = []
@@ -118,7 +126,7 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
     try {
       let prepared = draft
       if (kind === 'products') {
-        stock.validate()
+        stock.validate((draft as ProductDraft).variants)
         const product = draft as ProductDraft
         // Validate common fields before uploading. Uploads are staged until the
         // product POST attaches them; retry reuses each confirmed upload URL.
@@ -136,13 +144,14 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
       const saved = await saveInline(kind, record, prepared)
       if (persistent) { setRecord(saved); setDraft(normalizer(saved)); clearImages() }
       if (kind === 'products') {
-        try { await stock.save() }
+        try { await stock.save(id, (prepared as ProductDraft).variants) }
         catch (failure) { throw new Error(`Product fields and images saved. Remaining stock changes need attention: ${(failure as Error).message}`) }
       }
       // Medusa's native sections and list caches use these shared prefixes.
       await Promise.all([kind, ...(kind === 'products' ? ['product_variants', 'rh-product-suggestions', 'inventory_items', 'inventory_levels'] : ['order_preview', 'rh-order-suggestions'])].map(key => queryClient.invalidateQueries({ queryKey: [key] })))
       if (persistent) { setRecord(saved); setDraft(normalizer(saved)); setDiscard(false) }
       else close()
+      if (kind === 'products') await stock.load(id)
       setNotice('Changes saved.')
     } catch (failure) {
       const message = (failure as Error).message || 'Save could not be confirmed. Your draft is kept; check the record before retrying.'
@@ -192,11 +201,10 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
         <section className="rh-inline-card"><h2>Product details</h2><div className="rh-inline-grid"><div className="wide">{textField('title', p.fields, setProductField)}</div>{['subtitle', 'material'].map(key => textField(key, p.fields, setProductField))}<DescriptionEditor value={String(p.fields.description)} onChange={value => setProductField('description', value)}/><div className="wide">{textField('handle', p.fields, setProductField)}</div></div></section>
         <ProductImages draft={p} change={value => setDraft(value)} add={addImages}/>
         <section className="rh-inline-card wide rh-variants-card"><div className="rh-inline-section-heading"><h2>Variants, pricing & stock</h2><Link onClick={openTool} to={`/products/${id}/variants/create`}>+ Add variant</Link></div>{stock.error && <p className="rh-inline-error" role="status">Stock could not be loaded. Other fields can still be saved. {stock.error}</p>}{!p.variants.length && <p>No variants yet. Add a variant to set a SKU and price.</p>}<div className="rh-variant-table" role="table" aria-label="Variants, pricing and stock">{p.variants.map((variant, index) => {
-            const source = record.variants.find((item: Entity) => item.id === variant.id)
             const suffix = ` — variant ${index + 1}`
-            const change = (key: string, value: string, price = false) => setDraft(previous => ({ ...(previous as ProductDraft), variants: (previous as ProductDraft).variants.map(item => item.id === variant.id ? { ...item, [price ? 'prices' : 'fields']: { ...item[price ? 'prices' : 'fields'], [key]: value } } : item) }))
-            return <div className="rh-variant-row" role="row" key={variant.id}><div role="cell">{textField('title', variant.fields, change, suffix)}<details><summary>Additional identifiers</summary>{['ean', 'upc'].map(key => textField(key, variant.fields, change, suffix))}</details></div><div role="cell">{textField('sku', variant.fields, change, suffix)}{textField('barcode', variant.fields, change, suffix)}</div><div role="cell">{(source.prices ?? []).filter(isBasePrice).map((price: Price) => <label className="rh-inline-field" key={price.id}><span>Price ({price.currency_code.toUpperCase()})</span><input aria-label={`Price ${price.currency_code.toUpperCase()}${suffix}`} type="number" min="0" step="any" required value={variant.prices[price.id]} onChange={event => change(price.id, event.target.value, true)}/></label>)}{!(source.prices ?? []).some(isBasePrice) && <small>No base price. Use advanced pricing.</small>}</div><div role="cell">{stock.fields(variant.id)}</div></div>
-          })}</div><div className="rh-inline-links"><Link onClick={openTool} to={`/products/${id}/stock`}>Inventory tools</Link><Link onClick={openTool} to={`/products/${id}/prices`}>Advanced pricing</Link></div></section>
+            const change = (key: string, value: string | boolean, price = false) => setDraft(previous => ({ ...(previous as ProductDraft), variants: (previous as ProductDraft).variants.map(item => item.id === variant.id ? price ? { ...item, prices: { ...item.prices, [key]: String(value) } } : { ...item, fields: { ...item.fields, [key]: value } } : item) }))
+            return <div className="rh-variant-row" role="row" key={variant.id}><div role="cell">{textField('title', variant.fields, change, suffix)}<details><summary>Additional identifiers</summary>{['ean', 'upc'].map(key => textField(key, variant.fields, change, suffix))}</details></div><div role="cell">{textField('sku', variant.fields, change, suffix)}{textField('barcode', variant.fields, change, suffix)}</div><div role="cell">{(variant.priceRows ?? []).filter(baseRow).map(price => <label className="rh-inline-field" key={price.key}><span>Price ({price.currency_code.toUpperCase()})</span><input aria-label={`Price ${price.currency_code.toUpperCase()}${suffix}`} type="number" min="0" step="any" required value={variant.prices[price.key]} onChange={event => change(price.key, event.target.value, true)}/></label>)}{!variant.priceRows.some(baseRow) && <small>Add a price below.</small>}</div><div role="cell">{stock.fields(variant, (key, value) => change(key, value))}</div><div className="rh-price-rules-cell" role="cell"><ProductPricing variant={variant} options={pricingOptions} change={next => setDraft(previous => ({ ...(previous as ProductDraft), variants: (previous as ProductDraft).variants.map(row => row.id === variant.id ? next : row) }))}/></div></div>
+          })}</div></section>
         <section className="rh-inline-card"><h2>Publishing & organization</h2>{missingChoices.length > 0 && <p className="rh-inline-error" role="status">Could not load {missingChoices.join(', ')} options. Those fields are kept unchanged.</p>}<div className="rh-inline-grid"><label className="rh-inline-field"><span>Status</span><select aria-label="Status" value={String(p.fields.status)} onChange={event => setProductField('status', event.target.value)}>{['draft', 'proposed', 'published', 'rejected'].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select></label><label className="rh-inline-check"><input type="checkbox" checked={Boolean(p.fields.discountable)} onChange={event => setProductField('discountable', event.target.checked)}/>Allow discounts</label>{lookups.filter(lookup => lookup.key !== 'shipping_profile_id').map(relationField)}</div></section>
         <section className="rh-inline-card"><h2>Shipping</h2><div className="rh-inline-grid"><div className="wide">{relationField(lookups.find(lookup => lookup.key === 'shipping_profile_id')!)}</div>{['weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code'].map(key => textField(key, p.fields, setProductField))}</div></section>
       </> : <>

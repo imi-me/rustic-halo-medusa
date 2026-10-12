@@ -11,3 +11,7 @@ export function assertStockRevision(level: any, edit: StockEdit) {
   }
   if (edit.stocked_quantity < Number(level.reserved_quantity)) throw new Error('On-hand quantity cannot be below reserved stock. Manage reservations in the inventory tools.')
 }
+
+export function assertStockRemoval(level: any) {
+  if (Number(level.stocked_quantity) !== 0 || Number(level.reserved_quantity) !== 0 || Number(level.incoming_quantity ?? 0) !== 0) throw new Error('Only an empty stock location without reservations or incoming stock can be removed. Save zero stock first.')
+}

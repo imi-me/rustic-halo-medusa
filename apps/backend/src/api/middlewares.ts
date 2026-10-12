@@ -13,6 +13,11 @@ export default defineMiddlewares({
     policies: [{ resource: 'inventory_level', operation: PolicyOperation.update }],
     middlewares: [],
   }, {
+    matcher: '/admin/inventory-items/:id/inline-level/:location_id',
+    method: ['DELETE'],
+    policies: [{ resource: 'inventory_level', operation: PolicyOperation.delete }],
+    middlewares: [],
+  }, {
     // Medusa's native SSO button uses this route; use the same guarded start flow.
     matcher: '/auth/user/apple-staff',
     method: ['POST'],

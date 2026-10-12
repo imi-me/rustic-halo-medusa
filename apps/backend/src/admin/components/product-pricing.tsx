@@ -1,0 +1,21 @@
+import { type Entity, type ProductDraft } from '../lib/inline-edit'
+import { baseRow, type PriceRow } from '../lib/product-prices'
+type Variant = ProductDraft['variants'][number]
+export type PricingOptions = { regions: Entity[]; currencies: string[]; error: string }
+export function ProductPricing({ variant, change, options }: { variant: Variant; change: (variant: Variant) => void; options: PricingOptions }) {
+  const { regions, currencies, error } = options
+  const update = (key: string, fields: Partial<PriceRow>) => change({ ...variant, priceRows: variant.priceRows.map(row => row.key === key ? { ...row, ...fields } : row) })
+  const remove = (key: string) => { const prices = { ...variant.prices }; delete prices[key]; change({ ...variant, prices, priceRows: variant.priceRows.filter(row => row.key !== key) }) }
+  const add = () => {
+    const key = `new-${crypto.randomUUID()}`
+    change({ ...variant, prices: { ...variant.prices, [key]: '' }, priceRows: [...variant.priceRows, { key, currency_code: currencies[0] ?? 'usd', min_quantity: '', max_quantity: '', rules: {} }] })
+  }
+  return <div className="rh-variant-pricing"><div className="rh-inline-section-heading"><h3>Currency, regional & quantity pricing</h3><button type="button" onClick={add} disabled={!currencies.length}>+ Add price</button></div>{error && <p role="status">{error}</p>}{variant.priceRows.map((row, index) => <div className="rh-price-rule-row" key={row.key}>
+    <label className="rh-inline-field"><span>Currency</span><select aria-label={`Price currency — ${variant.fields.title} — price ${index + 1}`} value={row.currency_code} disabled={!currencies.length} onChange={event => { const rules = { ...row.rules }; delete rules.region_id; update(row.key, { currency_code: event.target.value, rules }) }}>{Array.from(new Set([...currencies, row.currency_code])).map(currency => <option key={currency} value={currency}>{currency.toUpperCase()}</option>)}</select></label>
+    <label className="rh-inline-field"><span>Region</span><select aria-label={`Price region — ${variant.fields.title} — price ${index + 1}`} value={row.rules.region_id ?? ''} disabled={Boolean(error)} onChange={event => { const rules = { ...row.rules }; delete rules.region_id; const region = regions.find(region => region.id === event.target.value); update(row.key, { rules: region ? { ...rules, region_id: region.id } : rules, ...(region ? { currency_code: region.currency_code } : {}) }) }}><option value="">All regions</option>{regions.map(region => <option key={region.id} value={region.id}>{region.name}</option>)}{row.rules.region_id && !regions.some(region => region.id === row.rules.region_id) && <option value={row.rules.region_id}>{row.rules.region_id}</option>}</select></label>
+    {!baseRow(row) ? <label className="rh-inline-field"><span>Price ({row.currency_code.toUpperCase()})</span><input aria-label={`Rule price — ${variant.fields.title} — price ${index + 1}`} type="number" min="0" step="any" required value={variant.prices[row.key]} onChange={event => change({ ...variant, prices: { ...variant.prices, [row.key]: event.target.value } })}/></label> : <small className="rh-price-base-note">Amount editable above</small>}
+    <label className="rh-inline-field"><span>Minimum quantity</span><input aria-label={`Minimum quantity — ${variant.fields.title} — price ${index + 1}`} type="number" min="1" step="1" placeholder="Any" value={row.min_quantity} onChange={event => update(row.key, { min_quantity: event.target.value })}/></label>
+    <label className="rh-inline-field"><span>Maximum quantity</span><input aria-label={`Maximum quantity — ${variant.fields.title} — price ${index + 1}`} type="number" min="1" step="1" placeholder="Any" value={row.max_quantity} onChange={event => update(row.key, { max_quantity: event.target.value })}/></label>
+    <button type="button" onClick={() => remove(row.key)} aria-label={`Remove price ${index + 1} — ${variant.fields.title}`}>Remove price</button>{Object.entries(row.rules).filter(([key]) => key !== 'region_id').map(([key, value]) => <small key={key}>{key}: {value}</small>)}
+  </div>)}{!variant.priceRows.length && <p>No prices. Add a price to make this variant available for purchase.</p>}<small>Removing a price takes effect when you save. Discard restores unsaved prices.</small></div>
+}
