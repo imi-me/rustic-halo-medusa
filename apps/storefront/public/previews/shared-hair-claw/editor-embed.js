@@ -1,6 +1,6 @@
-import { renderClaw } from './compositor.js?v=editor3'
-import { placement } from './editor-claw.js?v=editor3'
-import { validCorners } from './editor-transform.js'
+import { renderClaw } from './compositor.js?v=editor4'
+import { placement } from './editor-claw.js?v=editor4'
+import { validCorners } from './editor-transform.js?v=editor4'
 const stage=document.getElementById('preview')
 let data=null,parentOrigin=null,drag=null
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,n))
@@ -61,6 +61,7 @@ stage.addEventListener('pointermove',event=>{
 })
 for(const name of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(name,()=>{drag=null})
 stage.addEventListener('keydown',event=>{
+  if(data?.editable&&event.key==='Escape'){event.preventDefault();send('hair-claw-editor-close');return}
   if(!data?.editable||!data.recipe||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return
   event.preventDefault();const r=data.recipe,n=event.shiftKey?1:.1
   const assembly=stage.querySelector('[data-assembly]');if(!assembly)return

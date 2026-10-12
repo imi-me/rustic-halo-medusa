@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { TooltipProvider } from '@medusajs/ui'
 import HairClawPhotoUpload from './hair-claw-photo-upload'
 import { FitHelp, FitHint, FitIcon } from './hair-claw-ui'
@@ -33,7 +33,7 @@ async function api(path:string, body?:unknown) {
   if (!response.ok) throw Error(data.message || 'Request failed')
   return data
 }
-export default function HairClawEditor({productId}:{productId:string}) {
+export default function HairClawEditor({productId,onStateChange,onRequestClose,headerAction}:{productId:string;onStateChange?:(state:{dirty:boolean;busy:boolean})=>void;onRequestClose?:()=>void;headerAction?:ReactNode}) {
   const [settings,setSettings] = useState<Settings>({revision:null,recipes:{}})
   const [images,setImages] = useState<ProductImage[]>([])
   const [size,setSize] = useState('4')
@@ -48,8 +48,15 @@ export default function HairClawEditor({productId}:{productId:string}) {
   const [errorLabel,setErrorLabel] = useState<string|null>(null)
   const frame = useRef<HTMLIFrameElement>(null)
   const canvas = useRef<HTMLDivElement>(null)
+  useEffect(()=>onStateChange?.({dirty,busy}),[dirty,busy,onStateChange])
+  useEffect(()=>{
+    if(!dirty)return
+    const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=''}
+    window.addEventListener('beforeunload',warn)
+    return()=>window.removeEventListener('beforeunload',warn)
+  },[dirty])
   let previewUrl=''
-  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor3`} catch {}
+  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor4`} catch {}
   const previewOrigin = previewUrl ? new URL(previewUrl).origin : ''
   useEffect(()=>{
     let active=true
@@ -72,7 +79,7 @@ export default function HairClawEditor({productId}:{productId:string}) {
     const measure=()=>{
       cancelAnimationFrame(animation)
       animation=requestAnimationFrame(()=>{
-        const viewport=window.visualViewport?.height||window.innerHeight
+        const viewport=Math.min(window.visualViewport?.height||window.innerHeight,element.closest('.rh-fit-dialog')?.getBoundingClientRect().bottom||Infinity)
         const foot=studio.querySelector('.rh-fit-canvas-foot')?.getBoundingClientRect().height||54
         const save=studio.querySelector('.rh-fit-savebar')?.getBoundingClientRect().height||65
         const available=viewport-Math.max(18,element.getBoundingClientRect().top)-foot-save-24
@@ -108,6 +115,7 @@ export default function HairClawEditor({productId}:{productId:string}) {
     preview()
     const receive=(event:MessageEvent)=>{
       if (event.source !== frame.current?.contentWindow || event.origin !== previewOrigin) return
+      if (event.data?.type === 'hair-claw-editor-close') onRequestClose?.()
       if (event.data?.type === 'hair-claw-preview-ready') preview()
       if (event.data?.type === 'hair-claw-preview-error') {setNotice('Preview could not load. Choose another photo or check the preview connection.');setErrorLabel('Preview unavailable')}
       if (event.data?.type === 'hair-claw-placement' && !busy) {
@@ -123,7 +131,7 @@ export default function HairClawEditor({productId}:{productId:string}) {
     }
     window.addEventListener('message',receive)
     return ()=>window.removeEventListener('message',receive)
-  },[preview,previewOrigin,busy,change])
+  },[preview,previewOrigin,busy,change,onRequestClose])
   async function choosePhoto(photo:ProductImage) {
     setBusy(true)
     try {
@@ -156,7 +164,7 @@ export default function HairClawEditor({productId}:{productId:string}) {
   return <TooltipProvider><section className="rh-fit-studio" aria-label="Hair-claw image fitting">
     <header className="rh-fit-header">
       <div className="rh-fit-heading"><span className="rh-fit-heading-mark"><FitIcon name="corners"/></span><h2>Image fitting</h2><FitHelp label="Image fitting">Choose a current product photo or upload artwork. Crop to the wood, place the corners, then save. Your original photos stay unchanged.</FitHelp></div>
-      <label className="rh-fit-size"><span>Size</span><select aria-label="Physical size" disabled={busy||dirty} value={size} onChange={e=>{setSize(e.target.value);setRecipe(editable(savedFor(settings,e.target.value)));setView('preview');setErrorLabel(null)}}><option value="2">2 inch</option><option value="4">4 inch</option></select><FitHelp label="Physical size">{dirty?'Save or discard your changes before switching size.':size==='2'?'2-inch fits can be saved as drafts. Color previews are pending the measured plastic template.':'Each physical size has its own saved fit.'}</FitHelp></label>
+      <div className="rh-fit-header-actions"><label className="rh-fit-size"><span>Size</span><select aria-label="Physical size" disabled={busy||dirty} value={size} onChange={e=>{setSize(e.target.value);setRecipe(editable(savedFor(settings,e.target.value)));setView('preview');setErrorLabel(null)}}><option value="2">2 inch</option><option value="4">4 inch</option></select><FitHelp label="Physical size">{dirty?'Save or discard your changes before switching size.':size==='2'?'2-inch fits can be saved as drafts. Color previews are pending the measured plastic template.':'Each physical size has its own saved fit.'}</FitHelp></label>{headerAction}</div>
     </header>
     <div className="rh-fit-workspace">
       <section className="rh-fit-canvas-panel" aria-label="Adjusted claw preview">

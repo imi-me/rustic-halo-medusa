@@ -1,6 +1,6 @@
 // Prototype: one solid shared 13-color body and one photo per design.
 // SVG clipping preserves the source photographs; no per-design recolors are made.
-import { renderEditorClaw } from './editor-claw.js?v=editor3'
+import { renderEditorClaw } from './editor-claw.js?v=editor4'
 import { overlayOutline } from './overlay-outline.js?v=20260928-svg5'
 import { polygon, bounds, fitPhoto } from './fit-outline.js?v=20260929-batch9'
 export const colors = [

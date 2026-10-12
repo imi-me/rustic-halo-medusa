@@ -1,5 +1,5 @@
 import { geometry as g } from './editor-geometry.js'
-import { validCorners, perspectiveMatrix } from './editor-transform.js'
+import { validCorners, projectiveTriangles } from './editor-transform.js?v=editor4'
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))
 const finite = (n,min,max) => Number.isFinite(n) && n >= min && n <= max
 export function placement(recipe) {
@@ -26,10 +26,17 @@ export function placement(recipe) {
 function artwork(recipe,p,id,url) {
   const mx=recipe.mirror_x?-1:1,my=recipe.mirror_y?-1:1
   if (!recipe.corners) return `<g data-artwork transform="${p.transform}"><g clip-path="url(#${id}-crop)"><image data-artwork-mirror="${mx},${my}" transform="translate(${p.x+p.w/2} ${p.y+p.h/2}) scale(${mx} ${my}) translate(${-p.x-p.w/2} ${-p.y-p.h/2})" href="${esc(url)}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="xMidYMid meet"/></g></g>`
-  // A projective transform pins all four corners. One original image is retained;
-  // CSS rendering does not require downloading a cross-origin image as a texture.
-  const matrix=perspectiveMatrix(p.corners,p.w,p.h)
-  return `<foreignObject data-artwork data-corner-fit="true" x="-240" y="-240" width="480" height="480" pointer-events="none"><div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:480px;height:480px;overflow:visible"><div style="position:absolute;left:240px;top:240px;width:${p.w}px;height:${p.h}px;overflow:hidden;transform-origin:0 0;transform:matrix3d(${matrix.join(',')})"><div data-artwork-mirror="${mx},${my}" style="width:100%;height:100%;transform:scale(${mx},${my})"><img src="${esc(url)}" alt="Fitted original artwork" draggable="false" style="position:absolute;left:${-p.x}px;top:${-p.y}px;width:${recipe.width}px;height:${recipe.height}px;max-width:none;max-height:none"/></div></div></div></foreignObject>`
+  const tiles=projectiveTriangles(p.corners,p.w,p.h)
+  const face=p.corners.map(point=>`${point.x},${point.y}`).join(' ')
+  const clips=tiles.map((tile,i)=>{
+    const center=tile.target.reduce((sum,point)=>({x:sum.x+point.x/3,y:sum.y+point.y/3}),{x:0,y:0})
+    // A tiny overlap prevents antialiasing seams; the outer face clip retains
+    // the exact pinned perimeter and the fixed wood clip remains above it.
+    const points=tile.target.map(point=>{const length=Math.hypot(point.x-center.x,point.y-center.y);return `${point.x+(point.x-center.x)*.012/length},${point.y+(point.y-center.y)*.012/length}`}).join(' ')
+    return `<clipPath id="${id}-tile-${i}" clipPathUnits="userSpaceOnUse"><polygon points="${points}"/></clipPath>`
+  }).join('')
+  const mirror=`translate(${p.w/2} ${p.h/2}) scale(${mx} ${my}) translate(${-p.w/2} ${-p.h/2})`
+  return `<g data-artwork data-corner-fit="true" pointer-events="none"><defs><clipPath id="${id}-face"><polygon points="${face}"/></clipPath><g id="${id}-source" data-artwork-mirror="${mx},${my}" transform="${mirror}"><image href="${esc(url)}" x="${-p.x}" y="${-p.y}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="none"/></g>${clips}</defs><g clip-path="url(#${id}-face)">${tiles.map((tile,i)=>`<g clip-path="url(#${id}-tile-${i})"><use href="#${id}-source" transform="matrix(${tile.transform.join(' ')})"/></g>`).join('')}</g></g>`
 }
 export function renderEditorClaw({recipe,color,outline=false,id='uploaded'}) {
   if (!/^[a-z0-9-]+$/i.test(id)||!/^#[a-f0-9]{6}$/i.test(color.hex)) throw Error('Invalid renderer')
