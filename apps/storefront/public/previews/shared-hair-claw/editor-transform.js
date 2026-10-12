@@ -33,7 +33,8 @@ export function projectiveTriangles(points,width,height,{interactive=false}={}) 
     const target=source.map(map)
     const mids=source.map((p,i)=>middle(p,source[(i+1)%3]))
     const error=Math.max(...mids.map((p,i)=>{const actual=map(p),approx=middle(target[i],target[(i+1)%3]);return Math.hypot(actual.x-approx.x,actual.y-approx.y)}))
-    if(error>(interactive ? .2 : .025)&&depth<(interactive?3:5)) {
+    // Fixed topology avoids rebuilding the SVG mesh during a drag.
+    if(interactive ? depth<2 : error>.025&&depth<5) {
       const [a,b,c]=source,[ab,bc,ca]=mids
       for(const triangle of [[a,ab,ca],[ab,b,bc],[ca,bc,c],[ab,bc,ca]])add(triangle,depth+1)
       return

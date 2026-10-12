@@ -1,5 +1,5 @@
 import { geometry as g } from './editor-geometry.js'
-import { validCorners, projectiveTriangles } from './editor-transform.js?v=editor5'
+import { validCorners, projectiveTriangles } from './editor-transform.js?v=editor6'
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))
 const finite = (n,min,max) => Number.isFinite(n) && n >= min && n <= max
 export function placement(recipe) {
@@ -25,7 +25,7 @@ export function placement(recipe) {
 }
 function artwork(recipe,p,id,url,interactive) {
   const mx=recipe.mirror_x?-1:1,my=recipe.mirror_y?-1:1
-  if (!recipe.corners) return `<g data-artwork transform="${p.transform}"><g clip-path="url(#${id}-crop)"><image data-artwork-mirror="${mx},${my}" transform="translate(${p.x+p.w/2} ${p.y+p.h/2}) scale(${mx} ${my}) translate(${-p.x-p.w/2} ${-p.y-p.h/2})" href="${esc(url)}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="xMidYMid meet"/></g></g>`
+  if (!recipe.corners && !interactive) return `<g data-artwork transform="${p.transform}"><g clip-path="url(#${id}-crop)"><image data-artwork-mirror="${mx},${my}" transform="translate(${p.x+p.w/2} ${p.y+p.h/2}) scale(${mx} ${my}) translate(${-p.x-p.w/2} ${-p.y-p.h/2})" href="${esc(url)}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="xMidYMid meet"/></g></g>`
   const tiles=projectiveTriangles(p.corners,p.w,p.h,{interactive})
   const face=p.corners.map(point=>`${point.x},${point.y}`).join(' ')
   const clips=tiles.map((tile,i)=>{
@@ -33,10 +33,25 @@ function artwork(recipe,p,id,url,interactive) {
     // A tiny overlap prevents antialiasing seams; the outer face clip retains
     // the exact pinned perimeter and the fixed wood clip remains above it.
     const points=tile.target.map(point=>{const length=Math.hypot(point.x-center.x,point.y-center.y);return `${point.x+(point.x-center.x)*.012/length},${point.y+(point.y-center.y)*.012/length}`}).join(' ')
-    return `<clipPath id="${id}-tile-${i}" clipPathUnits="userSpaceOnUse"><polygon points="${points}"/></clipPath>`
+    return `<clipPath id="${id}-tile-${i}" clipPathUnits="userSpaceOnUse"><polygon data-artwork-tile="${i}" points="${points}"/></clipPath>`
   }).join('')
   const mirror=`translate(${p.w/2} ${p.h/2}) scale(${mx} ${my}) translate(${-p.w/2} ${-p.h/2})`
-  return `<g data-artwork data-corner-fit="true" pointer-events="none"><defs><clipPath id="${id}-face"><polygon points="${face}"/></clipPath><g id="${id}-source" data-artwork-mirror="${mx},${my}" transform="${mirror}"><image href="${esc(url)}" x="${-p.x}" y="${-p.y}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="none"/></g>${clips}</defs><g clip-path="url(#${id}-face)">${tiles.map((tile,i)=>`<g clip-path="url(#${id}-tile-${i})"><use href="#${id}-source" transform="matrix(${tile.transform.join(' ')})"/></g>`).join('')}</g></g>`
+  return `<g data-artwork data-corner-fit="true" pointer-events="none"><defs><clipPath id="${id}-face"><polygon data-artwork-face points="${face}"/></clipPath><g id="${id}-source" data-artwork-mirror="${mx},${my}" transform="${mirror}"><image href="${esc(url)}" x="${-p.x}" y="${-p.y}" width="${recipe.width}" height="${recipe.height}" preserveAspectRatio="none"/></g>${clips}</defs><g clip-path="url(#${id}-face)">${tiles.map((tile,i)=>`<g clip-path="url(#${id}-tile-${i})"><use data-artwork-use="${i}" href="#${id}-source" transform="matrix(${tile.transform.join(' ')})"/></g>`).join('')}</g></g>`
+}
+export function updateInteractiveArtwork(stage,recipe) {
+  const p=placement(recipe),tiles=projectiveTriangles(p.corners,p.w,p.h,{interactive:true})
+  const clips=stage.querySelectorAll('[data-artwork-tile]'),uses=stage.querySelectorAll('[data-artwork-use]')
+  if(clips.length!==tiles.length||uses.length!==tiles.length)return false
+  stage.querySelector('[data-artwork-face]').setAttribute('points',p.corners.map(p=>`${p.x},${p.y}`).join(' '))
+  tiles.forEach((tile,i)=>{
+    const center=tile.target.reduce((sum,p)=>({x:sum.x+p.x/3,y:sum.y+p.y/3}),{x:0,y:0})
+    clips[i].setAttribute('points',tile.target.map(p=>{
+      const length=Math.hypot(p.x-center.x,p.y-center.y)
+      return `${p.x+(p.x-center.x)*.012/length},${p.y+(p.y-center.y)*.012/length}`
+    }).join(' '))
+    uses[i].setAttribute('transform',`matrix(${tile.transform.join(' ')})`)
+  })
+  return true
 }
 export function renderEditorClaw({recipe,color,outline=false,id='uploaded',interactive=false}) {
   if (!/^[a-z0-9-]+$/i.test(id)||!/^#[a-f0-9]{6}$/i.test(color.hex)) throw Error('Invalid renderer')

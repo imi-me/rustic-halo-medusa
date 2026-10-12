@@ -1,12 +1,31 @@
-import { renderClaw } from './compositor.js?v=editor5'
-import { placement } from './editor-claw.js?v=editor5'
-import { validCorners } from './editor-transform.js?v=editor5'
+import { renderClaw } from './compositor.js?v=editor6'
+import { placement, updateInteractiveArtwork } from './editor-claw.js?v=editor6'
+import { validCorners } from './editor-transform.js?v=editor6'
+import { fittingView } from './editor-viewport.js?v=editor6'
 const stage=document.getElementById('preview')
 let data=null,parentOrigin=null,drag=null
-let animation=0,pendingPatch=null,renderedState='',editRevision=0
+let animation=0,pendingPatch=null,renderedState='',editRevision=0,viewport=null,interactiveReady=false,ending=false
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,n))
 const round=n=>Math.round(n*1000)/1000
 function send(type,extra={}) {if(parentOrigin)window.parent.postMessage({type,...extra},parentOrigin)}
+function selection() {
+  if(!data?.editable||data.recipe.editor_version!==2)return
+  const group=stage.querySelector('[data-selection]'),assembly=stage.querySelector('[data-assembly]')
+  const {corners}=placement(data.recipe),matrix=assembly.getScreenCTM()
+  if(!matrix)return
+  const unit=Math.hypot(matrix.a,matrix.b);if(!unit)return
+  const size=22/unit
+  if(!group.querySelector('polygon'))group.innerHTML=`<polygon fill="none" stroke="#527c96" stroke-dasharray="1 1" pointer-events="none"/>${corners.map((p,i)=>`<rect data-action="corner" data-corner="${i}" tabindex="0" role="button" aria-label="Artwork corner ${i+1}. Drag or use arrow keys to place this corner." fill="white" stroke="#527c96"/>`).join('')}<circle data-action="rotate" fill="white" stroke="#527c96"/>`
+  const polygon=group.querySelector('polygon');polygon.setAttribute('points',corners.map(p=>`${p.x},${p.y}`).join(' '));polygon.setAttribute('stroke-width',1/unit)
+  group.querySelectorAll('[data-corner]').forEach((handle,i)=>{
+    const p=corners[i]
+    for(const [key,value] of Object.entries({x:p.x-size/2,y:p.y-size/2,width:size,height:size,rx:3/unit,'stroke-width':1.5/unit}))handle.setAttribute(key,value)
+  })
+  const rotate=group.querySelector('circle')
+  rotate.style.display=data.recipe.corners?'none':''
+  rotate.setAttribute('cx',(corners[0].x+corners[1].x)/2);rotate.setAttribute('cy',(corners[0].y+corners[1].y)/2-size)
+  rotate.setAttribute('r',8/unit);rotate.setAttribute('stroke-width',1.5/unit)
+}
 function draw() {
   const signature=JSON.stringify([data?.recipe,data?.size,data?.color,data?.outline,data?.editable,Boolean(drag)])
   if(signature===renderedState)return
@@ -14,15 +33,20 @@ function draw() {
   if(!data?.recipe){stage.textContent='Choose an image to begin fitting.';return}
   if(data.size!=='4'){stage.textContent='2-inch preview awaits its measured physical template. Save placement as a draft.';return}
   try {
+    if(drag&&interactiveReady&&updateInteractiveArtwork(stage,data.recipe)){selection();return}
     const focusedCorner=stage.contains(document.activeElement)?document.activeElement?.dataset?.corner:undefined
     stage.innerHTML=renderClaw({colorSlug:data.color,uploaded:data.recipe,scale:data.recipe.scale,vertical:data.recipe.vertical,showOutline:data.outline===true,id:'uploaded',interactive:Boolean(drag)})
+    interactiveReady=Boolean(drag)
     stage.dataset.editable=String(data.editable===true)
-    stage.querySelector('image,img')?.addEventListener('error',()=>{stage.textContent='Source image could not load.';send('hair-claw-preview-error')},{once:true})
+    stage.dataset.dragging=String(Boolean(drag))
+    const svg=stage.querySelector('svg')
     if(data.editable&&data.recipe.editor_version===2) {
-      const {corners}=placement(data.recipe),top={x:(corners[0].x+corners[1].x)/2,y:(corners[0].y+corners[1].y)/2-6}
-      stage.querySelector('[data-selection]').innerHTML=`<polygon points="${corners.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="#527c96" stroke-width=".3" stroke-dasharray="1 1" pointer-events="none"/>${corners.map((p,i)=>`<rect data-action="corner" data-corner="${i}" tabindex="0" role="button" aria-label="Artwork corner ${i+1}. Drag or use arrow keys to place this corner." x="${p.x-2.4}" y="${p.y-2.4}" width="4.8" height="4.8" rx=".6" fill="white" stroke="#527c96" stroke-width=".4"/>`).join('')}${!data.recipe.corners?`<circle data-action="rotate" cx="${top.x}" cy="${top.y}" r="2" fill="white" stroke="#527c96" stroke-width=".4"/>`:''}`
-      if(focusedCorner!==undefined)stage.querySelector(`[data-corner="${focusedCorner}"]`)?.focus({preventScroll:true})
+      if(!drag||!viewport)viewport=fittingView(placement(data.recipe).corners,data.recipe)
+      svg.setAttribute('viewBox',viewport.join(' '))
     }
+    stage.querySelector('image,img')?.addEventListener('error',()=>{stage.textContent='Source image could not load.';send('hair-claw-preview-error')},{once:true})
+    selection()
+    if(focusedCorner!==undefined)stage.querySelector(`[data-corner="${focusedCorner}"]`)?.focus({preventScroll:true})
   } catch {stage.textContent='This overlay could not be displayed. Check its image and alignment.';send('hair-claw-preview-error')}
 }
 function scheduleDraw() {
@@ -30,18 +54,22 @@ function scheduleDraw() {
   animation=requestAnimationFrame(()=>{
     animation=0
     draw()
-    if(pendingPatch){const patch=pendingPatch;pendingPatch=null;send('hair-claw-placement',{patch,editRevision})}
+    // Keep pointer work local; React receives one final fit per gesture.
+    if(pendingPatch&&!drag){const patch=pendingPatch;pendingPatch=null;send('hair-claw-placement',{patch,editRevision})}
+    if(ending){ending=false;send('hair-claw-interaction',{active:false})}
   })
 }
 window.addEventListener('message',event=>{
-  if(event.source!==window.parent||event.data?.type!=='hair-claw-preview'||event.origin==='null')return
+  if(event.source!==window.parent||event.origin==='null')return
+  if(event.data?.type==='hair-claw-fit-view'&&event.origin===parentOrigin){viewport=null;renderedState='';scheduleDraw();return}
+  if(event.data?.type!=='hair-claw-preview')return
   if(parentOrigin&&event.origin!==parentOrigin)return
   parentOrigin=event.origin
   // A delayed parent echo must not rewind a newer move still being dragged.
   const older=Number.isSafeInteger(event.data.editRevision)&&event.data.editRevision<editRevision
   const recipe=(drag||pendingPatch||older)&&event.data.editable&&data ? data.recipe : event.data.recipe
   data={...event.data,recipe}
-  if(!data.editable){drag=null;pendingPatch=null}
+  if(!data.editable){drag=null;pendingPatch=null;interactiveReady=false}
   scheduleDraw()
 })
 function edit(patch) {
@@ -69,7 +97,8 @@ stage.addEventListener('pointerdown',event=>{
   const inverse=assembly.getScreenCTM().inverse(),start=point(event,inverse),r=data.recipe,p=placement(r)
   const handle=event.target.closest('[data-action]')
   drag={id:event.pointerId,inverse,start,recipe:{...r},corners:p.corners,corner:Number(handle?.dataset.corner),cx:p.cx,cy:p.cy,action:handle?.dataset.action||'move'}
-  event.preventDefault();stage.setPointerCapture(event.pointerId);stage.focus({preventScroll:true})
+  event.preventDefault();stage.setPointerCapture(event.pointerId);(handle?.dataset.corner!==undefined?handle:stage).focus({preventScroll:true})
+  send('hair-claw-interaction',{active:true})
   scheduleDraw()
 })
 stage.addEventListener('pointermove',event=>{
@@ -85,7 +114,7 @@ stage.addEventListener('pointermove',event=>{
 })
 for(const name of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(name,()=>{
   if(!drag)return
-  drag=null
+  drag=null;ending=true
   // Releasing a handle flushes the latest placement at full review quality.
   scheduleDraw()
 })
@@ -103,4 +132,5 @@ stage.addEventListener('keydown',event=>{
     if(corner)stage.querySelector(`[data-corner="${corner.dataset.corner}"]`)?.focus({preventScroll:true})
   }
 })
+new ResizeObserver(()=>{if(!drag)selection()}).observe(stage)
 window.parent.postMessage({type:'hair-claw-preview-ready'},'*')
