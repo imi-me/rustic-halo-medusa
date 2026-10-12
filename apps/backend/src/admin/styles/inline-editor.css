@@ -45,3 +45,22 @@
 .rh-inline-leave button { margin-right: 8px; }
 @media(max-width: 1000px) { .rh-inline-body { grid-template-columns: minmax(0, 1fr); } }
 @media(max-width: 600px) { .rh-inline-toolbar { flex-wrap: wrap; } .rh-inline-grid, .rh-inline-variant .rh-inline-grid { grid-template-columns: minmax(0, 1fr); } .rh-inline-card { padding: 16px; } }
+/* The product workspace opens as one form; order quick edit retains its toolbar. */
+.rh-product-editor { margin-top: 0; }
+.rh-inline-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rh-inline-identity img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; background: #f5f7fb; flex-shrink: 0; }
+#medusa .rh-inline-identity h1 { margin: 0; font-size: clamp(18px, 1.45vw, 24px); font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+.rh-inline-column { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.rh-product-editor .rh-inline-body { grid-template-columns: minmax(0, 1.65fr) minmax(310px, 1fr); }
+.rh-inline-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rh-inline-section-heading > a { flex-shrink: 0; }
+.rh-product-editor .rh-inline-card { padding: 20px; }
+.rh-product-editor .rh-inline-grid { gap: 14px; }
+.rh-product-editor .rh-inline-photos { max-height: 320px; margin-bottom: 0; }
+.rh-product-editor .rh-inline-photos img:first-child { height: 200px; }
+.rh-inline-multiple[role='group'] { max-height: 156px; overflow-y: auto; padding: 5px; }
+.rh-inline-multiple[role='group'] small { display: block; padding: 7px; }
+.rh-inline-variant > .rh-inline-empty-price { margin: 12px 0 0; }
+@media(max-width: 1100px) { .rh-product-editor .rh-inline-body { grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); } .rh-product-editor .rh-inline-variant .rh-inline-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media(max-width: 850px) { .rh-product-editor .rh-inline-body { grid-template-columns: minmax(0, 1fr); } .rh-product-editor .rh-inline-toolbar { flex-wrap: wrap; } }
+@media(max-width: 600px) { .rh-product-editor .rh-inline-grid, .rh-product-editor .rh-inline-variant .rh-inline-grid { grid-template-columns: minmax(0, 1fr); } .rh-inline-identity img { display: none; } .rh-product-editor .rh-inline-buttons { width: 100%; justify-content: flex-end; } }

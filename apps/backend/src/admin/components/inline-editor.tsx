@@ -14,7 +14,7 @@ const lookups = [
   { key: 'sales_channels', label: 'Sales channels', path: 'sales-channels', response: 'sales_channels', name: 'name', multiple: true },
 ]
 type Choice = { id: string; label: string }
-type Props = { kind: 'products' | 'orders'; id: string; onEditingChange?: (value: boolean) => void; editRequest?: number }
+type Props = { kind: 'products' | 'orders'; id: string; onEditingChange?: (value: boolean) => void; editRequest?: number; workspace?: { title: string; thumbnail?: string | null } }
 const inputType = (key: string) => ['weight', 'length', 'width', 'height'].includes(key) ? 'number' : 'text'
 
 async function loadChoices(lookup: typeof lookups[number]) {
@@ -45,7 +45,7 @@ const DraftGuard = ({ dirty, saving, onDiscard }: { dirty: boolean; saving: bool
   return <div role="alert" className="rh-inline-leave"><strong>{saving ? 'Saving changes…' : 'You have unsaved changes.'}</strong><p>{saving ? 'Stay on this page until the save finishes.' : 'Stay to save your draft, or discard it and leave.'}</p><button type="button" onClick={() => blocker.reset()}>Stay on page</button>{!saving && <button type="button" onClick={() => { onDiscard(); blocker.proceed() }}>Discard and leave</button>}</div>
 }
 
-export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0 }: Props) => {
+export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, workspace }: Props) => {
   const [record, setRecord] = useState<Entity | null>(null)
   const [draft, setDraft] = useState<ProductDraft | OrderDraft | null>(null)
   const [loading, setLoading] = useState(false)
@@ -98,6 +98,8 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0 }: Pro
     } catch (failure) { if (token === generation.current) setError((failure as Error).message) }
     finally { if (token === generation.current) setLoading(false) }
   }
+  const persistent = Boolean(workspace && kind === 'products')
+  useEffect(() => { if (persistent) void begin() }, [id, persistent])
   useEffect(() => { if (editRequest) void begin() }, [editRequest])
   const close = () => { generation.current++; setRecord(null); setDraft(null); setError(''); setDiscard(false); setLoading(false) }
   const openTool = () => { if (!dirty && !saving) close() }
@@ -105,13 +107,19 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0 }: Pro
     if (!record || !draft || saving || !dirty) return
     setSaving(true); setError(''); setNotice('')
     try {
-      await saveInline(kind, record, draft)
+      const saved = await saveInline(kind, record, draft)
       // Medusa's native sections and list caches use these shared prefixes.
       await Promise.all([kind, ...(kind === 'products' ? ['product_variants', 'rh-product-suggestions'] : ['order_preview', 'rh-order-suggestions'])].map(key => queryClient.invalidateQueries({ queryKey: [key] })))
-      close(); setNotice('Changes saved.')
-    } catch (failure) { setError((failure as Error).message || 'Save could not be confirmed. Your draft is kept; check the record before retrying.') }
+      if (persistent) { setRecord(saved); setDraft(normalizer(saved)); setDiscard(false) }
+      else close()
+      setNotice('Changes saved.')
+    } catch (failure) {
+      const message = (failure as Error).message || 'Save could not be confirmed. Your draft is kept; check the record before retrying.'
+      setError(persistent ? message.replace('cancel and reopen Edit all to load the latest values', 'discard your draft to load the latest values') : message)
+    }
     finally { setSaving(false) }
   }
+  const discardDraft = () => { if (persistent) void begin(); else close() }
   const p = draft as ProductDraft
   const o = draft as OrderDraft
   const setProductField = (key: string, value: string | boolean) => setDraft(previous => ({ ...(previous as ProductDraft), fields: { ...(previous as ProductDraft).fields, [key]: value } }))
@@ -125,29 +133,33 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0 }: Pro
       const current = lookup.multiple ? record?.[lookup.key]?.find((item: Entity) => item.id === selected) : record?.[lookup.key.replace('_id', '')]
       options.push({ id: selected, label: current?.[lookup.name] ?? selected })
     }
-    if (lookup.multiple) return <div className="rh-inline-field" key={lookup.key}><span>{lookup.label}</span><details className="rh-inline-multiple"><summary>{options.filter(option => (value as string[]).includes(option.id)).map(option => option.label).join(', ') || 'None selected'}</summary><div role="group" aria-label={lookup.label}>{options.map(option => <label key={option.id}><input type="checkbox" aria-label={`${lookup.label}: ${option.label}`} disabled={!choices[lookup.key]} checked={(value as string[]).includes(option.id)} onChange={event => setDraft(previous => ({ ...(previous as ProductDraft), relations: { ...(previous as ProductDraft).relations, [lookup.key]: (event.target.checked ? [...(previous as ProductDraft).relations[lookup.key], option.id] : (previous as ProductDraft).relations[lookup.key].filter(id => id !== option.id)).sort() } }))}/>{option.label}</label>)}{!options.length && <small>No options available.</small>}</div></details></div>
+    if (lookup.multiple) return <div className="rh-inline-field" key={lookup.key}><span>{lookup.label}</span><div className="rh-inline-multiple" role="group" aria-label={lookup.label}>{options.map(option => <label key={option.id}><input type="checkbox" aria-label={`${lookup.label}: ${option.label}`} disabled={!choices[lookup.key]} checked={(value as string[]).includes(option.id)} onChange={event => setDraft(previous => ({ ...(previous as ProductDraft), relations: { ...(previous as ProductDraft).relations, [lookup.key]: (event.target.checked ? [...(previous as ProductDraft).relations[lookup.key], option.id] : (previous as ProductDraft).relations[lookup.key].filter(id => id !== option.id)).sort() } }))}/>{option.label}</label>)}{!options.length && <small>No options available.</small>}</div></div>
     return <label className="rh-inline-field" key={lookup.key}><span>{lookup.label}</span><select aria-label={lookup.label} value={value} disabled={!choices[lookup.key]} onChange={event => setProductField(lookup.key, event.target.value)}><option value="">{lookup.key === 'shipping_profile_id' ? 'Choose a shipping profile' : 'None'}</option>{options.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
   }
-  return <div className={`rh-inline-editor ${active ? 'is-editing' : ''}`}>
+  return <div className={`rh-inline-editor ${active ? 'is-editing' : ''} ${persistent ? 'rh-product-editor' : ''}`}>
     <div className="rh-inline-toolbar">
-      <div><strong>{active ? kind === 'products' ? 'Edit all product fields' : 'Edit contact & addresses' : kind === 'products' ? 'Quick edit' : 'Order quick edit'}</strong><span>{loading ? 'Loading current values…' : active ? dirty ? 'Unsaved changes' : 'No changes yet' : kind === 'products' ? 'Review and edit the product together.' : 'Edit customer email and both addresses here.'}</span></div>
-      <div className="rh-inline-buttons">{active ? <><button type="button" disabled={saving} onClick={() => dirty ? setDiscard(true) : close()}>Cancel</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button></> : <button type="button" className="primary" onClick={begin}>Edit all</button>}</div>
+      {persistent ? <div className="rh-inline-identity">{(record?.thumbnail ?? workspace?.thumbnail) && <img src={record?.thumbnail ?? workspace?.thumbnail} alt=""/>}<div><h1>{record?.title ?? workspace?.title}</h1><span role="status">{loading ? 'Loading product…' : saving ? 'Saving changes…' : dirty ? 'Unsaved changes' : notice || 'Edit fields below, then save your changes.'}</span></div></div> : <div><strong>{active ? kind === 'products' ? 'Edit all product fields' : 'Edit contact & addresses' : kind === 'products' ? 'Quick edit' : 'Order quick edit'}</strong><span>{loading ? 'Loading current values…' : active ? dirty ? 'Unsaved changes' : 'No changes yet' : kind === 'products' ? 'Review and edit the product together.' : 'Edit customer email and both addresses here.'}</span></div>}
+      <div className="rh-inline-buttons">{persistent ? <><button type="button" disabled={saving || loading || !dirty} onClick={() => setDiscard(true)}>Discard</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button>{!active && !loading && <button type="button" onClick={begin}>Retry loading</button>}</> : active ? <><button type="button" disabled={saving} onClick={() => dirty ? setDiscard(true) : close()}>Cancel</button><button type="submit" form={formId} className="primary" disabled={saving || loading || !dirty}>{saving ? 'Saving…' : 'Save changes'}</button></> : <button type="button" className="primary" onClick={begin}>Edit all</button>}</div>
     </div>
-    {notice && <p role="status" className="rh-inline-success">{notice}</p>}
+    {notice && !persistent && <p role="status" className="rh-inline-success">{notice}</p>}
     {error && <p role="alert" className="rh-inline-error">{error}</p>}
-    {discard && <div role="alert" className="rh-inline-discard"><span>Discard your unsaved changes?</span><button type="button" onClick={() => setDiscard(false)}>Keep editing</button><button type="button" onClick={close}>Discard changes</button></div>}
+    {discard && <div role="alert" className="rh-inline-discard"><span>Discard your unsaved changes?</span><button type="button" onClick={() => setDiscard(false)}>Keep editing</button><button type="button" onClick={discardDraft}>Discard changes</button></div>}
     {record && draft && <><DraftGuard dirty={dirty} saving={saving} onDiscard={close}/><form id={formId} ref={form} onSubmit={event => { event.preventDefault(); void save() }} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') { event.preventDefault(); form.current?.requestSubmit() } }}><fieldset disabled={loading || saving} className="rh-inline-body">
       {kind === 'products' ? <>
-        <section className="rh-inline-card"><h2>Product details</h2><div className="rh-inline-grid">{['title', 'subtitle', 'handle', 'material'].map(key => textField(key, p.fields, setProductField))}<label className="rh-inline-field"><span>Status</span><select aria-label="Status" value={String(p.fields.status)} onChange={event => setProductField('status', event.target.value)}>{['draft', 'proposed', 'published', 'rejected'].map(value => <option key={value} value={value}>{value}</option>)}</select></label><label className="rh-inline-check"><input type="checkbox" checked={Boolean(p.fields.discountable)} onChange={event => setProductField('discountable', event.target.checked)}/>Allow discounts</label><label className="rh-inline-field wide"><span>Description</span><textarea aria-label="Description" rows={9} value={String(p.fields.description)} onChange={event => setProductField('description', event.target.value)}/></label></div></section>
-        <section className="rh-inline-card"><h2>Images & inventory</h2><div className="rh-inline-photos">{(record.images ?? []).map((image: Entity) => <img key={image.id ?? image.url} src={image.url} alt={record.title}/>)}</div><p>Image uploads and stock adjustments have their own tools.</p><div className="rh-inline-links"><Link onClick={openTool} to={`/products/${id}/media?view=edit`}>Manage images</Link><Link onClick={openTool} to={`/products/${id}/stock`}>Manage stock</Link></div></section>
-        <section className="rh-inline-card wide"><h2>Variants & prices</h2><p>Update existing SKUs, barcodes and base prices. Regional and quantity prices are preserved.</p>{p.variants.map((variant, index) => {
-          const source = record.variants.find((item: Entity) => item.id === variant.id)
-          const suffix = ` — variant ${index + 1}`
-          const change = (key: string, value: string, price = false) => setDraft(previous => ({ ...(previous as ProductDraft), variants: (previous as ProductDraft).variants.map(item => item.id === variant.id ? { ...item, [price ? 'prices' : 'fields']: { ...item[price ? 'prices' : 'fields'], [key]: value } } : item) }))
-          return <div className="rh-inline-variant" key={variant.id}><h3>{source.title || `Variant ${index + 1}`}<small> {source.manage_inventory ? 'Inventory tracked' : 'Inventory not tracked'}</small></h3><div className="rh-inline-grid">{['title', 'sku', 'barcode', 'ean', 'upc'].map(key => textField(key, variant.fields, change, suffix))}{(source.prices ?? []).filter(isBasePrice).map((price: Price) => <label className="rh-inline-field" key={price.id}><span>Price ({price.currency_code.toUpperCase()})</span><input aria-label={`Price ${price.currency_code.toUpperCase()}${suffix}`} type="number" min="0" step="any" required value={variant.prices[price.id]} onChange={event => change(price.id, event.target.value, true)}/></label>)}</div></div>
-        })}<Link onClick={openTool} to={`/products/${id}/prices`}>More pricing options</Link></section>
-        <section className="rh-inline-card"><h2>Organization & selling</h2>{missingChoices.length > 0 && <p className="rh-inline-error" role="status">Could not load {missingChoices.join(', ')} options. Those fields are kept unchanged.</p>}<div className="rh-inline-grid">{lookups.map(relationField)}</div></section>
-        <section className="rh-inline-card"><h2>Shipping attributes</h2><div className="rh-inline-grid">{['weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code'].map(key => textField(key, p.fields, setProductField))}</div></section>
+        <div className="rh-inline-column">
+          <section className="rh-inline-card"><h2>Product details</h2><div className="rh-inline-grid"><div className="wide">{textField('title', p.fields, setProductField)}</div>{['subtitle', 'material'].map(key => textField(key, p.fields, setProductField))}<label className="rh-inline-field wide"><span>Description</span><textarea aria-label="Description" rows={6} value={String(p.fields.description)} onChange={event => setProductField('description', event.target.value)}/></label><div className="wide">{textField('handle', p.fields, setProductField)}</div></div></section>
+          <section className="rh-inline-card"><div className="rh-inline-section-heading"><h2>Variants & prices</h2><Link onClick={openTool} to={`/products/${id}/variants/create`}>+ Add variant</Link></div>{!p.variants.length && <p>No variants yet. Add a variant to set a SKU and price.</p>}{p.variants.map((variant, index) => {
+            const source = record.variants.find((item: Entity) => item.id === variant.id)
+            const suffix = ` — variant ${index + 1}`
+            const change = (key: string, value: string, price = false) => setDraft(previous => ({ ...(previous as ProductDraft), variants: (previous as ProductDraft).variants.map(item => item.id === variant.id ? { ...item, [price ? 'prices' : 'fields']: { ...item[price ? 'prices' : 'fields'], [key]: value } } : item) }))
+            return <div className="rh-inline-variant" key={variant.id}><h3>{source.title || `Variant ${index + 1}`}<small> {source.manage_inventory ? 'Inventory tracked' : 'Inventory not tracked'}</small></h3><div className="rh-inline-grid">{['sku', 'barcode'].map(key => textField(key, variant.fields, change, suffix))}{(source.prices ?? []).filter(isBasePrice).map((price: Price) => <label className="rh-inline-field" key={price.id}><span>Price ({price.currency_code.toUpperCase()})</span><input aria-label={`Price ${price.currency_code.toUpperCase()}${suffix}`} type="number" min="0" step="any" required value={variant.prices[price.id]} onChange={event => change(price.id, event.target.value, true)}/></label>)}{['title', 'ean', 'upc'].map(key => textField(key, variant.fields, change, suffix))}</div>{!(source.prices ?? []).some(isBasePrice) && <p className="rh-inline-empty-price">No base price. Use advanced pricing to add one.</p>}</div>
+          })}<div className="rh-inline-links"><Link onClick={openTool} to={`/products/${id}/stock`}>Manage stock</Link><Link onClick={openTool} to={`/products/${id}/prices`}>Advanced pricing</Link></div></section>
+        </div>
+        <div className="rh-inline-column">
+          <section className="rh-inline-card"><div className="rh-inline-section-heading"><h2>Images</h2><Link onClick={openTool} to={`/products/${id}/media?view=edit`}>Manage images</Link></div><div className="rh-inline-photos">{(record.images ?? []).map((image: Entity) => <img key={image.id ?? image.url} src={image.url} alt={record.title}/>)}</div>{!record.images?.length && <p>Add images to show this product in your store.</p>}</section>
+          <section className="rh-inline-card"><h2>Publishing & organization</h2>{missingChoices.length > 0 && <p className="rh-inline-error" role="status">Could not load {missingChoices.join(', ')} options. Those fields are kept unchanged.</p>}<div className="rh-inline-grid"><label className="rh-inline-field"><span>Status</span><select aria-label="Status" value={String(p.fields.status)} onChange={event => setProductField('status', event.target.value)}>{['draft', 'proposed', 'published', 'rejected'].map(value => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select></label><label className="rh-inline-check"><input type="checkbox" checked={Boolean(p.fields.discountable)} onChange={event => setProductField('discountable', event.target.checked)}/>Allow discounts</label>{lookups.filter(lookup => lookup.key !== 'shipping_profile_id').map(relationField)}</div></section>
+          <section className="rh-inline-card"><h2>Shipping</h2><div className="rh-inline-grid"><div className="wide">{relationField(lookups.find(lookup => lookup.key === 'shipping_profile_id')!)}</div>{['weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code'].map(key => textField(key, p.fields, setProductField))}</div></section>
+        </div>
       </> : <>
         <section className="rh-inline-card wide"><h2>Customer contact</h2><label className="rh-inline-field"><span>Email</span><input aria-label="Customer email" type="email" required value={o.email} onChange={event => setDraft(previous => ({ ...(previous as OrderDraft), email: event.target.value }))}/></label><p>Updates the contact email for this order.</p></section>
         {(['shipping_address', 'billing_address'] as const).map(key => <section className="rh-inline-card" key={key}><h2>{key === 'shipping_address' ? 'Shipping address' : 'Billing address'}</h2><div className="rh-inline-grid">{addressFields.map(field => textField(field, o[key], (name, value) => setDraft(previous => ({ ...(previous as OrderDraft), [key]: { ...(previous as OrderDraft)[key], [name]: value } })), ` — ${key === 'shipping_address' ? 'shipping' : 'billing'}`))}</div></section>)}
