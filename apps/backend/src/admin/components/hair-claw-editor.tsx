@@ -47,6 +47,7 @@ export default function HairClawEditor({productId}:{productId:string}) {
   const [guides,setGuides] = useState(true)
   const [errorLabel,setErrorLabel] = useState<string|null>(null)
   const frame = useRef<HTMLIFrameElement>(null)
+  const canvas = useRef<HTMLDivElement>(null)
   let previewUrl=''
   try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor3`} catch {}
   const previewOrigin = previewUrl ? new URL(previewUrl).origin : ''
@@ -55,10 +56,38 @@ export default function HairClawEditor({productId}:{productId:string}) {
     setBusy(true)
     api(`/admin/products/${productId}/hair-claw-media`).then(data=>{
       if (!active) return
-      setSettings(data.settings);setImages(data.images || []);setRecipe(editable(savedFor(data.settings,'4')));setSize('4');setDirty(false)
+      setSettings(data.settings);setImages(data.images || []);setRecipe(editable(savedFor(data.settings,'4')));setSize('4');setDirty(false);setView('preview')
       setOrigin(data.preview_origin || '');setNotice('Choose a current product photo or upload wood artwork, then adjust its fit and save.')
+      requestAnimationFrame(()=>{
+        const studio=canvas.current?.closest('.rh-fit-studio')
+        if(studio&&studio.clientWidth<700&&studio.getBoundingClientRect().top>80)studio.scrollIntoView({block:'start'})
+      })
     }).catch(error=>{if(active){setNotice(error.message);setErrorLabel('Load failed')}}).finally(()=>active && setBusy(false))
     return ()=>{active=false}
+  },[productId])
+  useEffect(()=>{
+    const element=canvas.current,studio=element?.closest('.rh-fit-studio')
+    if(!element||!studio)return
+    let animation=0
+    const measure=()=>{
+      cancelAnimationFrame(animation)
+      animation=requestAnimationFrame(()=>{
+        const viewport=window.visualViewport?.height||window.innerHeight
+        const foot=studio.querySelector('.rh-fit-canvas-foot')?.getBoundingClientRect().height||54
+        const save=studio.querySelector('.rh-fit-savebar')?.getBoundingClientRect().height||65
+        const available=viewport-Math.max(18,element.getBoundingClientRect().top)-foot-save-24
+        const width=element.parentElement?.clientWidth||540
+        element.style.setProperty('--fit-canvas-size',`${Math.floor(Math.max(240,Math.min(540,width,available)))}px`)
+      })
+    }
+    const observer=new ResizeObserver(measure)
+    observer.observe(studio)
+    for(const target of [element.parentElement,studio.querySelector('.rh-fit-savebar')])if(target)observer.observe(target)
+    window.addEventListener('resize',measure)
+    window.addEventListener('scroll',measure,{passive:true})
+    window.visualViewport?.addEventListener('resize',measure)
+    measure()
+    return()=>{cancelAnimationFrame(animation);observer.disconnect();window.removeEventListener('resize',measure);window.removeEventListener('scroll',measure);window.visualViewport?.removeEventListener('resize',measure)}
   },[productId])
   const preview = useCallback(()=>{
     if (previewOrigin && recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color,outline:guides,editable:!busy},previewOrigin)
@@ -73,7 +102,7 @@ export default function HairClawEditor({productId}:{productId:string}) {
         if(!validCorners(next.corners))return current
       }
       return next
-    });setDirty(true);setErrorLabel(null)
+    });setDirty(true);setErrorLabel(null);setView('preview')
   },[])
   useEffect(()=>{
     preview()
@@ -132,17 +161,17 @@ export default function HairClawEditor({productId}:{productId:string}) {
     <div className="rh-fit-workspace">
       <section className="rh-fit-canvas-panel" aria-label="Adjusted claw preview">
         <div className="rh-fit-canvas-bar">
-          <div className="rh-fit-segment" aria-label="Image view"><FitHint tip="Adjust the artwork inside the fixed claw outline."><button type="button" aria-pressed={view==='preview'} onClick={()=>setView('preview')}>Preview</button></FitHint><FitHint tip="See the untouched source photo for comparison."><button type="button" disabled={!recipe} aria-pressed={view==='original'} onClick={()=>setView('original')}>Original</button></FitHint></div>
-          <div className="rh-fit-color-select"><span className="rh-fit-swatch" style={{background:colorHex}}/><select aria-label="Preview color" value={color} onChange={e=>setColor(e.target.value)}>{palette.map(name=><option key={name} value={name.toLowerCase()}>{name}</option>)}</select><FitHelp label="Preview color">Preview the fit on each claw color. This does not change purchase options or the color added to a cart.</FitHelp></div>
+          <div className="rh-fit-segment" aria-label="Image view"><FitHint tip="Drag the artwork corners inside the fixed claw outline."><button type="button" aria-pressed={view==='preview'} onClick={()=>setView('preview')}>Edit</button></FitHint><FitHint tip="See the untouched source photo for comparison."><button type="button" disabled={!recipe} aria-pressed={view==='original'} onClick={()=>setView('original')}>Original</button></FitHint></div>
+          <div className="rh-fit-color-select"><span className="rh-fit-swatch" style={{background:colorHex}}/><select aria-label="Preview color" value={color} onChange={e=>{setColor(e.target.value);setView('preview')}}>{palette.map(name=><option key={name} value={name.toLowerCase()}>{name}</option>)}</select><FitHelp label="Preview color">Preview the fit on each claw color. This does not change purchase options or the color added to a cart.</FitHelp></div>
         </div>
-        <div className="rh-fit-canvas">
+        <div className="rh-fit-canvas" ref={canvas}>
           {recipe && size==='4' && previewUrl && <iframe ref={frame} src={previewUrl} title="Interactive hair-claw image fitting" onLoad={preview} hidden={view==='original'}/>}
           {recipe && view==='original' && <img className="rh-fit-original" src={recipe.url} alt="Original source before placement adjustments"/>}
           {view==='preview'&&(!recipe||size==='2'||!previewUrl)&&<div className="rh-fit-empty"><FitIcon name="image"/><span>{!recipe?'Choose a photo':size==='2'?'2-inch draft':'Connect preview'}</span><FitHelp label="Preview availability">{!recipe?'Choose a photo in the Photo panel, or upload new artwork.':size==='2'?'Save the fit as a draft. Preview is unavailable until the measured 2-inch plastic template is approved.':'Set the storefront origin under Connection to load the fitting canvas.'}</FitHelp></div>}
         </div>
         <div className="rh-fit-canvas-foot">
           <div className="rh-fit-mode"><FitIcon name="corners"/><span>{locked?'Corners pinned':'Place corners'}</span><FitHelp label="Corner fitting">{cornerHelp}</FitHelp></div>
-          <div className="rh-fit-toolrow"><FitHint tip="Show or hide the fixed cut and engraving guides."><button type="button" className="rh-fit-button" aria-pressed={guides} onClick={()=>setGuides(!guides)}>Guides</button></FitHint><FitHint tip="Remove the corner fit and return to scale and rotation controls."><button type="button" className="rh-fit-quiet" aria-label="Reset corner fit" disabled={busy||!locked} onClick={()=>change({corners:undefined})}><FitIcon name="reset"/>Reset corners</button></FitHint></div>
+          <div className="rh-fit-toolrow"><FitHint tip="Show or hide the fixed cut and engraving guides."><button type="button" className="rh-fit-button" aria-pressed={guides} onClick={()=>{setGuides(!guides);setView('preview')}}>Guides</button></FitHint><FitHint tip="Remove the corner fit and return to scale and rotation controls."><button type="button" className="rh-fit-quiet" aria-label="Reset corner fit" disabled={busy||!locked} onClick={()=>change({corners:undefined})}><FitIcon name="reset"/>Reset corners</button></FitHint></div>
         </div>
       </section>
       <section className="rh-fit-inspector" aria-label="Image adjustments">
