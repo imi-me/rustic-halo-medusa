@@ -3,12 +3,16 @@ import { MedusaError, Modules } from '@medusajs/framework/utils'
 import { IProductModuleService, IFileModuleService } from '@medusajs/framework/types'
 import { HAIR_CLAW_KEY, saveSchema, templates } from '../../../../../lib/hair-claw-settings'
 import { randomUUID } from 'node:crypto'
+import { offerProduct, offerPrices, saveTypeOffer } from '../../../../../lib/hair-claw-offers'
+import { allowedOrigin } from '../../../assistant/route'
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const products: IProductModuleService = req.scope.resolve(Modules.PRODUCT)
   const product = await products.retrieveProduct(req.params.id, { relations: ['images'] })
   res.setHeader('Cache-Control', 'no-store')
+  const offerMode = Boolean(product.metadata?.hair_claw_template_v2 && (product.metadata.hair_claw_template_v2 as any).offer_mode)
   res.json({ settings: product.metadata?.[HAIR_CLAW_KEY] || { revision: null, recipes: {} }, templates,
+    offer_mode: offerMode, offer_prices: offerMode ? offerPrices(await offerProduct(req.scope, req.params.id)) : {},
     images: (product.images || []).map(image => ({id:image.id, url:image.url})),
     preview_origin: process.env.HAIR_CLAW_PREVIEW_ORIGIN || process.env.STORE_CORS?.split(',')[0] || null })
 }
@@ -18,6 +22,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   if (!parsed.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Invalid overlay settings.')
   const { size, recipe, revision } = parsed.data
   if (size === '2' && recipe?.enabled) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Save the 2-inch overlay as a draft until its physical template is approved.')
+  if (parsed.data.finish) {
+    const authenticated = req as any
+    if (!authenticated.auth_context?.actor_id || authenticated.auth_context.actor_type !== 'user') return res.sendStatus(401)
+    if (!allowedOrigin(authenticated)) return res.sendStatus(403)
+    return res.json(await saveTypeOffer(req.scope, req.params.id, parsed.data))
+  }
   const products: IProductModuleService = req.scope.resolve(Modules.PRODUCT)
   const files: IFileModuleService = req.scope.resolve(Modules.FILE)
   const file = recipe?.file_id ? await files.retrieveFile(recipe.file_id) : null
@@ -25,6 +35,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const locking = req.scope.resolve(Modules.LOCKING)
   await locking.execute(`hair-claw-media:${req.params.id}`, async () => {
     const product = await products.retrieveProduct(req.params.id, { relations: ['images'] })
+    if ((product.metadata?.hair_claw_template_v2 as any)?.offer_mode) throw new MedusaError(MedusaError.Types.CONFLICT, 'This product now has separate size and finish options. Reload the fitting editor before saving.')
     const previous = product.metadata?.[HAIR_CLAW_KEY] as { revision?: string; recipes?: Record<string, unknown>; drafts?: Record<string, unknown> } | undefined
     if ((previous?.revision || null) !== revision) throw new MedusaError(MedusaError.Types.CONFLICT, 'Overlay settings changed in another editor. Reload before saving.')
     const recipes = { ...previous?.recipes }

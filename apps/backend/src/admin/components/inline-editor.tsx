@@ -115,6 +115,15 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
     } catch (failure) { if (token === generation.current) setError((failure as Error).message) }
     finally { if (token === generation.current) setLoading(false) }
   }
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      if(kind !== 'products' || (event as CustomEvent).detail?.productId !== id)return
+      if(dirty || saving || loading){setError('Size/finish options saved. Your main form draft is kept; copy pending edits and reload to refresh the option prices before saving this form.');return}
+      void begin()
+    }
+    window.addEventListener('rh-product-offer-saved',refresh)
+    return()=>window.removeEventListener('rh-product-offer-saved',refresh)
+  }, [id,kind,dirty,saving,loading,begin])
   const persistent = Boolean(workspace && kind === 'products')
   useEffect(() => { if (persistent) void begin() }, [id, persistent])
   useEffect(() => { if (editRequest) void begin() }, [editRequest])

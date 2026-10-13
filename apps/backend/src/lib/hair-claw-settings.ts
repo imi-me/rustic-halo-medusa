@@ -34,6 +34,9 @@ export const recipeSchema = z.object({
   .refine(r => r.editor_version === 2 || (r.scale >= .8 && r.scale <= 1.01 && Math.abs(r.x) <= 50 && Math.abs(r.y) <= 50 && r.rotation === undefined && r.skew_x === undefined && r.skew_y === undefined && r.crop === undefined && r.corners === undefined && r.mirror_x === undefined && r.mirror_y === undefined), 'Use the current editor for expanded placement controls.')
 export const saveSchema = z.object({
   size: z.enum(['2', '4']),
+  finish: z.enum(['natural', 'cbc']).optional(),
+  price: z.number().finite().min(0).max(1000000).optional(),
+  pricing_revision: z.string().nullable().optional(),
   revision: z.string().nullable(),
   recipe: recipeSchema.nullable(),
 }).strict()

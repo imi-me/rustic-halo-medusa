@@ -122,7 +122,11 @@ export default function ProductActions({
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
-    const next = { ...options, [optionId]: value }
+    let next = { ...options, [optionId]: value }
+    if (template?.offer_mode && optionId === template.size_option_id && !product.variants?.some(v => isEqual(optionsAsKeymap(v.options), next))) {
+      const compatible = product.variants?.find(v => v.options?.some(o => o.option_id === optionId && o.value === value) && v.options?.some(o => o.option_id === template.color_option_id && o.value === options[template.color_option_id]))
+      if (compatible) next = optionsAsKeymap(compatible.options) || next
+    }
     setOptions(next)
     const match = product.variants?.find(v => isEqual(optionsAsKeymap(v.options), next))
     const params = new URLSearchParams(searchParams.toString())
@@ -185,6 +189,8 @@ export default function ProductActions({
     setIsAdding(false)
   }
 
+  if (template?.offer_mode && !product.variants?.length) return <div><GalleryControlsTarget/><p className="rh-made-to-order" role="status">This design has no available size and finish options yet.</p></div>
+
   return (
     <>
       <div className="flex flex-col gap-y-2" ref={isHairClaw(product) ? undefined : actionsRef}>
@@ -202,7 +208,7 @@ export default function ProductActions({
                 return (
                   <div key={option.id}>
                     <OptionSelect
-                      option={option}
+                      option={template?.offer_mode && option.id === template.finish_option_id ? {...option,values:option.values?.filter(value => product.variants?.some(v => v.options?.some(o => o.option_id === option.id && o.value === value.value) && v.options?.some(o => o.option_id === template.size_option_id && o.value === options[template.size_option_id])))} : option}
                       current={options[option.id]}
                       updateOption={setOptionValue}
                       title={option.title ?? ""}

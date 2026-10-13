@@ -23,6 +23,7 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   const variant = variants.find(v => v.id === params.get('v_id')) || (variants.length === 1 ? variants[0] : undefined)
   const sizeOption = product.options?.find(o => o.title?.trim().toLowerCase() === 'size')
   const colorOption = product.options?.find(o => ['color','colour'].includes(o.title?.trim().toLowerCase() || ''))
+  const finishOption = product.options?.find(o => o.id === template?.finish_option_id)
   const localOptions = productSelection?.productId === product.id ? productSelection.options : undefined
   const selectedSize = sizeOption ? localOptions?.[sizeOption.id] || variant?.options?.find(o => o.option_id === sizeOption.id)?.value : undefined
   const selectedColor = (colorOption ? localOptions?.[colorOption.id] || variant?.options?.find(o => o.option_id === colorOption.id)?.value : undefined)?.toLowerCase()
@@ -36,11 +37,13 @@ export default function SharedClawGallery({product, children}: {product:HttpType
     sizeValues: sizeOption ? (sizeOption.values || []).map(v => v.value) : undefined,
     reviewedFour: reviewedFour?.editor_version === 2 && Boolean(reviewedFour.enabled),
   })
-  const recipe = size ? settings?.recipes?.[size] : undefined
+  const selectedFinish = finishOption ? localOptions?.[finishOption.id] || variant?.options?.find(o => o.option_id === finishOption.id)?.value || finishOption.values?.[0]?.value : undefined
+  const finish = selectedFinish === 'Colors by Cate' ? 'cbc' : selectedFinish === 'Natural' ? 'natural' : undefined
+  const recipe = size ? settings?.recipes?.[template?.offer_mode ? `${size}-${finish}` : size] : undefined
   const [previewColor,setPreviewColor] = useState('taupe')
   const [failed,setFailed] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
-  useEffect(() => {setPreviewColor(healingHeartsColors.find(c=>c.slug===selectedColor)?.slug || 'taupe');setFailed(false)}, [selectedColor, size, recipe?.url])
+  useEffect(() => {setPreviewColor(healingHeartsColors.find(c=>c.slug===selectedColor)?.slug || 'taupe');setFailed(false)}, [selectedColor, size, finish, recipe?.url])
   const send = useCallback(() => {
     if (recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color:previewColor,outline:false}, window.location.origin)
   }, [recipe,size,previewColor])
@@ -57,7 +60,8 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   // 2-inch geometry deliberately not synthesized from the 4-inch master.
   // Owner-approved, explicitly 4-inch product; no inference from a missing Size option.
   const adminOverride = size === '4' && recipe?.enabled && recipe.editor_version === 2 && !failed
-  const media = (preview:ReactNode) => <ClawMediaGallery product={product} preview={preview} viewKey={`${size}:${template ? selectedColor || 'taupe' : previewColor}`} colorHex={healingHeartsColors.find(c => c.slug === (template ? selectedColor || 'taupe' : previewColor))?.hex || '#927f6f'} />
+  if (template?.offer_mode && !adminOverride) return <>{children}</>
+  const media = (preview:ReactNode) => <ClawMediaGallery product={product} preview={preview} viewKey={`${size}:${finish}:${template ? selectedColor || 'taupe' : previewColor}`} colorHex={healingHeartsColors.find(c => c.slug === (template ? selectedColor || 'taupe' : previewColor))?.hex || '#927f6f'} />
   // A 2-inch purchase must never show an approved 4-inch design as its preview.
   if (template && size !== '4') return <>{children}</>
   if (!adminOverride) {

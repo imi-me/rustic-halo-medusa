@@ -6,8 +6,26 @@ import { limitPasswordReset } from '../lib/email/reset-rate-limit'
 
 import { guardResetReplay } from '../lib/email/reset-replay-guard'
 
+import { guardHairClawOffer } from '../lib/guard-hair-claw-offer'
+
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/products/:id/hair-claw-media',
+    method: ['POST'],
+    policies: [
+      { resource: 'product', operation: PolicyOperation.update },
+      { resource: 'product_variant', operation: PolicyOperation.create },
+      { resource: 'product_variant', operation: PolicyOperation.update },
+      { resource: 'inventory_item', operation: PolicyOperation.create },
+      { resource: 'price', operation: PolicyOperation.create },
+      { resource: 'price', operation: PolicyOperation.update },
+    ],
+    middlewares: [],
+  }, {
+    matcher: '/store/carts/:id/line-items',
+    method: ['POST'],
+    middlewares: [guardHairClawOffer],
+  }, {
     matcher: '/admin/inventory-items/:id/inline-level/:location_id',
     method: ['POST'],
     policies: [{ resource: 'inventory_level', operation: PolicyOperation.update }],
