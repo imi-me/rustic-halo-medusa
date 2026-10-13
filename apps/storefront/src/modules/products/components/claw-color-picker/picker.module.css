@@ -1,0 +1,8 @@
+.picker { border:0; padding:0; min-width:0; margin:20px 0 12px; color:#444344; }
+.picker legend { font-size:14px; margin-bottom:12px; }
+.colors { display:grid; grid-template-columns:repeat(auto-fit,minmax(74px,1fr)); gap:8px; }
+.choice { display:flex; align-items:center; flex-direction:column; gap:7px; min-height:76px; padding:10px 4px 8px; border:1px solid #dedcde; border-radius:8px; background:#fff; color:inherit; font-size:12px; line-height:1.3; cursor:pointer; }
+.choice:hover { border-color:#927f6f; }
+.choice[aria-pressed="true"] { border-color:#527c96; box-shadow:inset 0 0 0 1px #527c96; background:#f2f6f8; }
+.choice:focus-visible { outline:2px solid #527c96; outline-offset:3px; }
+.swatch { width:30px; height:30px; border:1px solid rgba(68,67,68,.18); border-radius:50%; }

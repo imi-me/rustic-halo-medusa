@@ -6,8 +6,9 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import GoldenLoveGallery from '@modules/products/components/golden-love-gallery'
 import ApprovedClawGallery from '@modules/products/components/approved-claw-gallery'
 import { approvedClawPreviews, ApprovedClawHandle } from '@lib/brand/approved-claw-previews'
+import { healingHeartsColors } from '@lib/brand/healing-hearts-colors'
+import ClawColorPicker from '@modules/products/components/claw-color-picker'
 
-const colors = ['Black','Espresso','Mocha','Chocolate','Caramel','Khaki','Taupe','Sand','Ivory','Gray','Terracotta','Rose','Purple']
 type Recipe = { url:string; width:number; height:number; scale:number; x:number; y:number; vertical:boolean; enabled:boolean; editor_version?:2 }
 // Only explicit physical sizes: never infer 4-inch from the absence of 2-inch.
 function sizeOf(value: string) {
@@ -31,7 +32,7 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   const [previewColor,setPreviewColor] = useState('taupe')
   const [failed,setFailed] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
-  useEffect(() => {setPreviewColor(colors.find(c=>c.toLowerCase()===selectedColor)?.toLowerCase() || 'taupe');setFailed(false)}, [selectedColor, size, recipe?.url])
+  useEffect(() => {setPreviewColor(healingHeartsColors.find(c=>c.slug===selectedColor)?.slug || 'taupe');setFailed(false)}, [selectedColor, size, recipe?.url])
   const send = useCallback(() => {
     if (recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color:previewColor,outline:false}, window.location.origin)
   }, [recipe,size,previewColor])
@@ -57,7 +58,7 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   if (size !== '4' || !recipe?.enabled || failed) return <>{children}</>
   return <div>
     <iframe ref={frame} src="/previews/shared-hair-claw/embed.html?v=editor7" title={`${product.title} — ${previewColor} color preview`} style={{width:'100%',aspectRatio:'1',border:0}} onLoad={send} onError={()=>setFailed(true)} />
-    <label>Preview claw color <select value={previewColor} onChange={e=>setPreviewColor(e.target.value)}>{colors.map(name=><option key={name} value={name.toLowerCase()}>{name}</option>)}</select></label>
+    <ClawColorPicker productName={product.title || 'hair claw'} value={previewColor} onChange={setPreviewColor} />
     <p className="text-sm my-3">Color preview only. Choose your available size and color in the purchase options; this preview does not change your cart selection.</p>
     <details><summary>Original product photos</summary>{children}</details>
   </div>
