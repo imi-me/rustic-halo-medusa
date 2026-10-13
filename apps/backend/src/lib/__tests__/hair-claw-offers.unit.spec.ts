@@ -1,5 +1,6 @@
 import {activeOfferVariantIds,offerPrices,priceRevision,saveTypeOffer} from '../hair-claw-offers'
 import {guardHairClawOffer} from '../guard-hair-claw-offer'
+import {POST} from '../../api/admin/products/[id]/hair-claw-media/route'
 import {updateProductVariantsWorkflow,createProductVariantsWorkflow,createProductOptionsWorkflow} from '@medusajs/medusa/core-flows'
 jest.mock('@medusajs/medusa/core-flows',()=>({updateProductVariantsWorkflow:jest.fn(),createProductVariantsWorkflow:jest.fn(),createProductOptionsWorkflow:jest.fn()}))
 const fit={image_id:'owned',editor_version:2,width:300,height:110,scale:1,x:0,y:0,vertical:false,enabled:true}
@@ -63,7 +64,6 @@ it('rejects cart adds for hidden options while preserving non-hair-claw behavior
 })
 
 it('requires authenticated staff and an allowed origin for price-capable saves',async()=>{
- const {POST}=await import('../../api/admin/products/[id]/hair-claw-media/route')
  const response:any={sendStatus:jest.fn(),json:jest.fn()}
  const req:any={params:{id:'p'},body:{size:'4',finish:'natural',price:15,pricing_revision:'hash',revision:null,recipe:fit},headers:{},scope:{resolve:jest.fn()}}
  await POST(req,response);expect(response.sendStatus).toHaveBeenCalledWith(401);expect(req.scope.resolve).not.toHaveBeenCalled()
