@@ -56,7 +56,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     return()=>window.removeEventListener('beforeunload',warn)
   },[dirty])
   let previewUrl=''
-  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor7`} catch {}
+  try {const address=new URL(origin);if(['http:','https:'].includes(address.protocol)&&!address.username&&!address.password)previewUrl=`${address.origin}/previews/shared-hair-claw/embed.html?v=editor8`} catch {}
   const previewOrigin = previewUrl ? new URL(previewUrl).origin : ''
   useEffect(()=>{
     let active=true

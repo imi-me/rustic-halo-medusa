@@ -57,7 +57,7 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   }
   if (size !== '4' || !recipe?.enabled || failed) return <>{children}</>
   return <div>
-    <iframe ref={frame} src="/previews/shared-hair-claw/embed.html?v=editor7" title={`${product.title} — ${previewColor} color preview`} style={{width:'100%',aspectRatio:'1',border:0}} onLoad={send} onError={()=>setFailed(true)} />
+    <iframe ref={frame} src="/previews/shared-hair-claw/embed.html?v=editor8" title={`${product.title} — ${previewColor} color preview`} style={{width:'100%',aspectRatio:'1',border:0}} onLoad={send} onError={()=>setFailed(true)} />
     <ClawColorPicker productName={product.title || 'hair claw'} value={previewColor} onChange={setPreviewColor} />
     <p className="text-sm my-3">Color preview only. Choose your available size and color in the purchase options; this preview does not change your cart selection.</p>
     <details><summary>Original product photos</summary>{children}</details>

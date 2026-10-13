@@ -2,7 +2,7 @@ import { renderClaw } from './compositor.js?v=editor7'
 import { placement, updateInteractiveArtwork } from './editor-claw.js?v=editor7'
 import { validCorners } from './editor-transform.js?v=editor7'
 import { fittingView } from './editor-viewport.js?v=editor7'
-import { mountEditorPhoto, updateEditorPhoto } from './editor-photo.js?v=editor7'
+import { mountEditorPhoto, updateEditorPhoto } from './editor-photo.js?v=editor8'
 const stage=document.getElementById('preview')
 let data=null,parentOrigin=null,drag=null
 let renderedStructure=''
