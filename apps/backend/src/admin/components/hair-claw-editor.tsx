@@ -157,7 +157,7 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
       const result=await api(`/admin/products/${productId}/hair-claw-media`,{size,revision:settings.revision,recipe:clean})
       setSettings(result.settings);setRecipe(editable(savedFor(result.settings,size)));setDirty(false)
       setErrorLabel(null)
-      setNotice(!recipe ? 'Overlay setting removed. Original photos and the approved gallery remain available.' : enable&&size==='4' ? 'Saved and enabled for every color preview of this size.' : 'Draft saved. The current storefront preview stays in place until you enable the reviewed fit.')
+      setNotice(!recipe ? 'Overlay setting removed. Original photos and the approved gallery remain available.' : enable&&size==='4' ? 'Image fit saved. All configured colors use the same artwork.' : 'Draft saved. The current storefront preview stays in place until you save the reviewed fit.')
     } catch(error) {setNotice((error as Error).message);setErrorLabel('Save failed')} finally {setBusy(false)}
   }
   const locked=!!recipe?.corners
@@ -236,8 +236,8 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     </div>
     <footer className="rh-fit-savebar">
       <div className="rh-fit-status" data-state={state}><span className="rh-fit-status-dot"/><span>{stateLabel}</span><FitHelp label="Status">{notice}</FitHelp><span className="rh-fit-sr" role={errorLabel?'alert':'status'} aria-live={errorLabel?'assertive':'polite'}>{notice}</span></div>
-      <div className="rh-fit-mode"><FitIcon name="check"/><span>{size==='4'?'One fit · all colors':'2-inch draft'}</span><FitHelp label="All colors">Save all colors enables this fitted artwork across the complete preview palette for this product. The same corners, crop and mirrors are reused. Save draft keeps it private until you finish.</FitHelp></div>
-      <div className="rh-fit-save-actions"><FitHint tip="Restore the last saved fit or draft."><button type="button" className="rh-fit-quiet" disabled={busy||interacting||!dirty} onClick={()=>{setRecipe(editable(savedFor(settings,size)));setDirty(false);setErrorLabel(null);setNotice('Saved settings restored.')}}>Discard</button></FitHint>{size==='4'&&recipe&&<button type="button" className="rh-fit-button" disabled={busy||interacting||!dirty} onClick={()=>void save(false)}>Save draft</button>}<button type="button" className="rh-fit-button rh-fit-primary" disabled={busy||interacting||!dirty} onClick={()=>void save(size==='4')}>{busy?'Working…':!recipe?'Save changes':size==='4'?'Save all colors':'Save draft'}</button></div>
+      <div className="rh-fit-mode"><FitIcon name="check"/><span>{size==='4'?'One fit · all colors':'2-inch draft'}</span><FitHelp label="All colors">Save applies this artwork fit to the storefront. Every configured claw color, including colors added later, reuses the same corners, crop and mirrors. Save draft keeps unfinished adjustments private.</FitHelp></div>
+      <div className="rh-fit-save-actions"><FitHint tip="Restore the last saved fit or draft."><button type="button" className="rh-fit-quiet" disabled={busy||interacting||!dirty} onClick={()=>{setRecipe(editable(savedFor(settings,size)));setDirty(false);setErrorLabel(null);setNotice('Saved settings restored.')}}>Discard</button></FitHint>{size==='4'&&recipe&&<button type="button" className="rh-fit-button" disabled={busy||interacting||!dirty} onClick={()=>void save(false)}>Save draft</button>}<button type="button" className="rh-fit-button rh-fit-primary" disabled={busy||interacting||!dirty} onClick={()=>void save(size==='4')}>{busy?'Working…':!recipe||size==='4'?'Save':'Save draft'}</button></div>
     </footer>
   </section></TooltipProvider>
 }

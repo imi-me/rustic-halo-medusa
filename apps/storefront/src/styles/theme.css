@@ -119,7 +119,53 @@ input[type="checkbox"],input[type="radio"] { accent-color:var(--rh-ink); }
 [data-testid="checkout-container"] { padding-top:28px; color:var(--rh-ink); }
 [data-testid="cart-container"] h1,[data-testid="account-page"] h1 { font-family:var(--rh-display); font-weight:400; color:var(--rh-ink); }
 [data-testid="login-page"] h1,[data-testid="register-page"] h1 { font:400 36px/1.15 var(--rh-display); letter-spacing:-.025em; text-transform:none; color:var(--rh-ink); }
-input:not([type="checkbox"]):not([type="radio"]),textarea { background-color:#fff; }
+/* One field treatment across search, account, checkout and native selectors. */
+:root {
+  color-scheme: light;
+  --bg-field: #fff;
+  --bg-field-hover: #eef3f6;
+  --bg-component: #fff;
+  --bg-component-hover: #eef3f6;
+  --bg-component-pressed: #eef3f6;
+  --rh-field-radius: 8px;
+}
+html:root :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"])), select, textarea, [role="combobox"]),
+.rh-native-select, .rh-search {
+  color-scheme: light;
+  background-color: #fff;
+  color: var(--rh-ink);
+  caret-color: var(--rh-ink);
+  border-radius: var(--rh-field-radius);
+}
+html:root :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"])), select, textarea, [role="combobox"]):not([aria-invalid="true"]):not(:invalid):not(.rh-native-select select):not(.rh-search input),
+.rh-native-select:not(:has(> select:is([aria-invalid="true"], :invalid))), .rh-search {
+  border: 1px solid var(--rh-border);
+  box-shadow: none;
+}
+html:root :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"])), select, textarea, [role="combobox"]):not(:disabled):not([aria-disabled="true"]):where(:hover, :focus, [data-state="open"]),
+.rh-native-select:where(:hover, :focus-within):not(:has(> select:disabled)), .rh-search:where(:hover, :focus-within) {
+  background-color: var(--rh-mist);
+  color: var(--rh-ink);
+}
+html:root :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"])), select, textarea, [role="combobox"]):not(:disabled):not([aria-disabled="true"]):not([aria-invalid="true"]):not(:invalid):not(.rh-native-select select):not(.rh-search input):where(:focus, [data-state="open"]),
+.rh-native-select:focus-within:not(:has(> select:is([aria-invalid="true"], :invalid, :disabled))), .rh-search:focus-within {
+  border-color: var(--rh-accent);
+  box-shadow: 0 0 0 3px #527c9626;
+  outline: none;
+}
+html:root :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"])), select, textarea, [role="combobox"]):is(:disabled, [aria-disabled="true"]),
+.rh-native-select:has(> select:disabled) { background-color: var(--rh-stone); color: #8b898b; }
+html:root .rh-native-select select, html:root .rh-search input { border: 0; border-radius: inherit; box-shadow: none; outline: none; background: transparent; }
+html:root :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"])), select, textarea, [role="combobox"]):is([aria-invalid="true"], :user-invalid):not(.rh-native-select select):not(.rh-search input),
+.rh-native-select:has(> select:is([aria-invalid="true"], :user-invalid)), .rh-search:has(input:is([aria-invalid="true"], :user-invalid)) { border: 1px solid var(--border-error, #e11d48); box-shadow: 0 0 0 3px #e11d4826; }
+html:root select :is(option, optgroup) { background: #fff; color: var(--rh-ink); }
+html:root select option:disabled { color: #8b898b; }
+html:root :is([role="listbox"], [role="menu"]) { --bg-component: #fff; --bg-component-hover: #eef3f6; --bg-component-pressed: #eef3f6; --fg-base: #444344; background-color: #fff; color: var(--rh-ink); border-color: var(--rh-border); }
+html:root [role="option"] { background-color: #fff; color: var(--rh-ink); }
+html:root [role="option"]:is([aria-disabled="true"], [data-disabled]) { color: #8b898b; }
+html:root [role="option"]:not([aria-disabled="true"]):not([data-disabled]):is(:hover, :focus, [data-highlighted], [aria-selected="true"]) { background: var(--rh-mist); color: var(--rh-ink); }
+html:root input:-webkit-autofill { -webkit-text-fill-color: var(--rh-ink); -webkit-box-shadow: 0 0 0 1000px #fff inset; }
+html:root input:-webkit-autofill:focus:not([aria-invalid="true"]):not(:invalid) { -webkit-box-shadow: 0 0 0 1000px var(--rh-mist) inset, 0 0 0 3px #527c9626; }
 
 @media(max-width:900px) {
   :root { --rh-header-height:112px; }

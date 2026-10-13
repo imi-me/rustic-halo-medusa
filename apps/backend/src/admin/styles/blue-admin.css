@@ -256,7 +256,7 @@ html:root {
   --button-inverted-hover: #f0f2fc;
   --button-inverted-pressed: #edf0ff;
 }
-#medusa :is(button, input, select, textarea, [role='option'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):not([class*='danger']):not([class*='error']):hover {
+#medusa :is(button, [role='option'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio']):not(:disabled):not([aria-disabled='true']):not([data-disabled]):not([class*='danger']):not([class*='error']):hover {
   background-color: var(--rh-control-hover-bg);
   color: var(--rh-control-hover-fg);
 }
@@ -272,3 +272,71 @@ html:root { --rh-control-radius: 12px; }
 #medusa :is(input[type='search'], input[cmdk-input], input[placeholder*='Search'], input[placeholder*='search']) {
   border-radius: var(--rh-control-radius);
 }
+
+/* Shared field states also cover controls and menus mounted in body portals. */
+html:root {
+  --rh-field-bg: #fff;
+  --rh-field-fg: #253047;
+  --rh-field-border: #dce1eb;
+  --rh-field-active-bg: #f0f2fc;
+  --rh-field-accent: #3546d8;
+  --bg-disabled: #f5f7fb;
+}
+html:root :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']),
+#medusa :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']) {
+  color-scheme: light;
+  color: var(--rh-field-fg);
+  background-color: var(--rh-field-bg);
+  caret-color: var(--rh-field-fg);
+  border-radius: var(--rh-control-radius);
+}
+html:root :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):not([aria-invalid='true']):not(:invalid),
+#medusa :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):not([aria-invalid='true']):not(:invalid) {
+  border: 1px solid var(--rh-field-border);
+  box-shadow: none;
+}
+html:root :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):not(:disabled):not([aria-disabled='true']):where(:hover, :focus, [data-state='open']),
+#medusa :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):not(:disabled):not([aria-disabled='true']):where(:hover, :focus, [data-state='open']) {
+  background-color: var(--rh-field-active-bg);
+  color: var(--rh-field-fg);
+}
+html:root :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):not(:disabled):not([aria-disabled='true']):not([aria-invalid='true']):not(:invalid):not(.rh-products-search-input):where(:focus, [data-state='open']),
+#medusa :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):not(:disabled):not([aria-disabled='true']):not([aria-invalid='true']):not(:invalid):not(.rh-products-search-input):where(:focus, [data-state='open']) {
+  border-color: var(--rh-field-accent);
+  box-shadow: 0 0 0 3px #3546d81f;
+  outline: none;
+}
+html:root :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox']):is(:disabled, [aria-disabled='true']),
+#medusa :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox']):is(:disabled, [aria-disabled='true']) {
+  background-color: #f5f7fb;
+  color: #8b93a3;
+}
+html:root :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):is([aria-invalid='true'], :user-invalid),
+#medusa :is(input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'], [type='hidden'], [type='button'], [type='submit'], [type='reset'], [type='image'])), select, textarea, [role='combobox'], [contenteditable='true']):is([aria-invalid='true'], :user-invalid) { border: 1px solid var(--border-error, #e11d48); box-shadow: 0 0 0 3px #e11d4826; }
+html:root select :is(option, optgroup) { background: #fff; color: var(--rh-field-fg); }
+html:root :is([role='listbox'], [role='menu']) {
+  --bg-component: #fff;
+  --bg-component-hover: #f0f2fc;
+  --bg-component-pressed: #edf0ff;
+  --fg-base: #253047;
+  background-color: var(--rh-field-bg);
+  color: var(--rh-field-fg);
+  border-color: var(--rh-field-border);
+}
+html:root [role='option'] { background-color: var(--rh-field-bg); color: var(--rh-field-fg); }
+html:root [role='option']:is([aria-disabled='true'], [data-disabled]) { color: #8b93a3; }
+html:root [role='option']:not([aria-disabled='true']):not([data-disabled]):is(:hover, :focus, [data-highlighted], [aria-selected='true']) {
+  background: var(--rh-field-active-bg);
+  color: var(--rh-field-accent);
+}
+html:root input:-webkit-autofill {
+  -webkit-text-fill-color: var(--rh-field-fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--rh-field-bg) inset;
+}
+html:root input:-webkit-autofill:focus:not([aria-invalid='true']):not(:invalid) {
+  -webkit-box-shadow: 0 0 0 1000px var(--rh-field-active-bg) inset, 0 0 0 3px #3546d81f;
+}
+html:root select option:disabled { color: #8b93a3; }
+#medusa .rh-products-search-field:where(:hover, :focus-within) { background: var(--rh-field-active-bg); }
+#medusa .rh-products-search-field:focus-within { border-color: var(--rh-field-accent); box-shadow: 0 0 0 3px #3546d81f; outline: none; }
+#medusa .rh-products-search-field input.rh-products-search-input:not([aria-invalid='true']):not(:invalid) { border: 0; background: transparent; box-shadow: none; outline: none; }
