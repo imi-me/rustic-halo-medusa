@@ -87,7 +87,6 @@ export default function GoldenLoveGallery({ children, design = "golden-love", pu
     {!purchaseColor && <ClawColorPicker compact productName={name} value={colorSlug} onChange={setColorSlug} />}
       <p style={{ fontSize: 12, lineHeight: 1.6, color: "#676567", margin: "0 0 20px" }} role="status">{purchaseColor ? `4-inch preview in ${color.name}. Base color selects the item added to your cart.` : `${color.name} is a visual color preview. It does not change the item, price, or available options added to your cart.`}</p>
           </GalleryControls>
-<details><summary style={{ cursor: "pointer", padding: "12px 0", borderTop: "1px solid #ddd" }}>Original product photos</summary>{children}</details>
     </div>
   )
 }

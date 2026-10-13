@@ -12,6 +12,7 @@ import GalleryControls from '@modules/products/components/gallery-controls'
 import { resolveHairClawSize } from '@lib/util/hair-claw-size'
 import { useHappyCowPreview } from '@modules/products/components/happy-cow-color-preview-context'
 import { hairClawTemplate } from '@lib/util/hair-claw-template'
+import ClawMediaGallery from '@modules/products/components/claw-media-gallery'
 
 type Recipe = { url:string; width:number; height:number; scale:number; x:number; y:number; vertical:boolean; enabled:boolean; editor_version?:2 }
 export default function SharedClawGallery({product, children}: {product:HttpTypes.StoreProduct; children:ReactNode}) {
@@ -56,22 +57,22 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   // 2-inch geometry deliberately not synthesized from the 4-inch master.
   // Owner-approved, explicitly 4-inch product; no inference from a missing Size option.
   const adminOverride = size === '4' && recipe?.enabled && recipe.editor_version === 2 && !failed
+  const media = (preview:ReactNode) => <ClawMediaGallery product={product} preview={preview} viewKey={`${size}:${template ? selectedColor || 'taupe' : previewColor}`} colorHex={healingHeartsColors.find(c => c.slug === (template ? selectedColor || 'taupe' : previewColor))?.hex || '#927f6f'} />
   // A 2-inch purchase must never show an approved 4-inch design as its preview.
   if (template && size !== '4') return <>{children}</>
   if (!adminOverride) {
     const purchaseColor = template ? selectedColor || 'taupe' : undefined
-    if (product.handle && Object.prototype.hasOwnProperty.call(approvedClawPreviews, product.handle)) return <ApprovedClawGallery handle={product.handle as ApprovedClawHandle} purchaseColor={purchaseColor}>{children}</ApprovedClawGallery>
-    if (product.handle === 'golden-love-hair-claw-4') return <GoldenLoveGallery purchaseColor={purchaseColor}>{children}</GoldenLoveGallery>
-    if (product.handle === 'every-paw-matters-hair-claw') return <GoldenLoveGallery design="every-paw" purchaseColor={purchaseColor}>{children}</GoldenLoveGallery>
-    if (product.handle === 'country-skies-hair-claw') return <GoldenLoveGallery design="country-skies" purchaseColor={purchaseColor}>{children}</GoldenLoveGallery>
+    if (product.handle && Object.prototype.hasOwnProperty.call(approvedClawPreviews, product.handle)) return media(<ApprovedClawGallery handle={product.handle as ApprovedClawHandle} purchaseColor={purchaseColor}>{children}</ApprovedClawGallery>)
+    if (product.handle === 'golden-love-hair-claw-4') return media(<GoldenLoveGallery purchaseColor={purchaseColor}>{children}</GoldenLoveGallery>)
+    if (product.handle === 'every-paw-matters-hair-claw') return media(<GoldenLoveGallery design="every-paw" purchaseColor={purchaseColor}>{children}</GoldenLoveGallery>)
+    if (product.handle === 'country-skies-hair-claw') return media(<GoldenLoveGallery design="country-skies" purchaseColor={purchaseColor}>{children}</GoldenLoveGallery>)
   }
   if (size !== '4' || !recipe?.enabled || failed) return <>{children}</>
-  return <div className="rh-shared-claw-gallery">
+  return media(<div className="rh-shared-claw-gallery">
     <iframe ref={frame} src="/previews/shared-hair-claw/embed.html?v=editor8" title={`${product.title} — ${previewColor} color preview`} style={{width:'100%',aspectRatio:'1',border:0}} onLoad={send} onError={()=>setFailed(true)} />
     <GalleryControls>
       {!template && <ClawColorPicker compact productName={product.title || 'hair claw'} value={previewColor} onChange={setPreviewColor} />}
       <p className="rh-preview-disclaimer">{template ? '4-inch preview. Base color selects the item added to your cart.' : '4-inch color preview. Your cart uses the available purchase options below.'}</p>
     </GalleryControls>
-    <details><summary>Original product photos</summary>{children}</details>
-  </div>
+  </div>)
 }
