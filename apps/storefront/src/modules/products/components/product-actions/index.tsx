@@ -25,6 +25,9 @@ import { HAPPY_COW_HANDLE, isHappyCowFourInchSize } from "@lib/brand/happy-cow-c
 import { useHappyCowPreview } from "@modules/products/components/happy-cow-color-preview-context"
 import { GalleryControlsTarget } from "@modules/products/components/gallery-controls"
 import { isHairClaw } from "@lib/util/is-hair-claw"
+import { hairClawTemplate, initialProductOptions } from "@lib/util/hair-claw-template"
+import ClawColorPicker from "@modules/products/components/claw-color-picker"
+import { healingHeartsColors } from "@lib/brand/healing-hearts-colors"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -48,9 +51,12 @@ export default function ProductActions({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { setCanPreviewFourInch } = useHappyCowPreview()
+  const { setCanPreviewFourInch, setProductSelection } = useHappyCowPreview()
 
-  const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [options, setOptions] = useState<Record<string, string | undefined>>(() => initialProductOptions(product, searchParams.get("v_id")))
+  const template = hairClawTemplate(product)
+  const ownNavigations = useRef(new Set<string>())
+  const lastRoute = useRef({ productId: product.id, variantId: searchParams.get("v_id") })
   const [isAdding, setIsAdding] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
@@ -66,20 +72,26 @@ export default function ProductActions({
     [product.options]
   )
   const previewColor = getHealingHeartsColor(searchParams.get("color"))
-  const isHealingHeartsProof = product.handle === HEALING_HEARTS_HANDLE
+  const isHealingHeartsProof = !template && product.handle === HEALING_HEARTS_HANDLE
   const isPreviewOnlyColor = isHealingHeartsProof && previewColor.slug !== "black"
 
   useEffect(() => {
+    setProductSelection({ productId: product.id, options })
     const selectedSize = sizeOptionId ? options[sizeOptionId] : undefined
     setCanPreviewFourInch(
       product.handle === HAPPY_COW_HANDLE && isHappyCowFourInchSize(selectedSize)
     )
-  }, [product.handle, options, setCanPreviewFourInch, sizeOptionId])
+  }, [product.id, product.handle, options, setCanPreviewFourInch, setProductSelection, sizeOptionId])
 
   // Preselect a sole variant and imported "Default Title" placeholders. The
   // placeholder remains part of variant matching but is not a customer choice.
   // Preserve an explicit card/gallery variant after Next refreshes the route.
   useEffect(() => {
+    const variantId = searchParams.get("v_id")
+    if (lastRoute.current.productId === product.id && lastRoute.current.variantId === variantId) return
+    lastRoute.current = { productId: product.id, variantId }
+    const routeKey = `${product.id}:${variantId || ""}`
+    if (ownNavigations.current.delete(routeKey)) return
     const requestedVariant = product.variants?.find(
       (variant) => variant.id === searchParams.get("v_id")
     )
@@ -93,9 +105,9 @@ export default function ProductActions({
       const variantOptions = optionsAsKeymap(product.variants[0].options)
       setOptions(variantOptions ?? {})
     } else {
-      setOptions(hiddenDefaultSelections)
+      setOptions(template ? initialProductOptions(product, variantId) : hiddenDefaultSelections)
     }
-  }, [product.id, product.variants, hiddenDefaultSelections, searchParams])
+  }, [product, hiddenDefaultSelections, searchParams, template])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -110,10 +122,16 @@ export default function ProductActions({
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
-    setOptions((prev) => ({
-      ...prev,
-      [optionId]: value,
-    }))
+    const next = { ...options, [optionId]: value }
+    setOptions(next)
+    const match = product.variants?.find(v => isEqual(optionsAsKeymap(v.options), next))
+    const params = new URLSearchParams(searchParams.toString())
+    const variantId = match?.id || null
+    if (params.get("v_id") === variantId) return
+    ownNavigations.current.add(`${product.id}:${variantId || ""}`)
+    if (variantId) params.set("v_id", variantId)
+    else params.delete("v_id")
+    router.replace(pathname + "?" + params.toString(), { scroll: false })
   }
 
   //check if the selected options produce a valid variant
@@ -123,23 +141,6 @@ export default function ProductActions({
       return isEqual(variantOptions, options)
     })
   }, [product.variants, options])
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    const value = isValidVariant ? selectedVariant?.id : null
-
-    if (params.get("v_id") === value) {
-      return
-    }
-
-    if (value) {
-      params.set("v_id", value)
-    } else {
-      params.delete("v_id")
-    }
-
-    router.replace(pathname + "?" + params.toString())
-  }, [selectedVariant, isValidVariant, pathname, router, searchParams])
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
@@ -197,6 +198,7 @@ export default function ProductActions({
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
               {displayOptions.map((option) => {
+                if (template?.color_option_id === option.id) return <ClawColorPicker key={option.id} compact purchase productName={product.title || "hair claw"} value={options[option.id]?.toLowerCase() || "taupe"} disabled={!!disabled || isAdding} onChange={slug => { const color = healingHeartsColors.find(c => c.slug === slug); if (color) setOptionValue(option.id, color.name) }} />
                 return (
                   <div key={option.id}>
                     <OptionSelect

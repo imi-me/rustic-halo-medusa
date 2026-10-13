@@ -9,7 +9,7 @@ import { countrySkiesBorderFit } from "@lib/brand/country-skies-overlay"
 import { goldenLoveOverlay as template } from "@lib/brand/golden-love-overlay"
 import { goldenLoveBorderFit, goldenLoveEngravedBorder } from "@lib/brand/golden-love-border-fit"
 
-export default function GoldenLoveGallery({ children, design = "golden-love" }: { children: ReactNode; design?: "golden-love" | "country-skies" | "every-paw" }) {
+export default function GoldenLoveGallery({ children, design = "golden-love", purchaseColor }: { children: ReactNode; design?: "golden-love" | "country-skies" | "every-paw"; purchaseColor?: string }) {
   const isEveryPaw = design === "every-paw"
   const isCountrySkies = design === "country-skies"
   const name = isEveryPaw ? "Every Paw Matters" : isCountrySkies ? "Country Skies" : "Golden Love"
@@ -18,7 +18,7 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
   const [colorSlug, setColorSlug] = useState(isEveryPaw ? "black" : "taupe")
   const [failed, setFailed] = useState(false)
   const id = useId().replace(/:/g, "")
-  const color = healingHeartsColors.find((item) => item.slug === colorSlug)!
+  const color = healingHeartsColors.find((item) => item.slug === (purchaseColor || colorSlug)) || healingHeartsColors[0]
   const scale = (template.clipLengthMm - 2 * template.revealMm) / template.woodLengthMm
   const length = template.woodLengthMm * scale
   // Mirror the upper curve around the horizontal center for an even handle.
@@ -84,8 +84,8 @@ export default function GoldenLoveGallery({ children, design = "golden-love" }: 
         </svg>
       </div>
     <GalleryControls>
-    <ClawColorPicker compact productName={name} value={colorSlug} onChange={setColorSlug} />
-      <p style={{ fontSize: 12, lineHeight: 1.6, color: "#676567", margin: "0 0 20px" }} role="status">{color.name} is a visual color preview. It does not change the item, price, or available options added to your cart.</p>
+    {!purchaseColor && <ClawColorPicker compact productName={name} value={colorSlug} onChange={setColorSlug} />}
+      <p style={{ fontSize: 12, lineHeight: 1.6, color: "#676567", margin: "0 0 20px" }} role="status">{purchaseColor ? `4-inch preview in ${color.name}. Base color selects the item added to your cart.` : `${color.name} is a visual color preview. It does not change the item, price, or available options added to your cart.`}</p>
           </GalleryControls>
 <details><summary style={{ cursor: "pointer", padding: "12px 0", borderTop: "1px solid #ddd" }}>Original product photos</summary>{children}</details>
     </div>

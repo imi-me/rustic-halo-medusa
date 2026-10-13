@@ -3,6 +3,8 @@
 import { createContext, ReactNode, useContext, useState } from "react"
 
 type HappyCowPreviewContextValue = {
+  productSelection: { productId: string; options: Record<string, string | undefined> } | null
+  setProductSelection: (selection: { productId: string; options: Record<string, string | undefined> }) => void
   canPreviewFourInch: boolean
   setCanPreviewFourInch: (canPreview: boolean) => void
   previewColorSlug: string
@@ -19,10 +21,13 @@ export const HappyCowPreviewProvider = ({
 }) => {
   const [canPreviewFourInch, setCanPreviewFourInch] = useState(false)
   const [previewColorSlug, setPreviewColorSlug] = useState("black")
+  const [productSelection, setProductSelection] = useState<HappyCowPreviewContextValue["productSelection"]>(null)
 
   return (
     <HappyCowPreviewContext.Provider
       value={{
+        productSelection,
+        setProductSelection,
         canPreviewFourInch,
         setCanPreviewFourInch,
         previewColorSlug,

@@ -7,6 +7,7 @@ import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
+import { applyHairClawTemplate } from "@lib/util/hair-claw-template"
 
 type ProductListQueryParams = (HttpTypes.FindParams &
   HttpTypes.StoreProductListParams) & {
@@ -80,7 +81,7 @@ export const listProducts = async ({
 
       return {
         response: {
-          products,
+          products: products.map(applyHairClawTemplate),
           count,
         },
         nextPage: nextPage,
