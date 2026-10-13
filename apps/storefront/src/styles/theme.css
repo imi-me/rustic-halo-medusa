@@ -239,11 +239,12 @@ html:root input:-webkit-autofill:focus:not([aria-invalid="true"]):not(:invalid) 
 .rh-product-story .rh-product-share { margin:14px 0 0; }
 @media(max-width:760px) {
   .rh-product-compact { grid-template-columns:1fr; gap:20px; padding:20px 20px 32px; }
-  .rh-product-compact .rh-shared-claw-gallery > iframe { width:220px !important; height:220px; margin-bottom:8px; }
+  .rh-product-compact .rh-shared-claw-gallery > iframe { width:180px !important; height:180px; margin-bottom:8px; }
   .rh-product-compact .rh-approved-claw-gallery > div:first-of-type,
   .rh-product-compact .rh-golden-love-gallery > div:first-of-type,
   .rh-product-compact .rh-every-paw-gallery > div:first-of-type,
-  .rh-product-compact .rh-country-skies-gallery > div:first-of-type { max-width:220px; }
-  .rh-product-compact .rh-gallery-primary { height:220px; max-width:280px; }
+  .rh-product-compact .rh-country-skies-gallery > div:first-of-type { max-width:180px; }
+  .rh-product-compact .rh-gallery-primary { height:180px; max-width:240px; }
+  .rh-product-compact .rh-product-intro { display:none; }
   .rh-product-story { grid-template-columns:1fr; gap:24px; padding-top:20px; }
 }

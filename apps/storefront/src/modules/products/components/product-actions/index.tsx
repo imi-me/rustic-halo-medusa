@@ -186,7 +186,7 @@ export default function ProductActions({
 
   return (
     <>
-      <div className="flex flex-col gap-y-2" ref={actionsRef}>
+      <div className="flex flex-col gap-y-2" ref={isHairClaw(product) ? undefined : actionsRef}>
         <ProductPrice product={product} variant={selectedVariant} />
         <GalleryControlsTarget />
         {isHairClaw(product) && (product.variants?.length ?? 0) === 1 && displayOptions.map(option => (
@@ -215,7 +215,7 @@ export default function ProductActions({
           )}
         </div>
 
-        <div className="rh-purchase-row">
+        <div className="rh-purchase-row" ref={isHairClaw(product) ? actionsRef : undefined}>
         <div className="rh-quantity" aria-label="Quantity"><span>Quantity</span><div><button type="button" aria-label="Decrease quantity" onClick={() => setQuantity((current) => Math.max(1, current - 1))} disabled={isAdding || quantity === 1}>−</button><output aria-live="polite">{quantity}</output><button type="button" aria-label="Increase quantity" onClick={() => setQuantity((current) => current + 1)} disabled={isAdding}>+</button></div></div>
 
         <Button
