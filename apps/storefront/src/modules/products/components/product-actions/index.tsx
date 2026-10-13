@@ -23,6 +23,8 @@ import {
 } from "@lib/brand/healing-hearts-colors"
 import { HAPPY_COW_HANDLE, isHappyCowFourInchSize } from "@lib/brand/happy-cow-colors"
 import { useHappyCowPreview } from "@modules/products/components/happy-cow-color-preview-context"
+import { GalleryControlsTarget } from "@modules/products/components/gallery-controls"
+import { isHairClaw } from "@lib/util/is-hair-claw"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -186,7 +188,11 @@ export default function ProductActions({
     <>
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
         <ProductPrice product={product} variant={selectedVariant} />
-        <ProductDescription product={product} />
+        <GalleryControlsTarget />
+        {isHairClaw(product) && (product.variants?.length ?? 0) === 1 && displayOptions.map(option => (
+          <p className="rh-sole-option" key={option.id}>{option.title}: <strong>{options[option.id] || option.values?.[0]?.value}</strong></p>
+        ))}
+        {!isHairClaw(product) && <ProductDescription product={product} />}
         <div>
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
@@ -209,6 +215,7 @@ export default function ProductActions({
           )}
         </div>
 
+        <div className="rh-purchase-row">
         <div className="rh-quantity" aria-label="Quantity"><span>Quantity</span><div><button type="button" aria-label="Decrease quantity" onClick={() => setQuantity((current) => Math.max(1, current - 1))} disabled={isAdding || quantity === 1}>−</button><output aria-live="polite">{quantity}</output><button type="button" aria-label="Increase quantity" onClick={() => setQuantity((current) => current + 1)} disabled={isAdding}>+</button></div></div>
 
         <Button
@@ -234,6 +241,7 @@ export default function ProductActions({
             ? "Out of stock"
             : "Add to cart"}
         </Button>
+        </div>
         {isPreviewOnlyColor && (
           <p className="rh-color-preview-note" role="status">
             {previewColor.name} is a visual preview. Its purchasable catalog

@@ -6,3 +6,11 @@
 .choice[aria-pressed="true"] { border-color:#527c96; box-shadow:inset 0 0 0 1px #527c96; background:#f2f6f8; }
 .choice:focus-visible { outline:2px solid #527c96; outline-offset:3px; }
 .swatch { width:30px; height:30px; border:1px solid rgba(68,67,68,.18); border-radius:50%; }
+.compact { margin:10px 0 0; }
+.compact legend { margin-bottom:8px; font-size:13px; }
+.compact .colors { display:grid; grid-template-columns:repeat(7,40px); gap:6px; }
+.compact .choice { width:40px; min-height:40px; padding:4px; border-radius:50%; gap:0; }
+.compact .choice[aria-pressed="true"] { outline:2px solid #527c96; outline-offset:1px; box-shadow:none; }
+.compact .swatch { width:30px; height:30px; }
+@media(pointer:coarse) { .compact .colors { grid-template-columns:repeat(7,44px); gap:4px; } .compact .choice { width:44px; min-height:44px; } }
+@media(max-width:370px) { .compact .colors { grid-template-columns:repeat(6,40px); } .compact .choice { width:40px; } }

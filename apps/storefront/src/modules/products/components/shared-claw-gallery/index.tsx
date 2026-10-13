@@ -8,6 +8,7 @@ import ApprovedClawGallery from '@modules/products/components/approved-claw-gall
 import { approvedClawPreviews, ApprovedClawHandle } from '@lib/brand/approved-claw-previews'
 import { healingHeartsColors } from '@lib/brand/healing-hearts-colors'
 import ClawColorPicker from '@modules/products/components/claw-color-picker'
+import GalleryControls from '@modules/products/components/gallery-controls'
 
 type Recipe = { url:string; width:number; height:number; scale:number; x:number; y:number; vertical:boolean; enabled:boolean; editor_version?:2 }
 // Only explicit physical sizes: never infer 4-inch from the absence of 2-inch.
@@ -56,10 +57,12 @@ export default function SharedClawGallery({product, children}: {product:HttpType
     if (product.handle === 'country-skies-hair-claw') return <GoldenLoveGallery design="country-skies">{children}</GoldenLoveGallery>
   }
   if (size !== '4' || !recipe?.enabled || failed) return <>{children}</>
-  return <div>
+  return <div className="rh-shared-claw-gallery">
     <iframe ref={frame} src="/previews/shared-hair-claw/embed.html?v=editor8" title={`${product.title} — ${previewColor} color preview`} style={{width:'100%',aspectRatio:'1',border:0}} onLoad={send} onError={()=>setFailed(true)} />
-    <ClawColorPicker productName={product.title || 'hair claw'} value={previewColor} onChange={setPreviewColor} />
-    <p className="text-sm my-3">Color preview only. Choose your available size and color in the purchase options; this preview does not change your cart selection.</p>
+    <GalleryControls>
+      <ClawColorPicker compact productName={product.title || 'hair claw'} value={previewColor} onChange={setPreviewColor} />
+      <p className="rh-preview-disclaimer">Preview only. Your cart uses the available purchase options below.</p>
+    </GalleryControls>
     <details><summary>Original product photos</summary>{children}</details>
   </div>
 }

@@ -209,3 +209,41 @@ html:root input:-webkit-autofill:focus:not([aria-invalid="true"]):not(:invalid) 
   .rh-checkout-logo { width:145px; }
   [data-testid="nav-cart-dropdown"] { display:none; }
 }
+
+/* Compact hair-claw purchase layout: approved first product-page sample. */
+.rh-product-compact { grid-template-columns:minmax(0,.9fr) minmax(0,1fr); gap:28px 48px; max-width:1120px; padding-top:28px; padding-bottom:38px; }
+.rh-product-compact .rh-product-details { position:static; gap:12px; }
+.rh-product-compact .rh-product-title { font-size:clamp(28px,2.6vw,36px); }
+.rh-product-intro { margin:-4px 0 0; color:var(--rh-muted); font-size:14px; }
+.rh-product-compact .rh-product-gallery { min-width:0; }
+.rh-product-compact .rh-shared-claw-gallery > iframe { display:block; width:300px !important; max-width:100%; height:300px; aspect-ratio:1; margin:0 auto 12px; }
+.rh-product-compact .rh-approved-claw-gallery > div:first-of-type,
+.rh-product-compact .rh-golden-love-gallery > div:first-of-type,
+.rh-product-compact .rh-every-paw-gallery > div:first-of-type,
+.rh-product-compact .rh-country-skies-gallery > div:first-of-type { max-width:300px; margin:0 auto 12px; }
+.rh-product-compact .rh-gallery-primary { max-width:300px; height:300px; aspect-ratio:auto; margin:0 auto; }
+.rh-product-compact .rh-product-gallery details > summary { padding:9px 0; border-top:1px solid var(--rh-border); color:var(--rh-muted); font-size:12px; cursor:pointer; }
+.rh-product-compact .rh-gallery-purchase-controls:empty { display:none; }
+.rh-product-compact .rh-preview-disclaimer { margin:8px 0 12px; max-width:350px; color:var(--rh-muted); font-size:12px; line-height:1.5; }
+.rh-product-compact .rh-gallery-purchase-controls > p { font-size:12px !important; margin:8px 0 12px !important; }
+.rh-product-compact .rh-purchase-row { display:flex; align-items:flex-end; gap:12px; margin-top:8px; }
+.rh-product-compact .rh-quantity { flex:0 0 auto; padding:0; flex-direction:column; align-items:flex-start; gap:6px; font-size:12px; }
+.rh-product-compact .rh-quantity > div { border-radius:6px; }
+.rh-product-compact .rh-quantity button,.rh-product-compact .rh-quantity output { width:36px; height:46px; }
+.rh-product-compact .rh-add-to-cart { flex:1; width:auto; min-width:0; border-radius:6px !important; min-height:48px; }
+.rh-product-compact .rh-sole-option { margin:6px 0; font-size:13px; }
+.rh-compact-production { margin:0; color:var(--rh-muted); font-size:12px; }
+.rh-product-story { grid-column:1 / -1; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:48px; border-top:1px solid var(--rh-border); padding-top:24px; }
+.rh-product-story h2 { font:400 24px/1.2 var(--rh-display); margin-bottom:12px; }
+.rh-product-story .rh-product-description { color:var(--rh-muted); font-size:14px; line-height:1.65; }
+.rh-product-story .rh-product-share { margin:14px 0 0; }
+@media(max-width:760px) {
+  .rh-product-compact { grid-template-columns:1fr; gap:20px; padding:20px 20px 32px; }
+  .rh-product-compact .rh-shared-claw-gallery > iframe { width:220px !important; height:220px; margin-bottom:8px; }
+  .rh-product-compact .rh-approved-claw-gallery > div:first-of-type,
+  .rh-product-compact .rh-golden-love-gallery > div:first-of-type,
+  .rh-product-compact .rh-every-paw-gallery > div:first-of-type,
+  .rh-product-compact .rh-country-skies-gallery > div:first-of-type { max-width:220px; }
+  .rh-product-compact .rh-gallery-primary { height:220px; max-width:280px; }
+  .rh-product-story { grid-template-columns:1fr; gap:24px; padding-top:20px; }
+}
