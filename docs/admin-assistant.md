@@ -297,3 +297,44 @@ text-only generation and an unsaved new-product upload converted to a JPEG
 preview without product creation. Evidence/source/release: 
 `.local/admin-photo-ai-20261014/`. Deployed acceptance is recorded below when
 complete. No production/Shopify change, Etsy publication or label purchase.
+
+Deployed photo release `03e189a95b2d601973fa1e07642bba1c3222c672`, deployment
+`wjmatzyextofjcwuygryqwtt`, finished October 14 at 12:03:44 p.m. Eastern.
+Both services are healthy. Native staging description generation with three
+photos passed review/apply/Undo. Etsy generated 13 unique tags under the length
+limit, preserved a locked phrase, and passed apply/Undo/Discard. At 390px, the
+document and both photo pickers stay within the viewport. Anonymous/origin
+guards returned 401/403; private image URLs and invalid 180KB image previews
+returned 400 without contacting the provider. Catalog remains 424, with Coffee
+Cup copy/Etsy metadata unchanged. Queue status was OK at 12:04:23 p.m. Eastern.
+
+Final reports: `browser-checks.json`, `staging-checks.json`,
+`deployed-services.json`, `release.json` and `staging-photo-description.png` in
+`.local/admin-photo-ai-20261014/`. The clean product page is left open for owner
+testing. No remaining blocker for photo-assisted descriptions/tags; activation
+of external Etsy writes/color sharing and label purchases remains separate.
+
+
+## Shared compact image gallery — October 14, 2026
+
+The product workspace and new-product form now keep photos in one Images
+section, with 76px thumbnail cards. Cover choice and a compact Manage button
+preserve ordering/removal controls. The gallery owns one Use product photos for
+AI switch and up to three per-photo Use for AI selections. Website and Etsy
+writing helpers consume the same selected sources and show only a status and
+Choose in Images link; duplicated thumbnail galleries were removed.
+
+AI preferences are transient workspace state, separate from the persisted
+product draft. They do not enable Save or change gallery membership/order/cover.
+Removing a photo prunes it from both helpers; default selection uses the cover
+first, and new unsaved uploads remain supported. Hair-claw fitting remains
+conditional on product type. Backend photo validation/provider configuration
+and manual suggestion review/apply/save behavior are unchanged.
+
+Local validation: backend/Admin build and Admin TypeScript passed. Browser
+fixture verified identical photo sources for description and Etsy requests, the
+shared text-only switch, no duplicate helper images, selection without product
+dirtiness, cover/reorder/remove, pruning, Discard, and the shared new-product
+gallery. Provider requests were mocked for this UI-only change. Evidence and
+isolated release: `.local/admin-shared-gallery-20261014/`. Live staging
+acceptance is recorded after deployment.

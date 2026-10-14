@@ -5,6 +5,7 @@ import { emptyEtsyDraft, isHairClaw } from '../../../../lib/product-admin'
 import { ProductTypeField } from '../../../components/product-type-field'
 import { ProductImages, uploadProductImage } from '../../../components/product-images'
 import { DescriptionEditor } from '../../../components/description-editor'
+import { useCopyPhotos } from '../../../lib/copy-photos'
 import { ProductCopyHelper } from '../../../components/product-copy-helper'
 import { EtsyListingEditor } from '../../../components/etsy-listing-editor'
 import '../../../styles/inline-editor.css'
@@ -45,6 +46,7 @@ const slug = (value: string) =>
 const NewProductPage = () => {
   const navigate = useNavigate()
   const [draft, setDraft] = useState(blank)
+  const photos = useCopyPhotos(draft.images, draft.thumbnail, 'new')
   const [choices, setChoices] = useState<Record<string, Entity[]>>({})
   const [requestId] = useState(() => crypto.randomUUID())
   const [inventoryMode, setInventoryMode] = useState('stocked')
@@ -390,8 +392,7 @@ const NewProductPage = () => {
                 onChange={(value) => change('description', value)}
               />
               <ProductCopyHelper
-                images={draft.images}
-                thumbnail={draft.thumbnail}
+                photos={photos}
                 title={String(draft.fields.title)}
                 description={String(draft.fields.description)}
                 material={String(draft.fields.material)}
@@ -416,7 +417,7 @@ const NewProductPage = () => {
                 {field('handle', 'Handle')}
               </details>
             </section>
-            <ProductImages productId="new" draft={draft} change={setDraft} add={addImages} />
+            <ProductImages photos={photos} productId="new" draft={draft} change={setDraft} add={addImages} />
             <section className="rh-inline-card">
               <h2>Pricing, variants & inventory</h2>
               <label className="rh-inline-field">
@@ -596,6 +597,7 @@ const NewProductPage = () => {
               ))}
             </section>
             <EtsyListingEditor
+              photos={photos}
               value={draft.etsy}
               change={(etsy) => setDraft((previous) => ({ ...previous, etsy }))}
               product={{ images: draft.images, thumbnail: draft.thumbnail,

@@ -8,6 +8,7 @@ import {
   type EtsyDraft,
 } from '../../lib/product-admin'
 import { HairClawPreviewExport } from './hair-claw-preview-export'
+import type { CopyPhotoSelection } from '../lib/copy-photos'
 import { ProductCopyHelper, type CopySuggestion } from './product-copy-helper'
 import { adminRequest, type Entity } from '../lib/inline-edit'
 
@@ -18,6 +19,7 @@ export function EtsyListingEditor({
   title,
   description,
   material,
+  photos,
   saved = false,
   addColorImage,
 }: {
@@ -27,6 +29,7 @@ export function EtsyListingEditor({
   title: string
   description: string
   material: string
+  photos: CopyPhotoSelection
   saved?: boolean
   addColorImage?: (variantId: string, url: string) => void
 }) {
@@ -269,8 +272,7 @@ export function EtsyListingEditor({
           <small>These notes guide AI. Select the actual category and attributes in Etsy.</small>
         </details>
         <ProductCopyHelper
-          images={product.images ?? []}
-          thumbnail={product.thumbnail ?? ''}
+          photos={photos}
           title={value.title || title}
           description={value.description || description}
           material={material}

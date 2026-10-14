@@ -1,8 +1,35 @@
+import { useEffect, useState } from 'react'
+
 export type CopyPhoto = { url: string }
+export type CopyPhotoSelection = {
+  enabled: boolean
+  available: string[]
+  selected: string[]
+  galleryId: string
+  setEnabled: (enabled: boolean) => void
+  select: (url: string, checked: boolean) => void
+}
 export function copyPhotoChoices(images: CopyPhoto[], thumbnail = '') {
   const urls = images.map(image => image.url).filter(Boolean)
   if (thumbnail && !urls.includes(thumbnail)) urls.unshift(thumbnail)
   return [...new Set(urls)].sort((a, b) => Number(b === thumbnail) - Number(a === thumbnail))
+}
+
+// Ephemeral writing preferences belong to the product workspace, not its saved draft.
+export function useCopyPhotos(images: CopyPhoto[], thumbnail: string, productId: string): CopyPhotoSelection {
+  const available = copyPhotoChoices(images, images.some(image => image.url === thumbnail) ? thumbnail : '')
+  const [enabled, setEnabled] = useState(true)
+  const [selection, setSelection] = useState<string[] | null>(null)
+  useEffect(() => { setEnabled(true); setSelection(null) }, [productId])
+  const selected = selection === null ? available.slice(0, 3) : selection.filter(url => available.includes(url))
+  const select = (url: string, checked: boolean) => {
+    if (!available.includes(url)) return
+    setSelection(previous => {
+      const current = previous === null ? available.slice(0, 3) : previous.filter(value => available.includes(value))
+      return checked ? [...new Set([...current, url])].slice(0, 3) : current.filter(value => value !== url)
+    })
+  }
+  return { enabled, available, selected, galleryId: `rh-product-images-${productId}`, setEnabled, select }
 }
 
 export async function copyPhotoSource(url: string): Promise<string> {
