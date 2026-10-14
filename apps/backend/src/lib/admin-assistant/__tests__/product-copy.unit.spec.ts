@@ -53,6 +53,8 @@ it('returns validated proposals without saving and uses bounded structured outpu
   const payload = JSON.parse(request.mock.calls[0][1].body)
   expect(payload.store).toBe(false)
   expect(payload.text.format.strict).toBe(true)
+  expect(payload.text.format.schema.properties.tags).toMatchObject({ minItems: 13, maxItems: 13 })
+  expect(payload.text.format.schema.properties.tags.items.properties.tag.maxLength).toBe(20)
   expect(payload).not.toHaveProperty('tools')
 })
 it('rejects changed locked tags, duplicates and oversized tags', async () => {
@@ -89,6 +91,8 @@ it('routes OpenRouter credentials only to its fixed endpoint with schema support
   const payload = JSON.parse(request.mock.calls[0][1].body)
   expect(payload.provider.require_parameters).toBe(true)
   expect(payload.text.format.strict).toBe(true)
+  expect(payload.text.format.schema.properties.tags).toMatchObject({ minItems: 13, maxItems: 13 })
+  expect(payload.text.format.schema.properties.tags.items.properties.tag.maxLength).toBe(20)
   delete process.env.ADMIN_ASSISTANT_OPENROUTER_API_KEY
   request.mockClear()
   await expect(generateProductCopy(input(), request)).rejects.toThrow('Configure')

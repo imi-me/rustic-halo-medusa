@@ -243,3 +243,11 @@ remain off. No production or Shopify configuration changed.
 Evidence and isolated release: `.local/admin-openrouter-20261014/`, including
 `provider-preflight.json`, `credential-report.json`, `tests.log`, `build.log`,
 `typecheck.log` and `release.json`.
+
+Live acceptance identified an unsupported `parallel_tool_calls` routing filter on
+OpenRouter and a rejected generated tag set. The repair omits that unsupported
+OpenRouter parameter while retaining the server's one-tool limit. Product-copy
+JSON Schema now enforces action-specific empty unused fields, exactly 13 Etsy
+tags, and 20-character tag limits at the provider as well as server validation.
+A real locked-tag request and a complete two-round product lookup passed before
+the repair deployment; 18 tests and the backend/Admin build passed again.

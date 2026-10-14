@@ -71,6 +71,7 @@ it('keeps OpenRouter tool rounds stateless and uses only the selected provider k
       expect(options.headers.Authorization).toBe('Bearer router-test-only')
       expect(JSON.parse(options.body).store).toBe(false)
       expect(JSON.parse(options.body).provider.require_parameters).toBe(true)
+      expect(JSON.parse(options.body)).not.toHaveProperty('parallel_tool_calls')
     }
     expect(JSON.parse(request.mock.calls[1][1].body).input.at(-1).type).toBe('function_call_output')
   } finally { process.env = original }

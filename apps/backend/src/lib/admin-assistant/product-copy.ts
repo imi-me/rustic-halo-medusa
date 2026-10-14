@@ -67,18 +67,20 @@ export async function generateProductCopy(
           schema: {
             type: 'object',
             properties: {
-              title: { type: 'string' },
-              description: { type: 'string' },
+              title: { type: 'string', maxLength: ['etsy-title'].includes(input.action) ? 140 : 0 },
+              description: { type: 'string', maxLength: ['description', 'shorten', 'etsy-description'].includes(input.action) ? 10000 : 0 },
               tags: {
                 type: 'array',
+                minItems: input.action === 'etsy-tags' ? 13 : 0,
+                maxItems: input.action === 'etsy-tags' ? 13 : 0,
                 items: {
                   type: 'object',
-                  properties: { tag: { type: 'string' }, reason: { type: 'string' } },
+                  properties: { tag: { type: 'string', minLength: 1, maxLength: 20 }, reason: { type: 'string', maxLength: 500 } },
                   required: ['tag', 'reason'],
                   additionalProperties: false,
                 },
               },
-              explanation: { type: 'string' },
+              explanation: { type: 'string', maxLength: 2000 },
             },
             required: ['title', 'description', 'tags', 'explanation'],
             additionalProperties: false,
