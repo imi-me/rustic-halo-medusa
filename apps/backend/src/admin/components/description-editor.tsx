@@ -8,6 +8,7 @@ import { TextStyleKit } from '@tiptap/extension-text-style'
 import { cleanDescription, descriptionHTML } from '../../lib/product-description'
 import '../styles/description-editor.css'
 export function DescriptionEditor({ value, onChange, disabled = false }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  const more = useRef<HTMLDetailsElement>(null)
   const emitted = useRef(value)
   const interacted = useRef(false)
   const [source, setSource] = useState<string | null>(null)
@@ -27,7 +28,7 @@ export function DescriptionEditor({ value, onChange, disabled = false }: { value
     emitted.current = value; editor.commands.setContent(descriptionHTML(value), { emitUpdate: false })
   }, [value, editor])
   if (!editor || !state) return <div>Loading description editor…</div>
-  const button = (label: string, caption: string, run: () => void, active = false, unavailable = false) => <button type="button" title={label} aria-label={label} aria-pressed={active} disabled={disabled || unavailable || source !== null} onMouseDown={event => event.preventDefault()} onClick={run}>{caption}</button>
+  const button = (label: string, caption: string, run: () => void, active = false, unavailable = false) => <button type="button" title={label} aria-label={label} aria-pressed={active} disabled={disabled || unavailable || source !== null} onMouseDown={event => event.preventDefault()} onClick={() => { run(); if (more.current) more.current.open = false }}>{caption}</button>
   const validURL = (url: string, media = false) => media ? /^https:\/\/[^\s]+$/i.test(url) : /^(https?:\/\/|mailto:|tel:|\/(?!\/))[^\s]+$/i.test(url)
   return <div className="rh-inline-field wide rh-rich-description" onFocusCapture={() => { interacted.current = true }} onPointerDownCapture={() => { interacted.current = true }}><span>Description</span>
     <div className="rh-rich-toolbar" role="toolbar" aria-label="Description formatting">
@@ -35,19 +36,21 @@ export function DescriptionEditor({ value, onChange, disabled = false }: { value
       {button('Bold', 'B', () => editor.chain().focus().toggleBold().run(), state.bold)}
       {button('Italic', 'I', () => editor.chain().focus().toggleItalic().run(), state.italic)}
       {button('Underline', 'U', () => editor.chain().focus().toggleUnderline().run(), state.underline)}
-      {button('Bullet list', '• List', () => editor.chain().focus().toggleBulletList().run(), state.bullet)}
-      {button('Numbered list', '1. List', () => editor.chain().focus().toggleOrderedList().run(), state.numbered)}
+      {button('Bullet list', '•', () => editor.chain().focus().toggleBulletList().run(), state.bullet)}
+      {button('Numbered list', '1.', () => editor.chain().focus().toggleOrderedList().run(), state.numbered)}
+      {button('Insert or edit link', 'Link', () => { setLink(editor.getAttributes('link').href || ''); setError('') })}
+      {button('Undo', '↶', () => editor.chain().focus().undo().run(), false, !state.undo)}
+      {button('Redo', '↷', () => editor.chain().focus().redo().run(), false, !state.redo)}
+      <details ref={more} className="rh-rich-more" onKeyDown={event => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus() } }}><summary aria-label="More description tools">⋯</summary><div className="rh-rich-more-panel" role="toolbar" aria-label="More description tools">
       <select aria-label="Text alignment" disabled={disabled || source !== null} value={state.align} onChange={event => editor.chain().focus().setTextAlign(event.target.value).run()}>{['left','center','right','justify'].map(align => <option key={align} value={align}>{align[0].toUpperCase()+align.slice(1)}</option>)}</select>
       <label className="rh-rich-color" title="Text color">A<input aria-label="Text color" type="color" disabled={disabled || source !== null} defaultValue="#253047" onChange={event => editor.chain().focus().setColor(event.target.value).run()}/></label>
-      {button('Insert or edit link', 'Link', () => { setLink(editor.getAttributes('link').href || ''); setError('') })}
       {button('Remove link', 'Unlink', () => editor.chain().focus().unsetLink().run())}
       {button('Insert image', 'Image', () => { setImage(''); setError('') })}
       {button('Insert table', 'Table', () => editor.chain().focus().insertTable({ rows: 3, cols: 2, withHeaderRow: true }).run())}
       {button('Blockquote', 'Quote', () => editor.chain().focus().toggleBlockquote().run(), editor.isActive('blockquote'))}
       {button('Clear formatting', 'Clear', () => editor.chain().focus().unsetAllMarks().clearNodes().run())}
-      {button('Undo', '↶', () => editor.chain().focus().undo().run(), false, !state.undo)}
-      {button('Redo', '↷', () => editor.chain().focus().redo().run(), false, !state.redo)}
-      <button type="button" disabled={disabled} aria-label={source === null ? 'Edit HTML' : 'Return to visual editor'} onClick={() => { if (source === null) setSource(editor.getHTML()); else { const next = cleanDescription(source); editor.commands.setContent(next); setSource(null) } }}>{source === null ? '</> HTML' : 'Apply HTML'}</button>
+      <button type="button" disabled={disabled} aria-label={source === null ? 'Edit HTML' : 'Return to visual editor'} onClick={() => { if (more.current) more.current.open = false; if (source === null) setSource(editor.getHTML()); else { const next = cleanDescription(source); editor.commands.setContent(next); setSource(null) } }}>{source === null ? '</> HTML' : 'Apply HTML'}</button>
+      </div></details>
     </div>
     {state.table && source === null && <div className="rh-rich-toolbar" aria-label="Table tools">{button('Add table row', '+ Row', () => editor.chain().focus().addRowAfter().run())}{button('Add table column', '+ Column', () => editor.chain().focus().addColumnAfter().run())}{button('Delete table row', '− Row', () => editor.chain().focus().deleteRow().run())}{button('Delete table column', '− Column', () => editor.chain().focus().deleteColumn().run())}{button('Delete table', 'Remove table', () => editor.chain().focus().deleteTable().run())}</div>}
     {link !== null && <div className="rh-rich-dialog"><label>Link URL<input aria-label="Link URL" value={link} placeholder="https://… or /us/products/…" onChange={event => setLink(event.target.value)}/></label><button type="button" onClick={() => { if (!validURL(link)) { setError('Enter a website, email, phone or internal link.'); return } editor.chain().focus().extendMarkRange('link').setLink({ href: link }).run(); setLink(null); setError('') }}>Apply link</button><button type="button" onClick={() => { setLink(null); setError('') }}>Cancel</button></div>}
