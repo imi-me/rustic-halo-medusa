@@ -9,6 +9,7 @@ import { cleanDescription, descriptionHTML } from '../../lib/product-description
 import '../styles/description-editor.css'
 export function DescriptionEditor({ value, onChange, disabled = false }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
   const emitted = useRef(value)
+  const interacted = useRef(false)
   const [source, setSource] = useState<string | null>(null)
   const [link, setLink] = useState<string | null>(null)
   const [image, setImage] = useState<string | null>(null)
@@ -17,7 +18,7 @@ export function DescriptionEditor({ value, onChange, disabled = false }: { value
     extensions: [StarterKit.configure({ link: { openOnClick: false, autolink: false }, codeBlock: false }), TextAlign.configure({ types: ['heading', 'paragraph'] }), TableKit, Image, TextStyleKit],
     content: descriptionHTML(value),
     editorProps: { attributes: { role: 'textbox', 'aria-label': 'Description', 'aria-multiline': 'true', spellcheck: 'true' } },
-    onUpdate: ({ editor }) => { const next = cleanDescription(editor.getHTML()); emitted.current = next; onChange(next) },
+    onUpdate: ({ editor }) => { if (!interacted.current) return; const next = cleanDescription(editor.getHTML()); emitted.current = next; onChange(next) },
   })
   useEffect(() => { editor?.setEditable(!disabled) }, [editor, disabled])
   const state = useEditorState({ editor, selector: ({ editor }) => editor ? { bold: editor.isActive('bold'), italic: editor.isActive('italic'), underline: editor.isActive('underline'), bullet: editor.isActive('bulletList'), numbered: editor.isActive('orderedList'), undo: editor.can().undo(), redo: editor.can().redo(), heading: [1, 2, 3, 4, 5, 6].find(level => editor.isActive('heading', { level })) ?? 0, align: editor.getAttributes('paragraph').textAlign || editor.getAttributes('heading').textAlign || 'left', table: editor.isActive('table') } : null })
@@ -28,7 +29,7 @@ export function DescriptionEditor({ value, onChange, disabled = false }: { value
   if (!editor || !state) return <div>Loading description editor…</div>
   const button = (label: string, caption: string, run: () => void, active = false, unavailable = false) => <button type="button" title={label} aria-label={label} aria-pressed={active} disabled={disabled || unavailable || source !== null} onMouseDown={event => event.preventDefault()} onClick={run}>{caption}</button>
   const validURL = (url: string, media = false) => media ? /^https:\/\/[^\s]+$/i.test(url) : /^(https?:\/\/|mailto:|tel:|\/(?!\/))[^\s]+$/i.test(url)
-  return <div className="rh-inline-field wide rh-rich-description"><span>Description</span>
+  return <div className="rh-inline-field wide rh-rich-description" onFocusCapture={() => { interacted.current = true }} onPointerDownCapture={() => { interacted.current = true }}><span>Description</span>
     <div className="rh-rich-toolbar" role="toolbar" aria-label="Description formatting">
       <select aria-label="Text format" disabled={disabled || source !== null} value={state.heading} onChange={event => { const level = Number(event.target.value); if (level) editor.chain().focus().toggleHeading({ level: level as 1 | 2 | 3 | 4 | 5 | 6 }).run(); else editor.chain().focus().setParagraph().run() }}><option value="0">Paragraph</option>{[1,2,3,4,5,6].map(level => <option key={level} value={level}>Heading {level}</option>)}</select>
       {button('Bold', 'B', () => editor.chain().focus().toggleBold().run(), state.bold)}
