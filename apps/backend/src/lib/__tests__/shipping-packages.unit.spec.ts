@@ -81,3 +81,9 @@ it('treats historical zero variant weights as inheritance, keeping unrelated edi
   validateAssignments(defaultPackages(), product, product.variants)
   expect((await planShipping([{ variant_id: 'a', quantity: 1 }], defaultPackages(), service([{ ...product.variants[0], product }])))[0].weight).toBe(2.6)
 })
+it('validates product package defaults even when every variant overrides them, while allowing variant-only weights', () => {
+  const variants = [{ id: 'a', weight: grams, metadata: { [SHIPPING_KEY]: assignmentSchema.parse({ package_id: 'earring-box' }) } }]
+  expect(() => validateAssignments(defaultPackages(), assigned('p', { weight: null }), variants)).not.toThrow()
+  const invalid = assigned('p', { metadata: { [SHIPPING_KEY]: assignmentSchema.parse({ package_id: 'missing-package' }) } })
+  expect(() => validateAssignments(defaultPackages(), invalid, variants)).toThrow('active shipping package')
+})
