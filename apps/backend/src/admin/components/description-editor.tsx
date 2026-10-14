@@ -20,7 +20,7 @@ export function DescriptionEditor({ value, onChange, disabled = false }: { value
     editorProps: { attributes: { role: 'textbox', 'aria-label': 'Description', 'aria-multiline': 'true', spellcheck: 'true' } },
     onUpdate: ({ editor }) => { if (!interacted.current) return; const next = cleanDescription(editor.getHTML()); emitted.current = next; onChange(next) },
   })
-  useEffect(() => { editor?.setEditable(!disabled) }, [editor, disabled])
+  useEffect(() => { editor?.setEditable(!disabled, false) }, [editor, disabled])
   const state = useEditorState({ editor, selector: ({ editor }) => editor ? { bold: editor.isActive('bold'), italic: editor.isActive('italic'), underline: editor.isActive('underline'), bullet: editor.isActive('bulletList'), numbered: editor.isActive('orderedList'), undo: editor.can().undo(), redo: editor.can().redo(), heading: [1, 2, 3, 4, 5, 6].find(level => editor.isActive('heading', { level })) ?? 0, align: editor.getAttributes('paragraph').textAlign || editor.getAttributes('heading').textAlign || 'left', table: editor.isActive('table') } : null })
   useEffect(() => {
     if (!editor || value === emitted.current) return
