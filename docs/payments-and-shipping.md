@@ -168,3 +168,49 @@ This expands explicit coverage for the published storefront only. It does not
 add a fallback for unknown SKUs, enable inventory synchronization, purchase a
 label, or constitute a live-rate comparison. Coasters and other unpublished
 unmeasured products remain blocked.
+
+
+## Shipping packages Admin — October 14, 2026
+
+New Shipping · Packages route (`/app/shipping-packages`) manages named packages
+with measured exterior inches, empty packaging ounces, standard capacity,
+allowed product mixing, confirmed accessory combinations and archive/restore.
+The three existing presets and approved accessory combinations seed the first
+view. Saved definitions live in the existing admin-operations module under
+`shipping-packages:v1`; no schema migration is needed. Authenticated read/write
+policies, origin checks, a configuration lock and revision checks protect saves.
+Definitions cannot be destructively removed; archived definitions remain valid
+for existing assignments while new selections and type defaults exclude them.
+
+Product creation and inline editing now select a preferred package and measured
+item weight in grams. Variants can override package and weight, with blank/
+historical zero variant weights inheriting the product weight. Standard capacity
+overrides, ships-alone and accessory packing groups are explicit choices.
+Product type defaults apply to new products only. The product metadata key is
+`shipping_package_v1`; existing metadata, variants, prices and inventory are
+preserved. Package choices require confirmed positive item weights.
+
+Checkout and order-label preparation share `shipping-plan.ts`. The provider
+loads current package configuration and authoritative saved variant/product
+settings, preserving explicit legacy SKU mappings where no package has been
+assigned. Legacy accessory tie-breaking and packed weights remain compatible
+with the existing Python calculator. Unknown or unmeasured products still fail
+closed. Packaging weight is added once per parcel, each parcel receives its own
+rate request, and changes to configuration/parcel measurements invalidate cache.
+A no-postage packing preview accepts saved SKUs and quantities.
+
+The website label form suggests a single-box plan and offers saved packages.
+Changing the selected box clears packed weight; changing measurements clears
+old rates. The merchant confirms actual packed weight before rates/purchase.
+Multi-box plans are shown for review; purchasing split shipments still requires
+dedicated fulfillment tools. Etsy label purchasing stays in Etsy. Existing
+label/payment/production activation gates are unchanged; no postage is bought
+by this feature or its packing preview.
+
+Source and acceptance evidence: `.local/admin-packages-20261014/`. Focused
+checks cover legacy/new packing, mixed orders, per-variant overrides, tare
+arithmetic, archives/revision conflicts, preserving IDs/metadata/prices,
+provider quote payload/cache behavior, product creation and label safeguards.
+Staging release and final browser/data checks are recorded in that folder's
+release and acceptance reports after deployment. Remaining work: live carrier
+comparison, label purchasing/printer acceptance, and split-shipment purchasing.

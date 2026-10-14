@@ -1,0 +1,53 @@
+import { defineRouteConfig } from '@medusajs/admin-sdk'
+import { useEffect, useState } from 'react'
+import { useBlocker } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { adminRequest } from '../../lib/inline-edit'
+import { ProductSection, revealInvalidField } from '../../components/product-section'
+import { useShippingPackages } from '../../components/product-packaging'
+import { packagesSchema, type PackageConfig, type ShippingPackage } from '../../../lib/shipping-packages'
+import '../../styles/inline-editor.css'
+const ShippingPackagesPage = () => {
+  const query = useShippingPackages(), client = useQueryClient()
+  const [draft, setDraft] = useState<PackageConfig | null>(null), [error, setError] = useState(''), [notice, setNotice] = useState(''), [saving, setSaving] = useState(false)
+  const [previewItems, setPreviewItems] = useState([{ sku: '', quantity: 1 }]), [preview, setPreview] = useState<any[] | null>(null), [checking, setChecking] = useState(false)
+  const [types, setTypes] = useState<{ id: string; value: string }[]>([])
+  useEffect(() => { if (query.data && !draft) setDraft(query.data) }, [query.data, draft])
+  useEffect(() => { void adminRequest('/admin/product-types?limit=100').then(data => setTypes(data.product_types)).catch(() => setError('Product type defaults could not load. Package editing is still available.')) }, [])
+  useEffect(() => { setPreview(null) }, [draft])
+  const dirty = Boolean(draft && query.data && JSON.stringify(draft) !== JSON.stringify(query.data))
+  const blocker = useBlocker(() => dirty || saving)
+  useEffect(() => { if (!dirty && !saving) return; const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }; window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn) }, [dirty, saving])
+  const update = (id: string, patch: Partial<ShippingPackage>) => setDraft(current => current && ({ ...current, packages: current.packages.map(row => row.id === id ? { ...row, ...patch } : row) }))
+  const save = async () => {
+    if (!draft || !dirty || saving) return
+    setSaving(true); setError(''); setNotice('')
+    try {
+      const config = packagesSchema.parse({ packages: draft.packages, type_defaults: draft.type_defaults })
+      const saved = await adminRequest('/admin/shipping-packages', { config, expected_revision: draft.revision })
+      client.setQueryData(['rh-shipping-packages'], saved); setDraft(saved); setNotice('Shipping packages saved.')
+    } catch (failure) { setError((failure as Error).message) }
+    finally { setSaving(false) }
+  }
+  return <div className="rh-inline-editor rh-packages-page">
+    <div className="rh-inline-toolbar"><div><h1>Shipping · Packages</h1><span>Reusable boxes and mailers for products, checkout estimates and website labels.</span></div><div className="rh-inline-buttons"><button type="button" disabled={!dirty || saving} onClick={() => { setDraft(query.data!); setError('') }}>Discard</button><button type="button" disabled={saving || !draft} onClick={() => setDraft(current => current && ({ ...current, packages: [...current.packages, { id: `pkg_${crypto.randomUUID().replace(/-/g, '')}`, name: 'New package', active: true, length: 1, width: 1, height: 1, packaging_weight: 0, capacity: 1, combine_products: false, accessory_limits: [] }] }))}>+ Add package</button><button className="primary" type="submit" form="rh-package-form" disabled={!dirty || saving}>{saving ? 'Saving…' : 'Save packages'}</button></div></div>
+    <p>Use measured outside dimensions in inches and the empty package weight in ounces, including packing materials. Product item weights stay separate in grams.</p>
+    {(error || query.error) && <p role="alert" className="rh-inline-error">{error || query.error?.message}</p>}{notice && <p role="status" className="rh-inline-success">{notice}</p>}
+    {query.isLoading && <p>Loading packages…</p>}
+    {blocker.state === 'blocked' && <div role="alert" className="rh-inline-leave"><strong>Unsaved package changes</strong><button type="button" onClick={() => blocker.reset()}>Keep editing</button><button type="button" disabled={saving} onClick={() => { setDraft(query.data!); blocker.proceed() }}>Discard and leave</button></div>}
+    {draft && <form id="rh-package-form" onInvalid={revealInvalidField} onSubmit={event => { event.preventDefault(); void save() }}><fieldset disabled={saving} className="rh-packages-list">
+      {draft.packages.map((box, index) => <ProductSection key={box.id} title={`${box.name}${box.active ? '' : ' · archived'}`} open={index === 0 || !query.data?.packages.some(original => original.id === box.id)}>
+        <div className="rh-inline-grid"><label className="rh-inline-field wide"><span>Package name</span><input aria-label={`Package ${index + 1} name`} required maxLength={100} value={box.name} onChange={event => update(box.id, { name: event.target.value })}/></label>
+        {(['length', 'width', 'height', 'packaging_weight', 'capacity'] as const).map(key => <label className="rh-inline-field" key={key}><span>{({ length: 'Length (in)', width: 'Width (in)', height: 'Height (in)', packaging_weight: 'Empty packaging weight (oz)', capacity: 'Maximum items per box' })[key]}</span><input aria-label={`${({ length: 'Length (in)', width: 'Width (in)', height: 'Height (in)', packaging_weight: 'Empty packaging weight (oz)', capacity: 'Maximum items per box' })[key]} — package ${index + 1}`} type="number" required min={key === 'packaging_weight' ? 0 : key === 'capacity' ? 1 : .001} max={key === 'capacity' ? 100 : key === 'packaging_weight' ? 1120 : 108} step={key === 'capacity' ? 1 : 'any'} value={box[key]} onChange={event => update(box.id, { [key]: Number(event.target.value) })}/></label>)}
+        <label className="rh-inline-check"><input type="checkbox" checked={box.combine_products} onChange={event => update(box.id, { combine_products: event.target.checked })}/>Allow different products in this package</label>
+        </div><p>Capacity applies to standard packing. Keep mixed products separate unless you have confirmed they fit together.</p>
+        <details><summary>Confirmed hair-claw / earring combinations</summary><p>Each row is a combination that fits one box. These rules apply when products use the matching packing groups.</p>{box.accessory_limits.map((limit, n) => <div className="rh-packages-combination" key={n}>{(['hair_claws', 'earring_pairs'] as const).map(key => <label className="rh-inline-field" key={key}><span>{key === 'hair_claws' ? 'Hair claws' : 'Earring pairs'}</span><input aria-label={`${key} — package ${index + 1} combination ${n + 1}`} type="number" min={0} max={100} step={1} value={limit[key]} onChange={event => update(box.id, { accessory_limits: box.accessory_limits.map((row, i) => i === n ? { ...row, [key]: Number(event.target.value) } : row) })}/></label>)}<button type="button" onClick={() => update(box.id, { accessory_limits: box.accessory_limits.filter((_, i) => i !== n) })}>Remove combination</button></div>)}<button type="button" onClick={() => update(box.id, { accessory_limits: [...box.accessory_limits, { hair_claws: 1, earring_pairs: 0 }] })}>+ Add combination</button></details>
+        <button type="button" onClick={() => { update(box.id, { active: !box.active }); if (box.active) setDraft(current => current && ({ ...current, type_defaults: Object.fromEntries(Object.entries(current.type_defaults).filter(([, id]) => id !== box.id)) })) }}>{box.active ? 'Archive package' : 'Restore package'}</button><small>Archived packages remain valid for existing assignments and are hidden from new choices.</small>
+      </ProductSection>)}
+      <ProductSection title="Check packing" open={false}><p>Use saved SKUs and package settings. This preview does not request carrier rates or buy labels.</p>{previewItems.map((item, index) => <div className="rh-packages-combination" key={index}><label className="rh-inline-field"><span>SKU</span><input aria-label={`Packing SKU ${index + 1}`} value={item.sku} onChange={event => { setPreviewItems(previous => previous.map((row, i) => i === index ? { ...row, sku: event.target.value } : row)); setPreview(null) }}/></label><label className="rh-inline-field"><span>Quantity</span><input aria-label={`Packing quantity ${index + 1}`} type="number" min={1} max={100} value={item.quantity} onChange={event => { setPreviewItems(previous => previous.map((row, i) => i === index ? { ...row, quantity: Number(event.target.value) } : row)); setPreview(null) }}/></label>{previewItems.length > 1 && <button type="button" onClick={() => setPreviewItems(previous => previous.filter((_, i) => i !== index))}>Remove item</button>}</div>)}<button type="button" onClick={() => setPreviewItems(previous => [...previous, { sku: '', quantity: 1 }])}>+ Add packing item</button><button type="button" disabled={dirty || checking} onClick={async () => { setChecking(true); setError(''); setPreview(null); try { const result = await adminRequest('/admin/shipping-packages/preview', { items: previewItems }); setPreview(result.parcels) } catch (failure) { setError((failure as Error).message) } finally { setChecking(false) } }}>{checking ? 'Checking…' : 'Preview packing'}</button>{dirty && <p>Save package changes before previewing.</p>}{preview && <div role="status">{preview.map((box, index) => <p key={index}>Box {index + 1}: {box.package_name} · {box.length} × {box.width} × {box.height} in · {box.weight} oz packed · {box.item_count} item{box.item_count === 1 ? '' : 's'}</p>)}</div>}</ProductSection>
+      <ProductSection title="Defaults for new products"><p>Choose a package by product type. Existing products and measured item weights are kept unchanged.</p>{types.map(type => <label className="rh-inline-field" key={type.id}><span>{type.value}</span><select aria-label={`Default package — ${type.value}`} value={draft.type_defaults[type.id] ?? ''} onChange={event => setDraft({ ...draft, type_defaults: event.target.value ? { ...draft.type_defaults, [type.id]: event.target.value } : Object.fromEntries(Object.entries(draft.type_defaults).filter(([id]) => id !== type.id)) })}><option value="">Choose on each product</option>{draft.packages.filter(row => row.active).map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>)}{!types.length && <p>Create product types in the product editor to configure package defaults.</p>}</ProductSection>
+    </fieldset></form>}
+  </div>
+}
+export const config = defineRouteConfig({ label: 'Shipping · Packages', rank: 5 })
+export default ShippingPackagesPage

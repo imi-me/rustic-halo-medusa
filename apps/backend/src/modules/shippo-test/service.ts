@@ -2,10 +2,12 @@ import { AbstractFulfillmentProviderService } from '@medusajs/framework/utils'
 import { CalculateShippingOptionPriceDTO } from '@medusajs/framework/types'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { spawn } from 'node:child_process'
+import { ADMIN_OPERATIONS } from '../admin-operations'
+import { defaultPackages } from '../../lib/shipping-packages'
+import { readPackageConfig } from '../../lib/shipping-package-store'
+import { planShipping } from '../../lib/shipping-plan'
 import { assertShippingTestEnvironment } from '../../lib/shipping-test-environment'
 import { purchasedProviderLabel } from '../../lib/shippo-provider-label'
-import { shippingItems } from '../../lib/shipping-catalog'
 
 // Local pilot only. This provider cannot purchase a label or use live credentials.
 export default class ShippoTestService extends AbstractFulfillmentProviderService {
@@ -35,25 +37,17 @@ export default class ShippoTestService extends AbstractFulfillmentProviderServic
     }
     const address = ctx.shipping_address
     if (ctx.currency_code !== 'usd' || address?.country_code?.toLowerCase() !== 'us' || !address.address_1 || !address.postal_code || !address.city || !address.province) throw new Error('A complete US shipping address is required')
-    const items = shippingItems(ctx.items)
+    const config = this.labelContainer[ADMIN_OPERATIONS] ? await readPackageConfig(this.labelContainer[ADMIN_OPERATIONS]) : defaultPackages()
+    const parcels = await planShipping(ctx.items, config, this.labelContainer.product)
     const destination = { name: `${address.first_name || ''} ${address.last_name || ''}`.trim(), street1: address.address_1, street2: address.address_2 || '', city: address.city, state: address.province, zip: address.postal_code, country: 'US' }
-    const cacheKey = JSON.stringify({ items, destination })
+    const cacheKey = JSON.stringify({ parcels, revision: config.revision, destination })
     const cached = this.cache.get(cacheKey)
     if (cached && cached.until > Date.now()) return { calculated_amount: cached.amount, is_calculated_price_tax_inclusive: false }
-    const parcels = await new Promise<unknown[]>((accept, reject) => {
-      const child = spawn('python3', ['-B', '-c', 'import json,sys; from shipping_parcels import build_parcels; print(json.dumps(build_parcels(json.load(sys.stdin))))'], { cwd: resolve(this.root, 'scripts') })
-      let output = ''
-      child.stdout.on('data', d => output += d)
-      child.stderr.resume()
-      child.on('error', reject)
-      child.on('close', code => { if (code) reject(new Error('Unable to pack this order automatically.')); else { try { accept(JSON.parse(output)) } catch { reject(new Error('Invalid packing result')) } } })
-      child.stdin.end(JSON.stringify(items))
-    })
     const headers = { Authorization: `ShippoToken ${env.SHIPPO_API_KEY}`, 'Content-Type': 'application/json', 'SHIPPO-API-VERSION': '2018-02-08' }
     const origin = Object.fromEntries(['name','street1','city','state','zip','country'].map(k => [k, env[`SHIPPO_FROM_${k.toUpperCase()}`]]))
     let cents = 0
     for (const parcel of parcels) {
-      const response = await fetch('https://api.goshippo.com/shipments/', { method: 'POST', headers, signal: AbortSignal.timeout(30000), body: JSON.stringify({ address_from: origin, address_to: destination, parcels: [parcel], async: false }) })
+      const response = await fetch('https://api.goshippo.com/shipments/', { method: 'POST', headers, signal: AbortSignal.timeout(30000), body: JSON.stringify({ address_from: origin, address_to: destination, parcels: [{ length: String(parcel.length), width: String(parcel.width), height: String(parcel.height), weight: String(parcel.weight), distance_unit: 'in', mass_unit: 'oz' }], async: false }) })
       if (!response.ok) throw new Error('Shipping quote unavailable. Please try again.')
       const shipment = await response.json()
       const rates = (shipment.rates || []).filter((r: {currency:string,servicelevel:{token:string}}) => r.currency === 'USD' && r.servicelevel.token === 'usps_ground_advantage')

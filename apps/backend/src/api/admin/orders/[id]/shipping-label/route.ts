@@ -1,3 +1,6 @@
+import { Modules } from '@medusajs/framework/utils'
+import { readPackageConfig } from '../../../../../lib/shipping-package-store'
+import { planShipping } from '../../../../../lib/shipping-plan'
 import type { AuthenticatedMedusaRequest, MedusaResponse } from '@medusajs/framework/http'
 import { ADMIN_OPERATIONS } from '../../../../../modules/admin-operations'
 import { allowedOrigin } from '../../../assistant/route'
@@ -10,7 +13,14 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   const [operation] = await (req.scope.resolve(ADMIN_OPERATIONS) as any).listAdminOperations({ operation_key: `shippo-purchase:${req.params.id}` })
   let config: any = null, message = ''
   try { config = labelConfiguration(); if (!operation) assertWebsiteOrder(order, config.channels) } catch (error) { config = null; message = (error as Error).message }
-  return res.json({ enabled: Boolean(config), test: config?.test ?? false, message, status: operation?.status ?? null, label: operation?.status === 'purchased' ? { id: operation.id, ...operation.payload.label, fulfillment_id: operation.payload.fulfillment_id ?? null, test: operation.payload.mode === 'test' } : null })
+  const packages = await readPackageConfig(req.scope.resolve(ADMIN_OPERATIONS))
+  let packing: any[] = [], packingMessage = ''
+  try {
+    if (order.metadata?.etsy_receipt_id || order.metadata?.source === 'etsy') throw new Error('Buy Etsy labels in Etsy.')
+    if (order.items?.some((item: any) => item.requires_shipping === false || Number(item.detail?.fulfilled_quantity ?? 0) > 0)) throw new Error('Review partially fulfilled or nonphysical items before packing.')
+    packing = await planShipping(order.items, packages, req.scope.resolve(Modules.PRODUCT))
+  } catch (error) { packingMessage = (error as Error).message }
+  return res.json({ packages: packages.packages.filter(row => row.active), packing, packingMessage, enabled: Boolean(config), test: config?.test ?? false, message, status: operation?.status ?? null, label: operation?.status === 'purchased' ? { id: operation.id, ...operation.payload.label, fulfillment_id: operation.payload.fulfillment_id ?? null, test: operation.payload.mode === 'test' } : null })
 }
 export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResponse) {
   res.setHeader('Cache-Control', 'no-store')

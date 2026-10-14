@@ -1,15 +1,17 @@
+import { emptyAssignment, assignmentSchema, SHIPPING_KEY, type PackageAssignment } from '../../lib/shipping-packages'
 import { priceRows, pricePayload, type PriceRow } from './product-prices'
 import { emptyEtsyDraft, etsyDraftSchema, ETSY_DRAFT_KEY, type EtsyDraft } from '../../lib/product-admin'
 import { adminFetch } from './admin-fetch'
 export type Entity = Record<string, any>
 export type Price = { id: string; amount: number; currency_code: string; min_quantity?: number | null; max_quantity?: number | null; rules?: Record<string, string> }
 export type ProductDraft = {
+  shipping?: PackageAssignment
   etsy: EtsyDraft
   images: Array<{ key: string; id?: string; url: string }>
   thumbnail: string
   fields: Record<string, string | boolean>
   relations: Record<string, string[]>
-  variants: Array<{ id: string; fields: Record<string, string | boolean>; prices: Record<string, string>; priceRows: PriceRow[] }>
+  variants: Array<{ id: string; shipping?: PackageAssignment; fields: Record<string, string | boolean>; prices: Record<string, string>; priceRows: PriceRow[] }>
 }
 export const productTextFields = ['title', 'subtitle', 'handle', 'description', 'material', 'status', 'weight', 'length', 'width', 'height', 'origin_country', 'hs_code', 'mid_code', 'collection_id', 'type_id', 'shipping_profile_id']
 export const variantTextFields = ['title', 'sku', 'barcode', 'ean', 'upc']
@@ -22,13 +24,14 @@ export const isBasePrice = (price: Price) => !Object.keys(price.rules ?? {}).len
 
 export function productDraft(product: Entity): ProductDraft {
   return {
+    shipping: assignmentSchema.parse(product.metadata?.[SHIPPING_KEY] ?? {}),
     etsy: product.metadata?.[ETSY_DRAFT_KEY] ? etsyDraftSchema.parse(product.metadata[ETSY_DRAFT_KEY]) : emptyEtsyDraft(),
     images: (product.images ?? []).map((image: Entity) => ({ key: image.id ?? image.url, ...(image.id ? { id: image.id } : {}), url: image.url })),
     thumbnail: product.thumbnail ?? '',
     fields: { ...Object.fromEntries(productTextFields.map(key => [key, text(key === 'shipping_profile_id' ? product.shipping_profile?.id ?? product[key] : product[key])])), discountable: Boolean(product.discountable) },
     relations: Object.fromEntries(['categories', 'tags', 'sales_channels'].map(key => [key, ids(product[key])])),
-    variants: (product.variants ?? []).map((variant: Entity) => ({ id: variant.id,
-      fields: { ...Object.fromEntries(variantTextFields.map(key => [key, text(variant[key])])), manage_inventory: Boolean(variant.manage_inventory), allow_backorder: Boolean(variant.allow_backorder) },
+    variants: (product.variants ?? []).map((variant: Entity) => ({ id: variant.id, shipping: assignmentSchema.parse(variant.metadata?.[SHIPPING_KEY] ?? {}),
+      fields: { ...Object.fromEntries(variantTextFields.concat('weight').map(key => [key, text(key === 'weight' && Number(variant[key]) === 0 ? null : variant[key])])), manage_inventory: Boolean(variant.manage_inventory), allow_backorder: Boolean(variant.allow_backorder) },
       prices: Object.fromEntries((variant.prices ?? []).map((price: Price) => [price.id, text(price.amount)])),
       priceRows: priceRows(variant.prices),
     })),
@@ -40,6 +43,7 @@ export function productUpdate(product: Entity, draft: ProductDraft): Entity {
   const initial = productDraft(product)
   const update: Entity = {}
   if (!equal(initial.etsy, draft.etsy)) update.metadata = { ...product.metadata, [ETSY_DRAFT_KEY]: etsyDraftSchema.parse(draft.etsy) }
+  if (!equal(initial.shipping, draft.shipping ?? emptyAssignment())) update.metadata = { ...product.metadata, ...update.metadata, [SHIPPING_KEY]: assignmentSchema.parse(draft.shipping ?? {}) }
   if (!equal(initial.images, draft.images)) {
     if (draft.images.some(image => !/^https?:\/\//.test(image.url))) throw new Error('Image upload is incomplete. Your draft is kept.')
     update.images = draft.images.map(({ id, url }) => ({ ...(id ? { id } : {}), url }))
@@ -79,6 +83,8 @@ export function productUpdate(product: Entity, draft: ProductDraft): Entity {
       patch[key] = value || null
       variantChanged = true
     }
+    if (!equal(before.shipping, edited.shipping ?? emptyAssignment())) { patch.metadata = { ...variant.metadata, [SHIPPING_KEY]: assignmentSchema.parse(edited.shipping ?? {}) }; variantChanged = true }
+    if (edited.fields.weight !== before.fields.weight) { const weight = edited.fields.weight === '' ? null : Number(edited.fields.weight); if (weight !== null && (!Number.isFinite(weight) || weight <= 0)) throw new Error('Variant weight must be positive grams or blank to inherit.'); patch.weight = weight; variantChanged = true }
     for (const key of ['manage_inventory', 'allow_backorder']) {
       if (edited.fields[key] !== before.fields[key]) { patch[key] = Boolean(edited.fields[key]); variantChanged = true }
     }

@@ -1,3 +1,7 @@
+import { assignmentSchema, SHIPPING_KEY } from '../../../../../lib/shipping-packages'
+import { readPackageConfig } from '../../../../../lib/shipping-package-store'
+import { validateAssignments } from '../../../../../lib/shipping-assignment'
+import { ADMIN_OPERATIONS } from '../../../../../modules/admin-operations'
 import type { AuthenticatedMedusaRequest, MedusaResponse } from '@medusajs/framework/http'
 import { cleanDescription, richDescription } from '../../../../../lib/product-description'
 import { Modules } from '@medusajs/framework/utils'
@@ -22,7 +26,18 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
       if (update.variants && JSON.stringify(update.variants.map((variant: any) => variant.id).sort()) !== JSON.stringify((product.variants ?? []).map(row => row.id).sort())) throw new Error('Variant membership changed. Reload the product.')
       const changed = (update.variants ?? []).filter(row => row.barcode)
       if (changed.length) await allocateBarcodes(products, changed.map(row => ({ id: row.id, barcode: row.barcode! })), await pendingBarcodes(req.scope))
-      if (update.metadata) update.metadata = { ...product.metadata, [ETSY_DRAFT_KEY]: etsyDraftSchema.parse(update.metadata[ETSY_DRAFT_KEY]) }
+      if (update.metadata) update.metadata = { ...product.metadata,
+        ...(Object.prototype.hasOwnProperty.call(update.metadata, ETSY_DRAFT_KEY) ? { [ETSY_DRAFT_KEY]: etsyDraftSchema.parse(update.metadata[ETSY_DRAFT_KEY]) } : {}),
+        ...(Object.prototype.hasOwnProperty.call(update.metadata, SHIPPING_KEY) ? { [SHIPPING_KEY]: assignmentSchema.parse(update.metadata[SHIPPING_KEY]) } : {}),
+      }
+      for (const patch of update.variants ?? []) if (patch.metadata) {
+        const original = product.variants?.find(row => row.id === patch.id)
+        patch.metadata = { ...original?.metadata, [SHIPPING_KEY]: assignmentSchema.parse(patch.metadata[SHIPPING_KEY] ?? original?.metadata?.[SHIPPING_KEY] ?? {}) }
+      }
+      if (update.metadata?.[SHIPPING_KEY] || update.weight !== undefined || (update.variants ?? []).some(row => row.metadata || row.weight !== undefined)) {
+        const variants = (product.variants ?? []).map(row => ({ ...row, ...(update.variants ?? []).find(patch => patch.id === row.id) }))
+        validateAssignments(await readPackageConfig(req.scope.resolve(ADMIN_OPERATIONS)), { ...product, ...update }, variants, product)
+      }
       await updateProductsWorkflow(req.scope).run({ input: { selector: { id: req.params.id }, update } })
     })
     return res.json({ id: req.params.id })

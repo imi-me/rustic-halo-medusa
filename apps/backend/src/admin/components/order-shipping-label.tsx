@@ -14,6 +14,10 @@ export function OrderShippingLabel({ id, disabled = false }: { id: string; disab
   const load = async () => {
     const response = await adminRequest(`/admin/orders/${id}/shipping-label`)
     setState(response)
+    if (response.packing?.length === 1) {
+      const planned = response.packing[0]
+      setParcel({ weight: String(planned.weight), length: String(planned.length), width: String(planned.width), height: String(planned.height) })
+    }
   }
   useEffect(() => {
     void load().catch((failure) => setError(failure.message))
@@ -157,6 +161,10 @@ export function OrderShippingLabel({ id, disabled = false }: { id: string; disab
                 One package containing all unfulfilled physical items. Enter measured packed weight
                 and package dimensions.
               </p>
+              {state?.packingMessage && <p role="status">{state.packingMessage} Enter measured packing details below.</p>}
+              {state?.packing?.length > 0 && <div><strong>Suggested packing</strong>{state.packing.map((box: any, index: number) => <p key={index}>Box {index + 1}: {box.package_name} · {box.item_count} item{box.item_count === 1 ? '' : 's'} · {box.weight} oz</p>)}{state.packing.length > 1 && <p>This plan needs multiple boxes. This label tool supports one box; review split fulfillment or confirm a larger box that safely holds all items.</p>}</div>}
+              <label className="rh-inline-field"><span>Use a saved package</span><select aria-label="Use a saved package" defaultValue="" onChange={event => { const box = state.packages.find((row: any) => row.id === event.target.value); if (box) { setParcel(previous => ({ ...previous, length: String(box.length), width: String(box.width), height: String(box.height), weight: '' })); setQuote(null); setConfirm(false) } }}><option value="">Measured package / suggested packing</option>{state?.packages?.map((box: any) => <option key={box.id} value={box.id}>{box.name} · {box.length} × {box.width} × {box.height} in</option>)}</select></label>
+              <small>Confirm the actual packed weight before requesting rates. Choosing a different box clears the weight so it must be remeasured.</small>
               <div className="rh-inline-grid">
                 {Object.entries(parcel).map(([key, value]) => (
                   <label className="rh-inline-field" key={key}>
@@ -169,7 +177,7 @@ export function OrderShippingLabel({ id, disabled = false }: { id: string; disab
                       step="any"
                       value={value}
                       onChange={(event) => {
-                        setParcel({ ...parcel, [key]: event.target.value })
+                        { setParcel({ ...parcel, [key]: event.target.value }); setQuote(null); setConfirm(false) }
                         setQuote(null)
                         setRateId('')
                         setConfirm(false)

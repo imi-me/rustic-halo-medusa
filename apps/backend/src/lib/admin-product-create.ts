@@ -1,3 +1,6 @@
+import { assignmentSchema, SHIPPING_KEY } from './shipping-packages'
+import { readPackageConfig } from './shipping-package-store'
+import { validateAssignments } from './shipping-assignment'
 import { cleanDescription, richDescription } from './product-description'
 import { randomBytes, createHash } from 'node:crypto'
 import { z } from 'zod'
@@ -9,6 +12,7 @@ import { etsyDraftSchema, ETSY_DRAFT_KEY, isHairClaw } from './product-admin'
 const identifier = z.string().regex(/^[a-z]+_[A-Za-z0-9]+$/)
 export const creationSchema = z
   .object({
+    shipping: assignmentSchema.optional(),
     inventory_mode: z.enum(['stocked', 'made_to_order']).default('stocked'),
     request_id: z.string().uuid(),
     title: z.string().trim().min(1).max(250),
@@ -42,6 +46,8 @@ export const creationSchema = z
             title: z.string().trim().min(1).max(250),
             sku: z.string().trim().min(1).max(100),
             barcode: z.string().trim().max(100),
+            shipping: assignmentSchema.optional(),
+            weight: z.number().positive().nullable().optional(),
             price: z.number().finite().nonnegative().max(1000000),
             options: z.record(z.string(), z.string()),
             stock: z
@@ -136,6 +142,7 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
       )[0]
       if (product && product.metadata?.admin_creation_key !== key)
         throw new Error('That product handle is already in use.')
+      if (!operation && (input.shipping || input.variants.some(variant => variant.shipping))) validateAssignments(await readPackageConfig(ops), { weight: input.weight, metadata: { [SHIPPING_KEY]: input.shipping } }, input.variants.map(variant => ({ weight: variant.weight, metadata: { [SHIPPING_KEY]: variant.shipping ?? {} } })))
       if (!operation) {
         if (
           (
@@ -181,9 +188,10 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                 category_ids: input.categories,
                 tag_ids: input.tags,
                 sales_channels: input.sales_channels.map((id) => ({ id })),
-                metadata: { admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy },
+                metadata: { admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
                 variants: input.variants.map((variant, index) => ({
                   title: variant.title,
+                  ...(variant.weight ? { weight: variant.weight } : {}),
                   sku: variant.sku,
                   barcode: operation.payload.barcodes[index],
                   options: variant.options,
@@ -191,6 +199,7 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                   manage_inventory: true,
                   allow_backorder: input.inventory_mode === 'made_to_order',
                   metadata: {
+                    ...(variant.shipping ? { [SHIPPING_KEY]: variant.shipping } : {}),
                     inventory_mode:
                       input.inventory_mode === 'made_to_order' &&
                       hairClaw &&

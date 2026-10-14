@@ -113,7 +113,7 @@ module.exports = defineConfig({
     },
   }, {
     resolve: '@medusajs/medusa/fulfillment',
-    dependencies: ['admin_operations'],
+    dependencies: ['admin_operations', 'product'],
     options: { providers: [
       { resolve: '@medusajs/medusa/fulfillment-manual', id: 'manual' },
       { resolve: './src/modules/shippo-test', id: 'shippo' },

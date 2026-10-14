@@ -1,3 +1,5 @@
+import { ProductPackaging } from '../../../components/product-packaging'
+import { emptyAssignment, type PackageAssignment } from '../../../../lib/shipping-packages'
 import { ProductSection, revealInvalidField } from '../../../components/product-section'
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
@@ -17,6 +19,8 @@ type Variant = {
   sku: string
   barcode: string
   price: string
+  weight?: string
+  shipping?: PackageAssignment
   options: Record<string, string>
   stock: Record<string, string>
 }
@@ -36,6 +40,7 @@ const blank = (): ProductDraft => ({
   thumbnail: '',
   variants: [],
   etsy: emptyEtsyDraft(),
+  shipping: emptyAssignment(),
 })
 const slug = (value: string) =>
   value
@@ -72,6 +77,7 @@ const NewProductPage = () => {
   const [frozen, setFrozen] = useState<any>(null)
   const files = useRef(new Map<string, { file: File; url: string; uploaded?: string }>())
   const dirty = Boolean(
+    draft.shipping?.package_id || draft.fields.weight || variants.some(row => row.shipping?.package_id || row.weight) ||
     draft.fields.title ||
     draft.images.length ||
     draft.fields.description ||
@@ -251,6 +257,7 @@ const NewProductPage = () => {
           } else images.push({ url: image.url })
         }
         input = {
+          shipping: draft.shipping,
           inventory_mode: inventoryMode,
           request_id: requestId,
           title: String(draft.fields.title),
@@ -280,6 +287,8 @@ const NewProductPage = () => {
             sku: row.sku,
             barcode: row.barcode,
             price: Number(row.price),
+            shipping: row.shipping,
+            weight: row.weight ? Number(row.weight) : null,
             options: row.options,
             stock: Object.entries(row.stock).map(([location_id, quantity]) => ({
               location_id,
@@ -485,7 +494,7 @@ const NewProductPage = () => {
               </details>
               {variants.map((row) => (
                 <div className="rh-new-variant" key={row.key}>
-                  <h3>{row.title}</h3>
+                  <h3>{row.title}</h3><details><summary>Shipping override</summary><ProductPackaging variant label={` — ${row.title}`} value={row.shipping} change={shipping => setVariants(previous => previous.map(item => item.key === row.key ? { ...item, shipping } : item))} weight={row.weight ?? ''} setWeight={weight => setVariants(previous => previous.map(item => item.key === row.key ? { ...item, weight } : item))}/></details>
                   <div className="rh-inline-grid">
                     <label className="rh-inline-field">
                       <span>Price (USD)</span>
@@ -548,7 +557,7 @@ const NewProductPage = () => {
             </ProductSection>
             <ProductSection title="Shipping" className="">
               {select('shipping_profile_id', 'Shipping profile')}
-              {field('weight', 'Item weight (g)', 'number')}
+              <ProductPackaging value={draft.shipping} applyDefault typeId={String(draft.fields.type_id)} change={shipping => setDraft(previous => ({ ...previous, shipping }))} weight={String(draft.fields.weight)} setWeight={value => change('weight', value)}/>
               {field('material', 'Material')}
             </ProductSection>
           </div>
