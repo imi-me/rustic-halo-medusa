@@ -3,12 +3,11 @@ import ShippoTestService from '../service'
 describe('empty cart shipping recalculation', () => {
   const originalEnv = process.env
   beforeEach(() => {
-    process.env = { ...originalEnv, APP_ENV: 'staging', STRIPE_TEST_ENABLED: 'true', DATABASE_URL: 'postgres://postgres/rustic_halo_staging', SHIPPO_API_KEY: 'shippo_test_fixture' }
+    process.env = { ...originalEnv, APP_ENV: 'staging', STRIPE_TEST_ENABLED: 'true', DATABASE_URL: 'postgres://postgres@postgres/rustic_halo_staging', SHIPPO_API_KEY: 'shippo_test_fixture' }
   })
   afterEach(() => { process.env = originalEnv; jest.restoreAllMocks() })
 
-  const calculate = (items: unknown[]) => ShippoTestService.prototype.calculatePrice.call(
-    { root: '/unused', cache: new Map() } as any, {}, {},
+  const calculate = (items: unknown[]) => new ShippoTestService().calculatePrice({}, {},
     { currency_code: 'usd', shipping_address: { country_code: 'us', address_1: '123 Example St', city: 'Grimesland', province: 'NC', postal_code: '27837' }, items } as any
   )
 

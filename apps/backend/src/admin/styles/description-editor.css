@@ -1,0 +1,16 @@
+.rh-rich-description { min-width: 0; }
+.rh-rich-toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border: 1px solid #dce1eb; border-radius: 10px 10px 0 0; background: #f8fafc; }
+#medusa .rh-rich-toolbar button, #medusa .rh-rich-toolbar select { width: auto; min-height: 30px; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+#medusa .rh-rich-toolbar button[aria-pressed=true] { color: #3546d8; background: #e9edff; border-color: #8c9bf5; }
+.rh-rich-color { position: relative; display: grid; place-items: center; width: 28px; font-weight: 700; border-bottom: 3px solid #3546d8; }
+.rh-rich-color input { position: absolute; opacity: 0; inset: 0; width: 100%; cursor: pointer; }
+.rh-rich-description .tiptap { padding: 14px; min-height: 180px; max-height: 600px; overflow: auto; border: 1px solid #dce1eb; border-top: 0; border-radius: 0 0 10px 10px; font-size: 14px; line-height: 1.6; outline: none; background: white; color: #253047; overflow-wrap: anywhere; }
+.rh-rich-description .tiptap:focus { box-shadow: 0 0 0 2px #a8b7fc; }
+.rh-rich-description .tiptap p { margin: 0 0 12px; }
+.rh-rich-description .tiptap h1, .rh-rich-description .tiptap h2, .rh-rich-description .tiptap h3 { font-weight: 650; margin: 12px 0; }
+.rh-rich-description .tiptap h1 { font-size: 24px; }.rh-rich-description .tiptap h2 { font-size: 20px; }.rh-rich-description .tiptap h3 { font-size: 17px; }
+.rh-rich-description .tiptap ul { list-style: disc; padding-left: 24px; }.rh-rich-description .tiptap ol { list-style: decimal; padding-left: 24px; }
+.rh-rich-description .tiptap a { color: #3546d8; text-decoration: underline; }.rh-rich-description .tiptap img { max-width: 100%; height: auto; }
+.rh-rich-description .tiptap blockquote { border-left: 3px solid #a8b7fc; padding-left: 16px; }
+.rh-rich-description .tiptap table { border-collapse: collapse; width: 100%; }.rh-rich-description .tiptap td, .rh-rich-description .tiptap th { border: 1px solid #dce1eb; padding: 8px; min-width: 60px; }
+.rh-rich-dialog { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px; background: #eef2ff; }.rh-rich-dialog label { flex: 1; min-width: 160px; }.rh-rich-dialog input { width: 100%; }

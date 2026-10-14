@@ -3,7 +3,7 @@ import { FocusModal } from '@medusajs/ui'
 import HairClawEditor from './hair-claw-editor'
 import { FitIcon } from './hair-claw-ui'
 
-export const HairClawImageDialog = ({ productId }: { productId: string }) => {
+export const HairClawImageDialog = ({ productId, disabled = false }: { productId: string; disabled?: boolean }) => {
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState({ dirty: false, busy: false })
   const [leaving, setLeaving] = useState(false)
@@ -25,7 +25,7 @@ export const HairClawImageDialog = ({ productId }: { productId: string }) => {
     else refreshProduct()
   }, [editing,refreshProduct])
   return <FocusModal open={open} onOpenChange={changeOpen}>
-    <FocusModal.Trigger asChild><button type="button" className="rh-image-fitting-trigger" aria-haspopup="dialog"><FitIcon name="corners"/>Image fitting</button></FocusModal.Trigger>
+    <FocusModal.Trigger asChild><button type="button" disabled={disabled} title={disabled ? 'Save or discard product edits before fitting artwork.' : undefined} className="rh-image-fitting-trigger" aria-haspopup="dialog"><FitIcon name="corners"/>Image fitting</button></FocusModal.Trigger>
     <FocusModal.Content className="rh-fit-dialog" onOpenAutoFocus={event => { event.preventDefault(); close.current?.focus() }}>
       <div className="rh-fit-sr"><FocusModal.Title>Image fitting</FocusModal.Title></div>
       <FocusModal.Description className="rh-fit-sr">Fit current product photos to the hair-claw outline. Save adjustments as a draft before closing.</FocusModal.Description>

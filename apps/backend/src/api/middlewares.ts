@@ -10,6 +10,22 @@ import { guardHairClawOffer } from '../lib/guard-hair-claw-offer'
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/product-workspace', method: ['POST'],
+    policies: [{ resource: 'product', operation: PolicyOperation.create }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }, { resource: 'inventory_level', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }], middlewares: [],
+  }, {
+    matcher: '/admin/products/:id/workspace', method: ['POST'],
+    policies: [{ resource: 'product', operation: PolicyOperation.update }, { resource: 'product_variant', operation: PolicyOperation.update }, { resource: 'price', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.update }, { resource: 'price', operation: PolicyOperation.delete }], middlewares: [],
+  }, {
+    matcher: '/admin/products/:id/etsy-listing', method: ['POST'],
+    policies: [{ resource: 'product', operation: PolicyOperation.update }], middlewares: [],
+  }, {
+    matcher: '/admin/orders/:id/shipping-label', method: ['GET'],
+    policies: [{ resource: 'order', operation: PolicyOperation.read }], middlewares: [],
+  }, {
+    matcher: '/admin/orders/:id/shipping-label', method: ['POST'],
+    policies: [{ resource: 'order', operation: PolicyOperation.update }, { resource: 'fulfillment', operation: PolicyOperation.create }, { resource: 'fulfillment', operation: PolicyOperation.update }], middlewares: [],
+  }, {
+
     matcher: '/admin/products/:id/hair-claw-media',
     method: ['POST'],
     policies: [

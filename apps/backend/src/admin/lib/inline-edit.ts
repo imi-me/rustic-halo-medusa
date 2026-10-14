@@ -1,8 +1,10 @@
 import { priceRows, pricePayload, type PriceRow } from './product-prices'
+import { emptyEtsyDraft, etsyDraftSchema, ETSY_DRAFT_KEY, type EtsyDraft } from '../../lib/product-admin'
 import { adminFetch } from './admin-fetch'
 export type Entity = Record<string, any>
 export type Price = { id: string; amount: number; currency_code: string; min_quantity?: number | null; max_quantity?: number | null; rules?: Record<string, string> }
 export type ProductDraft = {
+  etsy: EtsyDraft
   images: Array<{ key: string; id?: string; url: string }>
   thumbnail: string
   fields: Record<string, string | boolean>
@@ -20,6 +22,7 @@ export const isBasePrice = (price: Price) => !Object.keys(price.rules ?? {}).len
 
 export function productDraft(product: Entity): ProductDraft {
   return {
+    etsy: product.metadata?.[ETSY_DRAFT_KEY] ? etsyDraftSchema.parse(product.metadata[ETSY_DRAFT_KEY]) : emptyEtsyDraft(),
     images: (product.images ?? []).map((image: Entity) => ({ key: image.id ?? image.url, ...(image.id ? { id: image.id } : {}), url: image.url })),
     thumbnail: product.thumbnail ?? '',
     fields: { ...Object.fromEntries(productTextFields.map(key => [key, text(key === 'shipping_profile_id' ? product.shipping_profile?.id ?? product[key] : product[key])])), discountable: Boolean(product.discountable) },
@@ -36,6 +39,7 @@ export const hasChanges = (initial: unknown, draft: unknown) => !equal(initial, 
 export function productUpdate(product: Entity, draft: ProductDraft): Entity {
   const initial = productDraft(product)
   const update: Entity = {}
+  if (!equal(initial.etsy, draft.etsy)) update.metadata = { ...product.metadata, [ETSY_DRAFT_KEY]: etsyDraftSchema.parse(draft.etsy) }
   if (!equal(initial.images, draft.images)) {
     if (draft.images.some(image => !/^https?:\/\//.test(image.url))) throw new Error('Image upload is incomplete. Your draft is kept.')
     update.images = draft.images.map(({ id, url }) => ({ ...(id ? { id } : {}), url }))
@@ -130,5 +134,9 @@ export async function saveInline(kind: 'products' | 'orders', initial: Entity, d
     prices: (variant.prices ?? []).map((price: Entity) => ({ id: price.id, amount: price.amount, updated_at: price.updated_at, currency_code: price.currency_code, min_quantity: price.min_quantity, max_quantity: price.max_quantity, rules: Object.entries(price.rules ?? {}).sort() })).sort((a: Entity, b: Entity) => a.id.localeCompare(b.id)),
   })).sort((a: Entity, b: Entity) => a.id.localeCompare(b.id))
   if (!fresh || !equal(normalize(initial), normalize(fresh)) || String(initial.updated_at) !== String(fresh.updated_at) || (kind === 'products' && !equal(priceRevision(initial), priceRevision(fresh)))) throw new Error('This record changed since you started editing. Your draft is kept; cancel and reopen Edit all to load the latest values.')
+  if (kind === 'products') {
+    await adminRequest(`/admin/products/${initial.id}/workspace`, { update, expected_updated_at: initial.updated_at })
+    return (await adminRequest(url))[key]
+  }
   return (await adminRequest(url, update))[key]
 }

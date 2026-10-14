@@ -1,3 +1,4 @@
+import { cleanDescription, richDescription } from "@lib/util/product-description"
 import { HttpTypes } from "@medusajs/types"
 
 const decodeText = (value: string) => value
@@ -10,6 +11,7 @@ const inline = (text: string) => text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).map((p
 export default function ProductDescription({ product }: { product: HttpTypes.StoreProduct }) {
   const description = product.description ? decodeText(product.description).trim() : ""
   if (!description) return null
+  if (richDescription(product.description || "")) return <section className="rh-product-description rh-rich-product-description" data-testid="product-description" dangerouslySetInnerHTML={{ __html: cleanDescription(product.description || "") }}/>
   const detailsMatch = description.match(/^\s*details\s*:\s*([\s\S]+)$/i)
   const details = detailsMatch?.[1].split(/(?:\r?\n|\s*[•]\s*)/).map((item) => item.replace(/^[-*]\s*/, "").trim()).filter(Boolean)
   if (details && details.length > 1) return <section className="rh-product-description" aria-labelledby="product-details-summary"><h2 id="product-details-summary">Details</h2><ul>{details.map((detail, index) => <li key={`${detail}-${index}`}>{inline(detail)}</li>)}</ul></section>

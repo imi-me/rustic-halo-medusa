@@ -84,13 +84,14 @@ it('rejects a concurrent price change, including hidden regional prices, without
   expect(request).toHaveBeenCalledTimes(1)
   expect(request.mock.calls[0][1]).not.toHaveProperty('method')
 })
-it('uses one native product update request after checking the current record', async () => {
+it('uses the guarded product update after checking and then reloads confirmed values', async () => {
   const source = product(), draft = productDraft(source)
   draft.fields.title = 'Updated'; draft.variants[1].fields.sku = '00789'
   const request = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ product: source }) } as Response)
   await saveInline('products', source, draft)
-  expect(request).toHaveBeenCalledTimes(2)
-  expect(JSON.parse(request.mock.calls[1][1]!.body as string)).toEqual({ title: 'Updated', variants: [{ id: 'var_one' }, { id: 'var_two', sku: '00789' }] })
+  expect(request).toHaveBeenCalledTimes(3)
+  expect(request.mock.calls[1][0]).toBe('/admin/products/prod_one/workspace')
+  expect(JSON.parse(request.mock.calls[1][1]!.body as string)).toEqual({ expected_updated_at: source.updated_at, update: { title: 'Updated', variants: [{ id: 'var_one' }, { id: 'var_two', sku: '00789' }] } })
 })
 it('keeps the draft unchanged on failed save and surfaces the server message', async () => {
   const source = product(), draft = productDraft(source), before = JSON.stringify(draft)

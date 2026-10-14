@@ -8,7 +8,7 @@ export async function adminFetch(url: string, options: RequestInit = {}) {
       if (controller.signal.aborted) throw error
       return {}
     })
-    if (!response.ok) throw new Error(data.message ?? 'Request failed. Your draft is kept.')
+    if (!response.ok) { const error = new Error(data.message ?? 'Request failed. Your draft is kept.'); Object.assign(error, { status: response.status, code: data.code }); throw error }
     return data
   } catch (error) {
     if (controller.signal.aborted) throw new Error(options.method && options.method !== 'GET'

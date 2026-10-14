@@ -1,0 +1,102 @@
+import { inventoryBody, planColorSharing } from '../color-sharing'
+const property = (id: number, name: string, value: string) => ({
+  property_id: id,
+  property_name: name,
+  value_ids: [id * 10],
+  values: [value],
+})
+const inventory = () => ({
+  products: [
+    {
+      sku: 'OLD-BLACK',
+      property_values: [property(513, 'Size', '4”'), property(514, 'Color', 'Black')],
+      offerings: [
+        {
+          quantity: 9,
+          is_enabled: true,
+          price: { amount: 1500, divisor: 100, currency_code: 'USD' },
+          readiness_state_id: 123,
+        },
+      ],
+    },
+  ],
+  price_on_property: [513],
+  quantity_on_property: [513],
+  sku_on_property: [513, 514],
+})
+const selection = (): any => ({
+  product_id: 'prod_one',
+  listing_id: '123',
+  variants: [
+    {
+      sku: 'NEW-ROSE',
+      color: 'Rose',
+      options: { Size: '4 inch', Color: 'Rose', 'Claw finish': 'Natural' },
+      price: 16,
+      quantity: 4,
+      image_url: '',
+      inventory_mode: 'made_to_order_color_option',
+    },
+  ],
+})
+it('adds a third Finish property using the documented custom ID and preserves old offerings', () => {
+  const source = inventory(),
+    before = JSON.stringify(source)
+  const plan = planColorSharing(source, selection(), 'Natural')
+  expect(JSON.stringify(source)).toBe(before)
+  expect(plan.body.products).toHaveLength(2)
+  expect(plan.body.products[0].offerings[0]).toMatchObject({
+    price: 15,
+    quantity: 9,
+    readiness_state_id: 123,
+  })
+  expect(plan.body.products[0].property_values[2]).toMatchObject({
+    property_id: 516,
+    values: ['Natural'],
+  })
+  expect(plan.body.products[1].property_values[0].values).toEqual(['4”'])
+  expect(plan.body.quantity_on_property).toEqual([513, 514, 516])
+})
+it('requires explicit interpretation of existing finish before extending the listing', () => {
+  expect(() => planColorSharing(inventory(), selection(), '')).toThrow('Specify the finish')
+})
+it('refuses pooled/stocked inventory and duplicate Etsy SKUs', () => {
+  const input = selection()
+  input.variants[0].inventory_mode = 'stocked'
+  expect(() => planColorSharing(inventory(), input, 'Natural')).toThrow('channel stock allocation')
+  const source = inventory()
+  source.products.push(source.products[0])
+  expect(() => planColorSharing(source, selection(), 'Natural')).toThrow('unique SKUs')
+})
+it('refuses an option combination already mapped to a different SKU', () => {
+  const input = selection()
+  input.variants[0].color = 'Black'
+  input.variants[0].options.Color = 'Black'
+  expect(() => planColorSharing(inventory(), input, 'Natural')).toThrow('different Etsy SKU')
+})
+it('updates only selected existing offerings and disables a zero allocation', () => {
+  const input = selection()
+  input.variants[0].sku = 'OLD-BLACK'
+  input.variants[0].options.Color = 'Black'
+  input.variants[0].quantity = 0
+  const plan = planColorSharing(inventory(), input, 'Natural')
+  expect(plan.body.products).toHaveLength(1)
+  expect(plan.body.products[0].offerings[0]).toMatchObject({
+    quantity: 0,
+    is_enabled: false,
+    price: 16,
+  })
+})
+it('rejects unsupported currency instead of interpreting another currency as USD', () => {
+  const source = inventory()
+  source.products[0].offerings[0].price.currency_code = 'EUR'
+  expect(() => inventoryBody(source)).toThrow('USD')
+})
+
+it('links a new Medusa SKU to the existing Etsy option without renaming its historical SKU', () => {
+  const data = selection(); data.variants[0].options.Color = 'Black'; data.variants[0].color = 'Black'; data.variants[0].etsy_sku = 'OLD-BLACK'
+  const plan = planColorSharing(inventory(), data, 'Natural')
+  expect(plan.body.products).toHaveLength(1)
+  expect(plan.body.products[0].sku).toBe('OLD-BLACK')
+  expect(plan.changes[0].medusa_sku).toBe('NEW-ROSE')
+})

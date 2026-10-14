@@ -46,7 +46,7 @@ module.exports = defineConfig({
   modules: [...(appleAdmin ? [{ resolve: '@medusajs/medusa/auth', options: { providers: [
     { resolve: '@medusajs/medusa/auth-emailpass', id: 'emailpass' },
     { resolve: './src/modules/apple-staff', id: 'apple-staff' },
-  ] } }] : []), { resolve: './src/modules/social-media' }, { resolve: './src/modules/etsy' }, { resolve: './src/modules/hair-claw-media' }, ...(r2Enabled ? [{
+  ] } }] : []), { resolve: './src/modules/admin-operations' }, { resolve: './src/modules/social-media' }, { resolve: './src/modules/etsy' }, { resolve: './src/modules/hair-claw-media' }, ...(r2Enabled ? [{
     resolve: '@medusajs/medusa/file',
     options: { providers: [{
       resolve: '@medusajs/medusa/file-s3',
@@ -113,6 +113,7 @@ module.exports = defineConfig({
     },
   }, {
     resolve: '@medusajs/medusa/fulfillment',
+    dependencies: ['admin_operations'],
     options: { providers: [
       { resolve: '@medusajs/medusa/fulfillment-manual', id: 'manual' },
       { resolve: './src/modules/shippo-test', id: 'shippo' },

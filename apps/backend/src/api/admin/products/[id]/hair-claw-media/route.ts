@@ -1,3 +1,4 @@
+import { isHairClaw } from '../../../../../lib/product-admin'
 import { MedusaRequest, MedusaResponse } from '@medusajs/framework/http'
 import { MedusaError, Modules } from '@medusajs/framework/utils'
 import { IProductModuleService, IFileModuleService } from '@medusajs/framework/types'
@@ -18,14 +19,16 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 }
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  const authenticated = req as any
+  if (!authenticated.auth_context?.actor_id || authenticated.auth_context.actor_type !== 'user') return res.sendStatus(401)
+  if (!allowedOrigin(authenticated)) return res.sendStatus(403)
+  const eligibility = await req.scope.resolve(Modules.PRODUCT).retrieveProduct(req.params.id, { relations: ['type'] })
+  if (!isHairClaw(eligibility)) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Image fitting is only available for hair-claw products.')
   const parsed = saveSchema.safeParse(req.body)
   if (!parsed.success) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Invalid overlay settings.')
   const { size, recipe, revision } = parsed.data
   if (size === '2' && recipe?.enabled) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Save the 2-inch overlay as a draft until its physical template is approved.')
   if (parsed.data.finish) {
-    const authenticated = req as any
-    if (!authenticated.auth_context?.actor_id || authenticated.auth_context.actor_type !== 'user') return res.sendStatus(401)
-    if (!allowedOrigin(authenticated)) return res.sendStatus(403)
     return res.json(await saveTypeOffer(req.scope, req.params.id, parsed.data))
   }
   const products: IProductModuleService = req.scope.resolve(Modules.PRODUCT)

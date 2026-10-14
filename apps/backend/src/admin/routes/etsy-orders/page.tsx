@@ -58,7 +58,7 @@ const EtsyOrdersPage = () => {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-ui-border-base bg-ui-bg-subtle"><tr>
-            {['Receipt', 'Date', 'Status', 'Items', 'Total', 'SKUs'].map(label => <th key={label} className="px-6 py-3 font-medium">{label}</th>)}
+            {['Receipt', 'Date', 'Status', 'Items', 'Total', 'SKUs', 'Shipping'].map(label => <th key={label} className="px-6 py-3 font-medium">{label}</th>)}
           </tr></thead>
           <tbody>{report.orders.map(order => <tr key={order.receiptId} className="border-b border-ui-border-base align-top">
             <td className="px-6 py-4 font-medium">#{order.receiptId}</td>
@@ -66,7 +66,7 @@ const EtsyOrdersPage = () => {
             <td className="px-6 py-4">{order.status ?? (order.shipped ? 'Shipped' : order.paid ? 'Paid' : 'Open')}</td>
             <td className="px-6 py-4">{order.itemCount}</td>
             <td className="px-6 py-4">{formatMoney(order.grandTotal)}</td>
-            <td className="px-6 py-4">{order.transactions.map(item => item.sku || 'Missing SKU').join(', ') || 'No items'}</td>
+            <td className="px-6 py-4">{order.transactions.map(item => item.sku || 'Missing SKU').join(', ') || 'No items'}</td><td className="px-6 py-4"><a href={`https://www.etsy.com/your/orders/sold?order_id=${order.receiptId}`} target="_blank" rel="noopener noreferrer">Buy / print label in Etsy ↗</a></td>
           </tr>)}</tbody>
         </table>
       </div>
