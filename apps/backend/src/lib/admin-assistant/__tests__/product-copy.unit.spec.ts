@@ -26,6 +26,7 @@ beforeEach(() => {
   process.env = {
     ...original,
     ADMIN_ASSISTANT_ENABLED: 'true',
+    ADMIN_ASSISTANT_PROVIDER: 'openai',
     ADMIN_ASSISTANT_OPENAI_API_KEY: 'mock',
     ADMIN_ASSISTANT_MODEL: 'mock-model',
     COOKIE_SECRET: 'mock',
@@ -76,4 +77,29 @@ it('rejects unbounded input or unexpected sensitive fields', () => {
     copyInputSchema.safeParse({ ...input(), customer_email: 'buyer@example.invalid' }).success,
   ).toBe(false)
   expect(copyInputSchema.safeParse({ ...input(), facts: 'x'.repeat(2001) }).success).toBe(false)
+})
+
+it('routes OpenRouter credentials only to its fixed endpoint with schema support required', async () => {
+  process.env.ADMIN_ASSISTANT_PROVIDER = 'openrouter'
+  process.env.ADMIN_ASSISTANT_OPENROUTER_API_KEY = 'router-test-only'
+  const request = jest.fn().mockResolvedValue(response(result()))
+  await generateProductCopy(input(), request)
+  expect(request.mock.calls[0][0]).toBe('https://openrouter.ai/api/v1/responses')
+  expect(request.mock.calls[0][1].headers.Authorization).toBe('Bearer router-test-only')
+  const payload = JSON.parse(request.mock.calls[0][1].body)
+  expect(payload.provider.require_parameters).toBe(true)
+  expect(payload.text.format.strict).toBe(true)
+  delete process.env.ADMIN_ASSISTANT_OPENROUTER_API_KEY
+  request.mockClear()
+  await expect(generateProductCopy(input(), request)).rejects.toThrow('Configure')
+  expect(request).not.toHaveBeenCalled()
+})
+it('rejects unknown providers and incomplete output before any draft is returned', async () => {
+  const request = jest.fn()
+  process.env.ADMIN_ASSISTANT_PROVIDER = 'https://other.invalid'
+  await expect(generateProductCopy(input(), request)).rejects.toThrow('Configure')
+  expect(request).not.toHaveBeenCalled()
+  process.env.ADMIN_ASSISTANT_PROVIDER = 'openai'
+  request.mockResolvedValue({ ok: true, json: async () => ({ status: 'incomplete', output: [] }) })
+  await expect(generateProductCopy(input(), request)).rejects.toThrow('incomplete')
 })

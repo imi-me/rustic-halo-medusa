@@ -1,7 +1,7 @@
 import { acquire, consumeProposal, isReady, proposeUpdate, readProposal, runAssistant, searchRecords, validateMessages } from '..'
 
 describe('admin assistant boundaries', () => {
-  beforeEach(() => { process.env.COOKIE_SECRET = 'test-signing-secret'; process.env.ADMIN_ASSISTANT_ENABLED = 'true'; process.env.ADMIN_ASSISTANT_OPENAI_API_KEY = 'test-only'; process.env.ADMIN_ASSISTANT_MODEL = 'test-model' })
+  beforeEach(() => { process.env.COOKIE_SECRET = 'test-signing-secret'; process.env.ADMIN_ASSISTANT_PROVIDER = 'openai'; process.env.ADMIN_ASSISTANT_ENABLED = 'true'; process.env.ADMIN_ASSISTANT_OPENAI_API_KEY = 'test-only'; process.env.ADMIN_ASSISTANT_MODEL = 'test-model' })
   it('requires explicit enablement, dedicated key and model', () => {
     expect(isReady()).toBe(true); delete process.env.ADMIN_ASSISTANT_OPENAI_API_KEY; expect(isReady()).toBe(false)
     process.env.ADMIN_ASSISTANT_OPENAI_API_KEY = 'test-only'; process.env.ADMIN_ASSISTANT_ENABLED = 'false'; expect(isReady()).toBe(false)
@@ -55,4 +55,23 @@ describe('admin assistant boundaries', () => {
     request.mockClear(); await expect(runAssistant({ graph: jest.fn() }, 'user_123', [{ role: 'user', content: 'help' }], request as any)).rejects.toThrow('not configured')
     expect(request).not.toHaveBeenCalled()
   })
+})
+
+it('keeps OpenRouter tool rounds stateless and uses only the selected provider key', async () => {
+  const original = process.env
+  process.env = { ...original, ADMIN_ASSISTANT_ENABLED: 'true', ADMIN_ASSISTANT_PROVIDER: 'openrouter', ADMIN_ASSISTANT_OPENROUTER_API_KEY: 'router-test-only', ADMIN_ASSISTANT_MODEL: 'openai/test-model', COOKIE_SECRET: 'test-signing' }
+  try {
+    const graph = jest.fn().mockResolvedValue({ data: [{ id: 'prod_123', title: 'Test', description: 'Wood hair claw' }] })
+    const request = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'completed', output: [{ type: 'function_call', name: 'search_records', call_id: 'call_1', arguments: JSON.stringify({ kind: 'products', query: 'prod_123' }) }] }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: 'Found Test.' }] }] }) })
+    const result = await runAssistant({ graph }, 'user_123', [{ role: 'user', content: 'Find Test' }], request as any)
+    expect(result.sources).toHaveLength(1)
+    expect(result.proposals).toHaveLength(0)
+    for (const [url, options] of request.mock.calls) {
+      expect(url).toBe('https://openrouter.ai/api/v1/responses')
+      expect(options.headers.Authorization).toBe('Bearer router-test-only')
+      expect(JSON.parse(options.body).store).toBe(false)
+      expect(JSON.parse(options.body).provider.require_parameters).toBe(true)
+    }
+    expect(JSON.parse(request.mock.calls[1][1].body).input.at(-1).type).toBe('function_call_output')
+  } finally { process.env = original }
 })

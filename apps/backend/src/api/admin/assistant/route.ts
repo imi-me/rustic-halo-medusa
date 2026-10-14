@@ -10,7 +10,7 @@ export async function GET(req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   res.setHeader('Cache-Control', 'no-store')
   if (!req.auth_context?.actor_id) return res.sendStatus(401)
   const config = configuration()
-  return res.json({ ready: isReady(), enabled: config.enabled, capabilities: ['Read products, orders and inventory', 'Propose product title and description changes for review'], message: isReady() ? 'Ready to help.' : 'Your assistant is waiting for its separate project key and model configuration.' })
+  return res.json({ ready: isReady(), enabled: config.enabled, provider: config.provider, capabilities: ['Read products, orders and inventory', 'Propose product title and description changes for review'], message: isReady() ? 'Ready to help.' : 'Your assistant is waiting for its separate project key and model configuration.' })
 }
 export async function POST(req: AuthenticatedMedusaRequest<{ messages: unknown }>, res: MedusaResponse) {
   res.setHeader('Cache-Control', 'no-store')

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { configuration, isReady } from './index'
+import { configuration, isReady, providerOptions } from './index'
 
 export const copyInputSchema = z
   .object({
@@ -48,11 +48,12 @@ export async function generateProductCopy(
       'Configure the existing Ask Rusty project key and model to enable AI suggestions.',
     )
   const config = configuration()
-  const response = await request('https://api.openai.com/v1/responses', {
+  const response = await request(config.endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${config.key}`, 'Content-Type': 'application/json' },
     signal: AbortSignal.timeout(25000),
     body: JSON.stringify({
+      ...providerOptions(),
       model: config.model,
       store: false,
       max_output_tokens: 2200,

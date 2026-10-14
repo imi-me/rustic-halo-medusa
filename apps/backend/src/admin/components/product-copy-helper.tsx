@@ -84,7 +84,7 @@ export function ProductCopyHelper({
         ))}
       </div>
       <small>
-        Selected product facts are sent to OpenAI. Review before use; nothing saves automatically.
+        Selected product facts are sent to your configured AI provider. Review before use; nothing saves automatically.
       </small>
       {error && (
         <p role="alert" className="rh-inline-error">

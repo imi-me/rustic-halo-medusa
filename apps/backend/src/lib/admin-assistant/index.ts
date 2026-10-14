@@ -3,8 +3,18 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 type Graph = { graph(input: any): Promise<{ data: any[]; metadata?: { count?: number } }> }
 export type Message = { role: 'user' | 'assistant'; content: string }
 export type Proposal = { productId: string; before: { title: string; description: string | null }; after: { title: string; description: string | null }; actor: string; expires: number; nonce: string }
-export const configuration = () => ({ enabled: process.env.ADMIN_ASSISTANT_ENABLED === 'true', key: process.env.ADMIN_ASSISTANT_OPENAI_API_KEY?.trim(), model: process.env.ADMIN_ASSISTANT_MODEL?.trim() })
-export const isReady = () => { const c = configuration(); return Boolean(c.enabled && c.key && c.model && process.env.COOKIE_SECRET) }
+export const configuration = () => {
+  const provider = process.env.ADMIN_ASSISTANT_PROVIDER?.trim() || 'openai'
+  return {
+    enabled: process.env.ADMIN_ASSISTANT_ENABLED === 'true',
+    provider,
+    key: (provider === 'openrouter' ? process.env.ADMIN_ASSISTANT_OPENROUTER_API_KEY : process.env.ADMIN_ASSISTANT_OPENAI_API_KEY)?.trim(),
+    model: process.env.ADMIN_ASSISTANT_MODEL?.trim(),
+    endpoint: provider === 'openrouter' ? 'https://openrouter.ai/api/v1/responses' : 'https://api.openai.com/v1/responses',
+  }
+}
+export const isReady = () => { const c = configuration(); return Boolean(c.enabled && ['openai', 'openrouter'].includes(c.provider) && c.key && c.model && process.env.COOKIE_SECRET) }
+export const providerOptions = () => configuration().provider === 'openrouter' ? { provider: { require_parameters: true } } : {}
 export function validateMessages(input: unknown): Message[] {
   if (!Array.isArray(input) || !input.length || input.length > 12) throw new Error('Send between 1 and 12 messages.')
   let size = 0
@@ -78,7 +88,7 @@ export async function runAssistant(query: Graph, actor: string, messages: Messag
   const config = configuration(); if (!isReady()) throw new Error('Assistant is not configured.')
   const input: any[] = [...messages]; const sources: any[] = []; const proposals: any[] = []
   for (let round = 0; round < 3; round++) {
-    const response = await request('https://api.openai.com/v1/responses', { method: 'POST', headers: { Authorization: `Bearer ${config.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: config.model, instructions, input, tools, tool_choice: round === 2 ? 'none' : 'auto', parallel_tool_calls: false, max_output_tokens: 1200, store: false }), signal: AbortSignal.timeout(25000) })
+    const response = await request(config.endpoint, { method: 'POST', headers: { Authorization: `Bearer ${config.key}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...providerOptions(), model: config.model, instructions, input, tools, tool_choice: round === 2 ? 'none' : 'auto', parallel_tool_calls: false, max_output_tokens: 1200, store: false }), signal: AbortSignal.timeout(25000) })
     if (!response.ok) throw new Error('The AI provider could not answer. Check the project key, model access and usage limits.')
     const body = await response.json() as any
     if (body.status !== 'completed' || !Array.isArray(body.output)) throw new Error('The answer was incomplete. Try a shorter question.')

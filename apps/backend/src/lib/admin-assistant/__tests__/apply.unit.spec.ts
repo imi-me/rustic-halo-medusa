@@ -12,7 +12,7 @@ describe('explicit assistant apply endpoint', () => {
   const response = () => { const res: any = { status: jest.fn(), json: jest.fn(), sendStatus: jest.fn(), setHeader: jest.fn() }; res.status.mockReturnValue(res); return res }
   const proposal = (): Proposal => ({ productId: 'prod_123', actor: 'user_123', before: original, after: { title: 'Updated', description: 'After' }, nonce: Math.random().toString(), expires: Date.now() + 10000 })
   const request = (token: string): any => ({ body: { token }, headers: { origin: 'http://localhost:19000' }, auth_context: { actor_id: 'user_123' }, scope })
-  beforeEach(() => { run.mockClear(); graph.mockReset().mockResolvedValue({ data: [{ id: 'prod_123', ...original }] }); process.env.COOKIE_SECRET = 'test-signing-secret'; process.env.ADMIN_ASSISTANT_ENABLED = 'true'; process.env.ADMIN_ASSISTANT_OPENAI_API_KEY = 'test-only'; process.env.ADMIN_ASSISTANT_MODEL = 'test-model'; process.env.ADMIN_CORS = 'http://localhost:19000' })
+  beforeEach(() => { run.mockClear(); graph.mockReset().mockResolvedValue({ data: [{ id: 'prod_123', ...original }] }); process.env.COOKIE_SECRET = 'test-signing-secret'; process.env.ADMIN_ASSISTANT_PROVIDER = 'openai'; process.env.ADMIN_ASSISTANT_ENABLED = 'true'; process.env.ADMIN_ASSISTANT_OPENAI_API_KEY = 'test-only'; process.env.ADMIN_ASSISTANT_MODEL = 'test-model'; process.env.ADMIN_CORS = 'http://localhost:19000' })
   it('applies only signed title/description after explicit request', async () => {
     const token = signProposal(proposal()); const req = request(token); req.body.price = 1
     const res = response(); await POST(req, res)
