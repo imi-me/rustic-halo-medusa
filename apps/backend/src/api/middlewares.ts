@@ -10,6 +10,10 @@ import { guardHairClawOffer } from '../lib/guard-hair-claw-offer'
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/assistant/product-copy', method: ['POST'],
+    bodyParser: { sizeLimit: '5mb' }, middlewares: [],
+  }, {
+
     matcher: '/admin/product-workspace', method: ['POST'],
     policies: [{ resource: 'product', operation: PolicyOperation.create }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }, { resource: 'inventory_level', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }], middlewares: [],
   }, {

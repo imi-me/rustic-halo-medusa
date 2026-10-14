@@ -132,3 +132,12 @@
 @media(max-width: 600px) { .rh-variant-details > summary { grid-template-columns: 1fr 1fr; } }
 
 @media(min-width: 851px) { .rh-product-editor .rh-inline-body { grid-template-columns: minmax(0, 1fr) 320px; } }
+
+/* Compact, selectable visual context for product writing. */
+.rh-copy-photo-picker { margin: 10px 0; }
+.rh-copy-photo-toggle { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+#medusa .rh-copy-helper input[type="checkbox"] { width: 14px; height: 14px; flex: 0 0 14px; }
+.rh-copy-photo-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.rh-copy-photo-option { position: relative; display: flex; flex-direction: column; align-items: center; width: 64px; gap: 3px; font-size: 10px; cursor: pointer; }
+.rh-copy-photo-option img { width: 64px; height: 56px; object-fit: contain; border: 1px solid #dce1eb; border-radius: 6px; background: white; }
+.rh-copy-photo-option input { position: absolute; left: 3px; top: 3px; }

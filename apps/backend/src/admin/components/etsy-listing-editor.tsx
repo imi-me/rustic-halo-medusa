@@ -269,6 +269,8 @@ export function EtsyListingEditor({
           <small>These notes guide AI. Select the actual category and attributes in Etsy.</small>
         </details>
         <ProductCopyHelper
+          images={product.images ?? []}
+          thumbnail={product.thumbnail ?? ''}
           title={value.title || title}
           description={value.description || description}
           material={material}

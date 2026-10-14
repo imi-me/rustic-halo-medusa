@@ -1,3 +1,4 @@
+import { copyPhotoChoices, copyPhotoSource, type CopyPhoto } from '../lib/copy-photos'
 import { useState } from 'react'
 import { descriptionText } from '../../lib/product-description'
 import { adminRequest } from '../lib/inline-edit'
@@ -14,6 +15,8 @@ export function ProductCopyHelper({
   category = '',
   attributes = '',
   lockedTags = [],
+  images = [],
+  thumbnail = '',
   actions = ['description', 'shorten'],
   apply,
 }: {
@@ -23,9 +26,15 @@ export function ProductCopyHelper({
   category?: string
   attributes?: string
   lockedTags?: string[]
+  images?: CopyPhoto[]
+  thumbnail?: string
   actions?: string[]
   apply: (action: string, value: CopySuggestion) => void
 }) {
+  const photoChoices = copyPhotoChoices(images, thumbnail)
+  const [usePhotos, setUsePhotos] = useState(true)
+  const [selection, setSelection] = useState<string[] | null>(null)
+  const selectedPhotos = selection === null ? photoChoices.slice(0, 3) : selection.filter(url => photoChoices.includes(url))
   const [facts, setFacts] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -42,6 +51,8 @@ export function ProductCopyHelper({
     setError('')
     setProposal(null)
     try {
+      if (usePhotos && photoChoices.length && !selectedPhotos.length) throw new Error('Choose up to three photos, or turn off Use product photos.')
+      const photos = usePhotos ? await Promise.all(selectedPhotos.map(copyPhotoSource)) : []
       const response = await adminRequest('/admin/assistant/product-copy', {
         action,
         title,
@@ -51,6 +62,7 @@ export function ProductCopyHelper({
         category,
         attributes,
         locked_tags: lockedTags,
+        photos,
       })
       setProposal({ action, value: response.suggestion })
     } catch (failure) {
@@ -71,6 +83,19 @@ export function ProductCopyHelper({
           onChange={(event) => setFacts(event.target.value)}
         />
       </label>
+      <div className="rh-copy-photo-picker">
+        <label className="rh-copy-photo-toggle"><input type="checkbox" checked={usePhotos && photoChoices.length > 0} disabled={busy || !photoChoices.length} onChange={event => setUsePhotos(event.target.checked)}/>Use product photos</label>
+        {photoChoices.length ? <>
+          <small>{usePhotos ? `${selectedPhotos.length}/3 photos selected · cover first` : 'Text-only draft'}</small>
+          {usePhotos && <div className="rh-copy-photo-options" role="group" aria-label="Product photos for AI">
+            {photoChoices.map((url, index) => <label className="rh-copy-photo-option" key={url}>
+              <input type="checkbox" aria-label={`Use photo ${index + 1} for AI`} checked={selectedPhotos.includes(url)} disabled={busy || (!selectedPhotos.includes(url) && selectedPhotos.length >= 3)} onChange={event => setSelection(event.target.checked ? [...selectedPhotos, url] : selectedPhotos.filter(selected => selected !== url))}/>
+              <img src={url} alt={`AI product photo ${index + 1}`} loading="lazy"/>
+              <span>{url === thumbnail ? 'Cover' : `Photo ${index + 1}`}</span>
+            </label>)}
+          </div>}
+        </> : <small>Add product photos to include visual details.</small>}
+      </div>
       <div className="rh-inline-buttons">
         {actions.map((action) => (
           <button
@@ -84,7 +109,7 @@ export function ProductCopyHelper({
         ))}
       </div>
       <small>
-        Selected product facts are sent to your configured AI provider. Review before use; nothing saves automatically.
+        Selected product facts and photos are sent to your configured AI provider when you generate. Review before use; nothing saves automatically.
       </small>
       {error && (
         <p role="alert" className="rh-inline-error">

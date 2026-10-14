@@ -390,6 +390,8 @@ const NewProductPage = () => {
                 onChange={(value) => change('description', value)}
               />
               <ProductCopyHelper
+                images={draft.images}
+                thumbnail={draft.thumbnail}
                 title={String(draft.fields.title)}
                 description={String(draft.fields.description)}
                 material={String(draft.fields.material)}
@@ -596,11 +598,10 @@ const NewProductPage = () => {
             <EtsyListingEditor
               value={draft.etsy}
               change={(etsy) => setDraft((previous) => ({ ...previous, etsy }))}
-              product={{
+              product={{ images: draft.images, thumbnail: draft.thumbnail,
                 id: 'new',
                 type: choices.type_id?.find((row) => row.id === draft.fields.type_id),
                 variants: [],
-                images: [],
               }}
               title={String(draft.fields.title)}
               description={String(draft.fields.description)}

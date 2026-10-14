@@ -251,3 +251,49 @@ JSON Schema now enforces action-specific empty unused fields, exactly 13 Etsy
 tags, and 20-character tag limits at the provider as well as server validation.
 A real locked-tag request and a complete two-round product lookup passed before
 the repair deployment; 18 tests and the backend/Admin build passed again.
+
+Final staging repair release `df136875b72068d2be9880fdacfcbdae2d65f356` finished
+at 14:39:39 UTC. Live product-description review/apply/Undo, 13 unique Etsy tags
+with locked phrase preserved, tag draft apply/Undo/Discard, and Ask Rusty product
+lookup with a source link passed. Final generated copy remains an unsaved review
+suggestion; existing product copy/Etsy metadata and all 424 catalog products are
+unchanged. Both services are healthy and refreshed queue status is OK. Browser
+evidence is in `browser-checks.json`, `description-ai-final.png`,
+`etsy-ai-review.png` and `ask-rusty-lookup.png` under the OpenRouter evidence
+directory. Owner can now test descriptions and tags in staging. Etsy writes,
+color-sharing activation, label purchases and measured 2-inch rendering remain
+separate integration work; no AI-connection blocker remains.
+
+
+## Product-photo context for AI — October 14, 2026
+
+Product creation, website description editing and Etsy title/description/tag
+helpers now offer Use product photos. Up to three photos are selected with the
+cover first by default; users can change the selection or turn it off for text
+only. Selecting photos does not edit the product or upload an unsaved image.
+Generation explicitly discloses that selected photos/facts go to the provider.
+
+Saved public photos from `cdn.rustichalo.com` and `cdn.shopify.com` go directly
+to the configured provider as Responses `input_image` content. Credentials,
+private hosts, arbitrary remote sources and sensitive query parameters are
+rejected, and this backend never fetches user-supplied URLs. Newly added local
+photos are resized to at most 1024px and encoded as JPEG previews in the browser;
+the server validates image bytes, bounds pixels/size, strips metadata and
+normalizes them before sending. The three-photo limit and 5MB route body limit
+bound uploads; no image data is persisted by this helper.
+
+The prompt now specifies the requested writing task explicitly. Photos can
+inform visible motifs, patterns and colors; they cannot establish material,
+measurements, named finishes, construction or availability. Existing facts take
+priority and unclear details should be omitted. Images may be mockups or show
+multiple variants. All output remains an editable suggestion, with existing
+Undo/save controls and Etsy tag/locked-phrase validation.
+
+Validation before deployment: 22 focused tests, backend/Admin build and Admin
+TypeScript passed. Real OpenRouter requests using three Coffee Cup product photos
+returned a description and 13 validated Etsy tags, with three image parts in each
+request. Local browser checks covered default selection, the three-photo limit,
+text-only generation and an unsaved new-product upload converted to a JPEG
+preview without product creation. Evidence/source/release: 
+`.local/admin-photo-ai-20261014/`. Deployed acceptance is recorded below when
+complete. No production/Shopify change, Etsy publication or label purchase.
