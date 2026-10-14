@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { prepareCopyPhotos, publicCopyPhoto, CopyPhotoError } from '../photos'
+import { prepareCopyPhotos, publicCopyPhoto, CopyPhotoError, MAX_COPY_PHOTO_BYTES } from '../photos'
 import { copyInputSchema, generateProductCopy } from '../product-copy'
 
 const input = { action: 'description' as const, title: 'Hair claw', description: '', material: '', facts: '', category: '', attributes: '', locked_tags: [] }
@@ -8,8 +8,14 @@ it('allows only public approved CDN photos without credentials or secret query p
   expect(publicCopyPhoto('https://cdn.shopify.com/photo.jpg?v=123&width=1024')).toBe(true)
   for (const url of ['http://cdn.rustichalo.com/a.jpg', 'https://cdn.rustichalo.com.evil.invalid/a.jpg', 'https://user:secret@cdn.rustichalo.com/a.jpg', 'https://127.0.0.1/a.jpg', 'https://cdn.rustichalo.com/a.jpg?token=secret', 'https://cdn.rustichalo.com:444/a.jpg', 'file:///tmp/a.jpg', 'blob:untrusted']) expect(publicCopyPhoto(url)).toBe(false)
 })
-it('bounds photo count and payload before the provider and never fetches unapproved URLs', async () => {
-  expect(copyInputSchema.safeParse({ ...input, photos: Array(4).fill('https://cdn.rustichalo.com/a.jpg') }).success).toBe(false)
+it('allows any photo selection while bounding total payload before the provider and never fetches unapproved URLs', async () => {
+  const photos = Array.from({ length: 20 }, (_, i) => `https://cdn.rustichalo.com/${i}.jpg`)
+  expect(copyInputSchema.safeParse({ ...input, photos }).success).toBe(true)
+  expect(await prepareCopyPhotos(photos)).toEqual(photos)
+  const oversized = Array.from({ length: 5 }, (_, i) => 'https://cdn.rustichalo.com/' + String(i) + 'x'.repeat(1_000_000))
+  expect(copyInputSchema.safeParse({ ...input, photos: oversized }).success).toBe(false)
+  await expect(prepareCopyPhotos(oversized)).rejects.toThrow('too large together')
+  expect(oversized.join('').length).toBeGreaterThan(MAX_COPY_PHOTO_BYTES)
   expect(copyInputSchema.safeParse({ ...input, photos: ['x'.repeat(1_400_001)] }).success).toBe(false)
   await expect(prepareCopyPhotos(['https://localhost/a.jpg'])).rejects.toBeInstanceOf(CopyPhotoError)
   await expect(prepareCopyPhotos(Array(2).fill('https://cdn.rustichalo.com/a.jpg'))).rejects.toThrow('different')

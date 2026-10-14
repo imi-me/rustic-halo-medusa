@@ -10,7 +10,7 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
   if (!allowedOrigin(req)) return res.sendStatus(403)
   if (!isReady()) return res.status(503).json({ message: 'Ask Rusty needs its backend project key and model before AI suggestions are available.' })
   const parsed = copyInputSchema.safeParse(req.body)
-  if (!parsed.success) return res.status(400).json({ message: 'Provide a title and bounded product facts; no buyer information or credentials.' })
+  if (!parsed.success) return res.status(400).json({ message: parsed.error.issues.some(issue => issue.message.includes('photo previews are too large')) ? 'Selected photo previews are too large together. Use smaller photos or select fewer newly added images.' : 'Provide a title and bounded product facts; no buyer information or credentials.' })
   const release = acquire(actor)
   if (!release) return res.status(429).json({ message: 'One AI request at a time, up to 10 per hour.' })
   try { return res.json({ suggestion: await generateProductCopy(parsed.data) }) }

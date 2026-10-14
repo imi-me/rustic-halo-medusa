@@ -1,3 +1,4 @@
+import { ProductSection } from './product-section'
 import { useState } from 'react'
 import { descriptionText } from '../../lib/product-description'
 import {
@@ -115,9 +116,8 @@ export function EtsyListingEditor({
     }
   }
   return (
-    <section className="rh-inline-card rh-etsy-card">
+    <ProductSection title="Etsy listing" className="rh-etsy-card">
       <div className="rh-inline-section-heading">
-        <h2>Etsy listing</h2>
         {value.listing_id && (
           <a
             href={`https://www.etsy.com/listing/${value.listing_id}`}
@@ -555,6 +555,6 @@ export function EtsyListingEditor({
         )}
         {message && <p role="status">{message}</p>}
       </details>
-    </section>
+    </ProductSection>
   )
 }

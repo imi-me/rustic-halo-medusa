@@ -338,3 +338,52 @@ dirtiness, cover/reorder/remove, pruning, Discard, and the shared new-product
 gallery. Provider requests were mocked for this UI-only change. Evidence and
 isolated release: `.local/admin-shared-gallery-20261014/`. Live staging
 acceptance is recorded after deployment.
+
+Shared-gallery release `fdb06b2035e438970ae6937d77413788ec10151c`, deployment
+`ajweydh54waugv2hvpatbdok`, finished at 1:00:59 p.m. Eastern. The owner's clean
+existing staging preview was refreshed to bundle `index-DUecS4u-.js`. Native
+Coffee Cup shows one gallery, 74x64px photo contents in 76px cards, and no
+helper photo galleries. Both helpers used the same two-photo selection for
+successful live description and 13 unique valid Etsy tags. Shared text-only
+status and 390px gallery/management layout passed. Default three-photo selection
+was restored, temporary notes/suggestions cleared, and Save stayed disabled.
+The final staging tab is left open with the compact gallery visible.
+
+Both services healthy; queue OK at 1:01:15 p.m. Eastern. Catalog remains 424
+and product copy/Etsy metadata unchanged. Protected endpoints/photo-source
+checks still return expected 401/403/400 responses. Final evidence is in
+`browser-checks.json`, `staging-checks.json`, `deployed-services.json`,
+`release.json` and `staging-shared-gallery.png` under the shared-gallery
+directory. No remaining shared-gallery blocker. Production, Shopify, external
+Etsy writes/color sharing and label purchases were unchanged.
+
+
+### 2026-10-14: Product workspace interactions
+
+Product sections now collapse without discarding fields, including Images,
+shipping, publishing and Etsy. Validation opens all containing disclosures.
+The shared compact gallery uses pointer dragging (mouse/touch) and keyboard
+arrow keys for ordering, with cover/remove controls retained. Both writing
+helpers accept none, any subset or all product photos; the default is all.
+There is no three-photo count cap. Newly added previews are still resized,
+with a 4.5 MB aggregate photo payload budget within the existing 5 MB route
+limit; approved CDN URL and credential protections remain. Sharp previews
+process sequentially to bound memory use.
+
+Options now has an inline collapsible editor: add product-specific options
+and values, link shared options and select their existing values. Option
+changes save separately before other product edits. The authenticated,
+origin-checked workspace/options route checks the product timestamp and
+canonical option/value snapshot under the existing product lock, then uses
+Medusa's native create/link workflow and protection for values used by
+variants. Shared catalog names remain managed in the catalog. Variant
+creation and the specialized image-fitting studio still use their dedicated
+editors; converting those is remaining work, not part of the Options editor.
+
+Scoped source and validation: `.local/admin-workspace-flow-20261014/`.
+Local Admin TypeScript and backend/Admin build passed; photo aggregate bounds,
+option payload preservation and shared-option safety have focused unit tests.
+Browser checks cover real mouse dragging, keyboard ordering, shared all/none
+photo selection, collapse/draft preservation, option draft isolation and local
+option saves preserving variant SKU and price. Staging acceptance is recorded
+in the release/report files after deployment. Production and Shopify untouched.

@@ -1,3 +1,4 @@
+import { ProductSection, revealInvalidField } from '../../../components/product-section'
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { adminRequest, type Entity, type ProductDraft } from '../../../lib/inline-edit'
@@ -333,7 +334,7 @@ const NewProductPage = () => {
   )
   return (
     <div className="rh-inline-editor rh-product-editor">
-      <form
+      <form onInvalid={revealInvalidField}
         onSubmit={(event) => {
           event.preventDefault()
           void save()
@@ -383,8 +384,7 @@ const NewProductPage = () => {
         )}
         <fieldset disabled={loading || saving || Boolean(frozen)} className="rh-inline-body">
           <div className="rh-inline-column rh-product-main">
-            <section className="rh-inline-card">
-              <h2>Product details</h2>
+            <ProductSection title="Product details" className="">
               {field('title', 'Title')}
               <DescriptionEditor
                 disabled={loading || saving || Boolean(frozen)}
@@ -416,10 +416,9 @@ const NewProductPage = () => {
                 <summary>Search URL</summary>
                 {field('handle', 'Handle')}
               </details>
-            </section>
+            </ProductSection>
             <ProductImages photos={photos} productId="new" draft={draft} change={setDraft} add={addImages} />
-            <section className="rh-inline-card">
-              <h2>Pricing, variants & inventory</h2>
+            <ProductSection title="Pricing, variants & inventory" className="">
               <label className="rh-inline-field">
                 <span>Inventory policy</span>
                 <select
@@ -546,17 +545,15 @@ const NewProductPage = () => {
                   </details>
                 </div>
               ))}
-            </section>
-            <section className="rh-inline-card">
-              <h2>Shipping</h2>
+            </ProductSection>
+            <ProductSection title="Shipping" className="">
               {select('shipping_profile_id', 'Shipping profile')}
               {field('weight', 'Item weight (g)', 'number')}
               {field('material', 'Material')}
-            </section>
+            </ProductSection>
           </div>
           <div className="rh-inline-column rh-product-sidebar">
-            <section className="rh-inline-card">
-              <h2>Organization</h2>
+            <ProductSection title="Organization" className="">
               <p>Status: Draft</p>
               <ProductTypeField
                 value={String(draft.fields.type_id)}
@@ -595,7 +592,7 @@ const NewProductPage = () => {
                   ))}
                 </details>
               ))}
-            </section>
+            </ProductSection>
             <EtsyListingEditor
               photos={photos}
               value={draft.etsy}
@@ -612,13 +609,12 @@ const NewProductPage = () => {
             {isHairClaw({
               type: choices.type_id?.find((row) => row.id === draft.fields.type_id),
             }) && (
-              <section className="rh-inline-card">
-                <h2>Hair-claw images</h2>
+              <ProductSection title="Hair-claw images" className="">
                 <p>
                   Save the product first to fit approved artwork and share saved color variants with
                   Etsy.
                 </p>
-              </section>
+              </ProductSection>
             )}
           </div>
         </fieldset>

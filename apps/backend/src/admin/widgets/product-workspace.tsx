@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { InlineEditor } from '../components/inline-editor'
 import '../styles/product-workspace.css'
 
-const commonSections = new Set(['Media', 'Variants', 'Sales Channels', 'Shipping configuration', 'Organize', 'Attributes'])
+const commonSections = new Set(['Options', 'Media', 'Variants', 'Sales Channels', 'Shipping configuration', 'Organize', 'Attributes'])
 
 const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) => {
   const [host, setHost] = useState<HTMLElement | null>(null)
@@ -41,7 +41,7 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
         for (const card of [...column.children]) {
           if (!(card instanceof HTMLElement)) continue
           const title = card.querySelector('h1,h2')?.textContent?.trim() ?? ''
-          // Keep options, metadata, JSON and third-party widgets below the form;
+          // Keep metadata, JSON and third-party widgets below the form;
           // hide native copies of fields already edited in that form.
           card.dataset.rhProductCommon = String(card === general || commonSections.has(title))
           marked.add(card)
@@ -85,7 +85,7 @@ const ProductWorkspace = ({ data: product }: DetailWidgetProps<AdminProduct>) =>
     <InlineEditor key={product.id} kind="products" id={product.id} workspace={{ title: product.title, thumbnail: product.thumbnail }}/>
     <button type="button" className="rh-pd-tools-toggle" aria-expanded={tools} aria-controls={toolsId} onClick={() => setTools(value => !value)}>
       <strong>Additional tools <span aria-hidden="true">{tools ? '−' : '+'}</span></strong>
-      <span>Product options, metadata and specialized tools</span>
+      <span>Metadata and specialized tools</span>
     </button>
   </section>, host)
 }

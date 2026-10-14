@@ -17,6 +17,9 @@ export default defineMiddlewares({
     matcher: '/admin/product-workspace', method: ['POST'],
     policies: [{ resource: 'product', operation: PolicyOperation.create }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }, { resource: 'inventory_level', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }], middlewares: [],
   }, {
+    matcher: '/admin/products/:id/workspace/options', method: ['POST'],
+    policies: [{ resource: 'product', operation: PolicyOperation.update }, { resource: 'product_option', operation: [PolicyOperation.create, PolicyOperation.update, PolicyOperation.delete] }], middlewares: [],
+  }, {
     matcher: '/admin/products/:id/workspace', method: ['POST'],
     policies: [{ resource: 'product', operation: PolicyOperation.update }, { resource: 'product_variant', operation: PolicyOperation.update }, { resource: 'price', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.update }, { resource: 'price', operation: PolicyOperation.delete }], middlewares: [],
   }, {

@@ -45,8 +45,8 @@ export function ProductCopyHelper({
     setError('')
     setProposal(null)
     try {
-      if (photos.enabled && photos.available.length && !photos.selected.length) throw new Error('Choose photos in Images, or turn off Use product photos for AI.')
       const sources = photos.enabled ? await Promise.all(photos.selected.map(copyPhotoSource)) : []
+      if (sources.reduce((size, source) => size + new TextEncoder().encode(source).length, 0) > 4_500_000) throw new Error('Selected photo previews are too large together. Use smaller photos or select fewer newly added images.')
       const response = await adminRequest('/admin/assistant/product-copy', {
         action,
         title,
@@ -77,7 +77,7 @@ export function ProductCopyHelper({
           onChange={(event) => setFacts(event.target.value)}
         />
       </label>
-      <p className="rh-copy-photo-status">{photos.enabled && photos.selected.length ? `Using ${photos.selected.length} product photos` : 'Text-only draft'} · <a href={`#${photos.galleryId}`}>Choose in Images</a></p>
+      <p className="rh-copy-photo-status">{photos.enabled && photos.selected.length ? `Using ${photos.selected.length} product photos` : 'Text-only draft'} · <a href={`#${photos.galleryId}`} onClick={() => { const gallery = document.getElementById(photos.galleryId); if (gallery instanceof HTMLDetailsElement) gallery.open = true }}>Choose in Images</a></p>
       <div className="rh-inline-buttons">
         {actions.map((action) => (
           <button

@@ -8,6 +8,7 @@ export type CopyPhotoSelection = {
   galleryId: string
   setEnabled: (enabled: boolean) => void
   select: (url: string, checked: boolean) => void
+  selectAll: (selected: boolean) => void
 }
 export function copyPhotoChoices(images: CopyPhoto[], thumbnail = '') {
   const urls = images.map(image => image.url).filter(Boolean)
@@ -21,15 +22,15 @@ export function useCopyPhotos(images: CopyPhoto[], thumbnail: string, productId:
   const [enabled, setEnabled] = useState(true)
   const [selection, setSelection] = useState<string[] | null>(null)
   useEffect(() => { setEnabled(true); setSelection(null) }, [productId])
-  const selected = selection === null ? available.slice(0, 3) : selection.filter(url => available.includes(url))
+  const selected = selection === null ? available : selection.filter(url => available.includes(url))
   const select = (url: string, checked: boolean) => {
     if (!available.includes(url)) return
     setSelection(previous => {
-      const current = previous === null ? available.slice(0, 3) : previous.filter(value => available.includes(value))
-      return checked ? [...new Set([...current, url])].slice(0, 3) : current.filter(value => value !== url)
+      const current = previous === null ? available : previous.filter(value => available.includes(value))
+      return checked ? [...new Set([...current, url])] : current.filter(value => value !== url)
     })
   }
-  return { enabled, available, selected, galleryId: `rh-product-images-${productId}`, setEnabled, select }
+  return { enabled, available, selected, galleryId: `rh-product-images-${productId}`, setEnabled, select, selectAll: checked => setSelection(checked ? null : []) }
 }
 
 export async function copyPhotoSource(url: string): Promise<string> {

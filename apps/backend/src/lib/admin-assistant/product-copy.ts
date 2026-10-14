@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { configuration, isReady, providerOptions } from './index'
-import { prepareCopyPhotos } from './photos'
+import { prepareCopyPhotos, MAX_COPY_PHOTO_BYTES } from './photos'
 
 export const copyInputSchema = z
   .object({
@@ -11,7 +11,7 @@ export const copyInputSchema = z
     facts: z.string().max(2000),
     category: z.string().max(200),
     attributes: z.string().max(2000),
-    photos: z.array(z.string().max(1_400_000)).max(3).default([]),
+    photos: z.array(z.string().max(1_400_000)).default([]).refine(photos => photos.reduce((size, photo) => size + Buffer.byteLength(photo), 0) <= MAX_COPY_PHOTO_BYTES, 'Selected photo previews are too large together.'),
     locked_tags: z.array(z.string().min(1).max(20)).max(13),
   })
   .strict()

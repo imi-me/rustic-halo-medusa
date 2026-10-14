@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 
 export class CopyPhotoError extends Error {}
-export const MAX_COPY_PHOTOS = 3
+export const MAX_COPY_PHOTO_BYTES = 4_500_000
 export function publicCopyPhoto(value: string) {
   try {
     const url = new URL(value)
@@ -14,10 +14,13 @@ export function publicCopyPhoto(value: string) {
 // Remote photos go directly from the approved public CDN to the AI provider.
 // This backend never fetches a user-supplied URL or forwards cookies/credentials.
 export async function prepareCopyPhotos(photos: string[]) {
-  if (photos.length > MAX_COPY_PHOTOS || new Set(photos).size !== photos.length)
-    throw new CopyPhotoError('Choose up to three different product photos.')
-  return Promise.all(photos.map(async photo => {
-    if (publicCopyPhoto(photo)) return photo
+  if (new Set(photos).size !== photos.length) throw new CopyPhotoError('Choose different product photos.')
+  if (photos.reduce((size, photo) => size + Buffer.byteLength(photo), 0) > MAX_COPY_PHOTO_BYTES)
+    throw new CopyPhotoError('Selected photo previews are too large together. Use smaller photos or select fewer newly added images.')
+  const result: string[] = []
+  // Process previews sequentially so selecting many photos cannot multiply Sharp memory use.
+  for (const photo of photos) {
+    if (publicCopyPhoto(photo)) { result.push(photo); continue }
     if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(photo) || photo.length > 1_400_000)
       throw new CopyPhotoError('Use product photos from Rustic Halo or Shopify, or newly added JPEG, PNG or WebP photos.')
     try {
@@ -27,7 +30,8 @@ export async function prepareCopyPhotos(photos: string[]) {
       const metadata = await image.metadata()
       if (!metadata.width || !metadata.height || (metadata.pages || 1) !== 1) throw new Error()
       const prepared = await image.rotate().resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true }).flatten({ background: '#ffffff' }).jpeg({ quality: 82 }).toBuffer()
-      return `data:image/jpeg;base64,${prepared.toString('base64')}`
+      result.push(`data:image/jpeg;base64,${prepared.toString('base64')}`)
     } catch { throw new CopyPhotoError('A selected photo could not be read. Choose a still photo under 4 megapixels after resizing.') }
-  }))
+  }
+  return result
 }
