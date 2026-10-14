@@ -9,20 +9,23 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
 import { listCollections } from "@lib/data/collections"
-import { homeCollectionTiles } from "@lib/brand/home-collections"
+import { listCategories } from "@lib/data/categories"
 import BagIcon from "@modules/layout/components/bag-icon"
 
 export default async function Nav() {
-  const [regions, locales, currentLocale, collectionResult] = await Promise.all([
+  const [regions, locales, currentLocale, collectionResult, categories] = await Promise.all([
     listRegions().then((regions: StoreRegion[]) => regions),
     listLocales(),
     getLocale(),
     listCollections(),
+    listCategories(),
   ])
-  const shopCollections = collectionResult.collections.filter((collection) => collection.handle !== "best-sellers")
+  const shopCategories = categories.filter((category) => !category.parent_category_id)
+  const shopCollections = collectionResult.collections.filter((collection) => collection.metadata?.grouping === "theme")
   const mobileLinks = [
     { name: "Shop", href: "/store" },
-    ...shopCollections.map((collection) => ({ name: homeCollectionTiles.find((tile) => tile.handle === collection.handle)?.label || collection.title, href: `/collections/${collection.handle}` })),
+    ...shopCategories.map((category) => ({ name: category.name, href: `/categories/${category.handle}` })),
+    ...shopCollections.map((collection) => ({ name: collection.title, href: `/collections/${collection.handle}` })),
     { name: "Our Story", href: "/#our-story" },
     { name: "Account", href: "/account" },
     { name: "Cart", href: "/cart" },

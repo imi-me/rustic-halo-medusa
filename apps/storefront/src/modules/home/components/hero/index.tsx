@@ -16,10 +16,9 @@ function EditorialPhoto({ region, label, className = "" }: { region: [number, nu
 }
 
 export default function Hero({ collections }: { collections: HttpTypes.StoreCollection[] }) {
-  const collectionHref = (handle: string) => collections.some((collection) => collection.handle === handle) ? `/collections/${handle}` : "/store"
-  const hairHref = collectionHref("hair-accessories-claws-and-clips")
-  const jewelryHref = collectionHref("earrings")
-  const giftsHref = collectionHref("gifts-home-decor")
+  const hairHref = "/categories/hair-claws"
+  const jewelryHref = "/categories/earrings"
+  const giftsHref = "/categories/home-decor"
   const categories = [
     { label: "Hair Claws", href: hairHref, region: [33, 443, 312, 202] as [number, number, number, number], alt: "Floral wooden hair claw in soft natural light" },
     { label: "Jewelry", href: jewelryHref, region: [358, 443, 301, 202] as [number, number, number, number], alt: "Leaf engraved wooden earrings" },

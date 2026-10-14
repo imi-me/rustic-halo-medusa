@@ -39,6 +39,7 @@ export default function CollectionTemplate({
             sortBy={sort}
             page={pageNumber}
             collectionId={collection.id}
+            themeTagId={typeof collection.metadata?.theme_tag_id === "string" ? collection.metadata.theme_tag_id : undefined}
             countryCode={countryCode}
             optionValueIds={optionValueIds}
           />

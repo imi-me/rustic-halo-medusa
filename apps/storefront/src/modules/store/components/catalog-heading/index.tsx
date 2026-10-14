@@ -1,5 +1,5 @@
 import { listCollections } from "@lib/data/collections"
-import { homeCollectionTiles } from "@lib/brand/home-collections"
+import { listCategories } from "@lib/data/categories"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import RefinementList from "../refinement-list"
 import { SortOptions } from "../refinement-list/sort-products"
@@ -11,8 +11,9 @@ export default async function CatalogHeading({ title, sortBy, collectionHandle, 
   subtitle?: string
   titleTestId?: string
 }) {
-  const { collections } = await listCollections()
-  const categories = collections.filter((collection) => collection.handle !== "best-sellers")
+  const [{ collections }, productCategories] = await Promise.all([listCollections(), listCategories()])
+  const categories = productCategories.filter((category) => !category.parent_category_id)
+  const themes = collections.filter((collection) => collection.metadata?.grouping === "theme")
   return (
     <>
       <nav aria-label="Breadcrumb" className="rh-breadcrumb">
@@ -24,11 +25,14 @@ export default async function CatalogHeading({ title, sortBy, collectionHandle, 
         {subtitle && <p className="rh-catalog-subtitle">{subtitle}</p>}
       </div>
       <div className="rh-catalog-toolbar">
-        <nav aria-label="Product collections" className="rh-collection-links">
+        <nav aria-label="Categories and collections" className="rh-collection-links">
           <LocalizedClientLink href="/store" aria-current={!collectionHandle ? "page" : undefined}>All products</LocalizedClientLink>
-          {categories.map((collection) => (
+          {categories.map((category) => (
+            <LocalizedClientLink key={category.id} href={`/categories/${category.handle}`}>{category.name}</LocalizedClientLink>
+          ))}
+          {themes.map((collection) => (
             <LocalizedClientLink key={collection.id} href={`/collections/${collection.handle}`} aria-current={collection.handle === collectionHandle ? "page" : undefined}>
-              {homeCollectionTiles.find((tile) => tile.handle === collection.handle)?.label || collection.title}
+              {collection.title}
             </LocalizedClientLink>
           ))}
         </nav>

@@ -236,3 +236,30 @@ Pagination deployed at 2026-09-21T14:04:57Z. Fresh browser verification shows
 pilot products, consistent with 242 newly enabled plus five pilot products (247
 visible total at 12 per page). New arrivals appear on page one; the last-page
 navigation and product cards work. This verifies the browsing limit is resolved.
+
+
+## Category and collection setup — October 14, 2026
+
+Staging catalog: 419 Rustic Halo products assigned to 19 populated hierarchical
+categories; five demo/test products excluded. Jewelry/Earrings, Hair Accessories,
+Home & Décor, Kitchen & Dining and Gift Boxes are the primary browsing groups.
+Christmas (53), Halloween (3), and Fall Favorites (19) are overlapping themes,
+identified by product tags `theme:christmas`, `theme:halloween`, `theme:fall`.
+Counts include drafts; storefront pages show published products only. Collection
+metadata `grouping: theme` and `theme_tag_id` select tag-filtered storefront grids.
+To add a product to a theme, add that theme tag while preserving its other tags.
+The native Medusa collection product count does not include tag-based membership.
+
+Existing five broad collections retained: all have products and existing URLs.
+Main menu, catalog shortcuts and homepage product-type links now use categories;
+legacy collection pages remain usable. No unused category or collection found.
+Price-based collections and subjective Best Sellers were not invented.
+
+Validation: full before/after product comparison preserved all 424 products,
+variants, publication status, existing collection assignments, metadata, images
+and descriptions. Storefront typecheck/build passed; local browser confirmed
+Christmas filtering and populated Hair Claws. Deployment acceptance evidence is
+recorded in `.local/catalog-organization-20261014/`; see `before.json`,
+`after.json`, `result.json`, `build.log`, `release.json` and browser screenshots.
+No Shopify or production changes. Remaining: curated theme membership review
+and production rollout through the existing approval gates.

@@ -19,6 +19,7 @@ export const listCollections = async (
 ): Promise<{ collections: HttpTypes.StoreCollection[]; count: number }> => {
   queryParams.limit = queryParams.limit || "100"
   queryParams.offset = queryParams.offset || "0"
+  queryParams.fields = queryParams.fields || "+metadata"
 
   return await sdk.client
     .fetch<{ collections: HttpTypes.StoreCollection[]; count: number }>(
@@ -37,7 +38,7 @@ export const getCollectionByHandle = async (
 ): Promise<HttpTypes.StoreCollection | null> => {
   return await sdk.client
     .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
-      query: { handle, fields: "*products" },
+      query: { handle, fields: "*products,+metadata" },
       cache: "no-store",
     })
     .then(({ collections }) => collections[0] || null)
