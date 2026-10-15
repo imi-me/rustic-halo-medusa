@@ -387,3 +387,16 @@ Browser checks cover real mouse dragging, keyboard ordering, shared all/none
 photo selection, collapse/draft preservation, option draft isolation and local
 option saves preserving variant SKU and price. Staging acceptance is recorded
 in the release/report files after deployment. Production and Shopify untouched.
+
+
+### 2026-10-14: Direct Etsy listing fields
+
+Removed the redundant nested Prepare Etsy listing / Manage Etsy listing
+disclosure. Opening the existing Etsy listing section now reveals the listing
+ID, copy, tags, materials and writing helper directly. The outer section still
+collapses; category guidance, search readiness and color-sharing subsections
+retain their existing controls. No data or integration behavior changed.
+Scoped source and validation evidence: `.local/admin-etsy-expander-20261014/`
+(`release.json`, `typecheck.log`, `build.log`, `browser-checks.json`,
+`deployed-services.json`, `staging-etsy-listing.png`). Staging acceptance is
+recorded in the release and browser reports after deployment.

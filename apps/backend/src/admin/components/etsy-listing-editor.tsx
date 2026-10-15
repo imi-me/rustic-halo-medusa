@@ -34,9 +34,6 @@ export function EtsyListingEditor({
   saved?: boolean
   addColorImage?: (variantId: string, url: string) => void
 }) {
-  const [expanded, setExpanded] = useState(
-    Boolean(value.listing_id || value.title || value.tags.length),
-  )
   const [locked, setLocked] = useState<string[]>([])
   const [undo, setUndo] = useState<EtsyDraft | null>(null)
   const [tag, setTag] = useState('')
@@ -128,12 +125,7 @@ export function EtsyListingEditor({
           </a>
         )}
       </div>
-      <details
-        className="rh-etsy-workspace"
-        open={expanded}
-        onToggle={(event) => setExpanded(event.currentTarget.open)}
-      >
-        <summary>{value.listing_id ? 'Manage Etsy listing' : 'Prepare Etsy listing'}</summary>
+      <div className="rh-etsy-workspace">
         <p>
           Keep Etsy copy separate from the website. Save preserves this draft; Update Etsy is a
           separate action.
@@ -554,7 +546,7 @@ export function EtsyListingEditor({
           </div>
         )}
         {message && <p role="status">{message}</p>}
-      </details>
+      </div>
     </ProductSection>
   )
 }
