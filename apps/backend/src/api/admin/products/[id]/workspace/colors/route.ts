@@ -21,7 +21,7 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
       if (palette.revision !== req.body.expected_palette_revision) throw Error('Shared colors changed. Reload before saving.')
       const bySize = sized ? parsed.data as { '2': string[]; '4': string[] } : { '2': parsed.data as string[], '4': parsed.data as string[] }
       if (Object.values(bySize).flat().some(name => !palette.colors.some(c => c.name === name))) throw Error('Choose colors from the shared hair-claw palette.')
-      await products.updateProducts(req.params.id, { metadata: { ...product.metadata, [CLAW_COLORS_KEY]: { ...(product.metadata?.[CLAW_COLORS_KEY] as Record<string, unknown> ?? {}), excluded: [], excluded_by_size: bySize } } })
+      await products.updateProducts(req.params.id, { metadata: { ...product.metadata, [CLAW_COLORS_KEY]: { ...(product.metadata?.[CLAW_COLORS_KEY] as Record<string, unknown> ?? {}), excluded: [], excluded_by_size: bySize, excluded_by_group: {} } } })
     }))
     return res.json({ id: req.params.id })
   } catch (error) { return res.status(409).json({ message: (error as Error).message }) }

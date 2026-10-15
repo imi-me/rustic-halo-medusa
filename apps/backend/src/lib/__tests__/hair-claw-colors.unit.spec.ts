@@ -140,7 +140,7 @@ it('saves size availability separately with stale and invalid-input protection, 
   const res: any = { setHeader: jest.fn(), sendStatus: jest.fn(), status: jest.fn().mockReturnThis(), json: jest.fn() }
   await saveProductColors(req, res)
   expect(update).toHaveBeenCalledTimes(1)
-  expect(product.metadata[CLAW_COLORS_KEY]).toEqual({ excluded: [], excluded_by_size: { '2': ['Black'], '4': [] } })
+  expect(product.metadata[CLAW_COLORS_KEY]).toEqual({ excluded: [], excluded_by_size: { '2': ['Black'], '4': [] }, excluded_by_group: {} })
   expect(product.metadata.unrelated).toBe('keep')
   req.body.expected_updated_at = '2020-01-01'
   await saveProductColors(req, res); expect(res.status).toHaveBeenLastCalledWith(409)

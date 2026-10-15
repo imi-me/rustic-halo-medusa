@@ -1,3 +1,5 @@
+import { CLAW_COLORS_KEY, clawColorSettingsSchema } from '../../lib/hair-claw-colors'
+import { workspacePriceRevision } from '../../lib/workspace-price-revision'
 import { emptyAssignment, assignmentSchema, SHIPPING_KEY, type PackageAssignment } from '../../lib/shipping-packages'
 import { priceRows, pricePayload, type PriceRow } from './product-prices'
 import { emptyEtsyDraft, etsyDraftSchema, ETSY_DRAFT_KEY, type EtsyDraft } from '../../lib/product-admin'
@@ -5,6 +7,7 @@ import { adminFetch } from './admin-fetch'
 export type Entity = Record<string, any>
 export type Price = { id: string; amount: number; currency_code: string; min_quantity?: number | null; max_quantity?: number | null; rules?: Record<string, string> }
 export type ProductDraft = {
+  clawColors?: ReturnType<typeof clawColorSettingsSchema.parse>
   shipping?: PackageAssignment
   etsy: EtsyDraft
   images: Array<{ key: string; id?: string; url: string }>
@@ -24,6 +27,7 @@ export const isBasePrice = (price: Price) => !Object.keys(price.rules ?? {}).len
 
 export function productDraft(product: Entity): ProductDraft {
   return {
+    ...(product.metadata?.hair_claw_template_v2 ? { clawColors: clawColorSettingsSchema.parse(product.metadata?.[CLAW_COLORS_KEY] ?? {}) } : {}),
     shipping: assignmentSchema.parse(product.metadata?.[SHIPPING_KEY] ?? {}),
     etsy: product.metadata?.[ETSY_DRAFT_KEY] ? etsyDraftSchema.parse(product.metadata[ETSY_DRAFT_KEY]) : emptyEtsyDraft(),
     images: (product.images ?? []).map((image: Entity) => ({ key: image.id ?? image.url, ...(image.id ? { id: image.id } : {}), url: image.url })),
@@ -96,6 +100,7 @@ export function productUpdate(product: Entity, draft: ProductDraft): Entity {
     }
     return patch
   })
+  if (!equal(initial.clawColors, draft.clawColors)) update.metadata = { ...update.metadata, [CLAW_COLORS_KEY]: clawColorSettingsSchema.parse(draft.clawColors) }
   if (variantChanged) update.variants = variants
   return update
 }
@@ -136,13 +141,12 @@ export async function saveInline(kind: 'products' | 'orders', initial: Entity, d
   const url = inlineRecordUrl(kind, initial.id)
   const key = kind === 'products' ? 'product' : 'order'
   const fresh = (await adminRequest(url))[key]
-  const priceRevision = (product: Entity) => (product.variants ?? []).map((variant: Entity) => ({ id: variant.id, updated_at: variant.updated_at,
-    prices: (variant.prices ?? []).map((price: Entity) => ({ id: price.id, amount: price.amount, updated_at: price.updated_at, currency_code: price.currency_code, min_quantity: price.min_quantity, max_quantity: price.max_quantity, rules: Object.entries(price.rules ?? {}).sort() })).sort((a: Entity, b: Entity) => a.id.localeCompare(b.id)),
-  })).sort((a: Entity, b: Entity) => a.id.localeCompare(b.id))
-  if (!fresh || !equal(normalize(initial), normalize(fresh)) || String(initial.updated_at) !== String(fresh.updated_at) || (kind === 'products' && !equal(priceRevision(initial), priceRevision(fresh)))) throw new Error('This record changed since you started editing. Your draft is kept; cancel and reopen Edit all to load the latest values.')
+  if (!fresh || !equal(normalize(initial), normalize(fresh)) || String(initial.updated_at) !== String(fresh.updated_at) || (kind === 'products' && !equal(workspacePriceRevision(initial), workspacePriceRevision(fresh)))) throw new Error('This record changed since you started editing. Your draft is kept; cancel and reopen Edit all to load the latest values.')
   if (kind === 'products') {
-    await adminRequest(`/admin/products/${initial.id}/workspace`, { update, expected_updated_at: initial.updated_at })
-    return (await adminRequest(url))[key]
+    await adminRequest(`/admin/products/${initial.id}/workspace`, { update, expected_updated_at: initial.updated_at, expected_pricing_revision: workspacePriceRevision(initial), expected_palette_revision: initial.metadata?.hair_claw_palette_v1?.revision })
+    const saved = (await adminRequest(url))[key]
+    if (saved.metadata?.hair_claw_template_v2) saved.metadata = { ...saved.metadata, hair_claw_palette_v1: await adminRequest('/admin/hair-claw-colors') }
+    return saved
   }
   return (await adminRequest(url, update))[key]
 }

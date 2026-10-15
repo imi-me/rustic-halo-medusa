@@ -184,3 +184,7 @@
 .rh-claw-palette-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 20px 0; }
 .rh-claw-palette-grid .rh-inline-card { display: grid; gap: 12px; }
 .rh-claw-palette-page fieldset { border: 0; padding: 0; }
+
+.rh-claw-groups{display:grid;gap:16px}.rh-claw-group{border:1px solid #e4e8ef;border-radius:12px;padding:16px;display:grid;gap:14px}.rh-claw-group-heading{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.rh-claw-group-heading h3{margin:0}.rh-claw-group-heading span,.rh-claw-group small{color:#687385;font-size:12px}.rh-claw-individual-variants{margin-top:18px}.rh-claw-individual-variants>summary{cursor:pointer;font-weight:600;padding:12px 0}
+
+.rh-claw-group{display:block}.rh-claw-group>summary{cursor:pointer}.rh-claw-group[open]>summary{margin-bottom:14px}.rh-claw-group[open]>.rh-inline-buttons,.rh-claw-group[open]>.rh-claw-color-checks{margin-top:14px}

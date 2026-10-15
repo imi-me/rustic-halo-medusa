@@ -123,10 +123,11 @@ export default function ProductActions({
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
     let next = { ...options, [optionId]: value }
-    if (template && optionId === template.size_option_id && !product.variants?.some(v => isEqual(optionsAsKeymap(v.options), next))) {
-      const compatible = product.variants?.find(v => v.options?.some(o => o.option_id === optionId && o.value === value) && v.options?.some(o => o.option_id === template.color_option_id && o.value === options[template.color_option_id]))
-      const finishId = template.finish_option_id
-      const fallback = compatible || product.variants?.find(v => v.options?.some(o => o.option_id === optionId && o.value === value) && (!finishId || v.options?.some(o => o.option_id === finishId && o.value === options[finishId]))) || product.variants?.find(v => v.options?.some(o => o.option_id === optionId && o.value === value))
+    if (template && optionId !== template.color_option_id && !product.variants?.some(v => isEqual(optionsAsKeymap(v.options), next))) {
+      const candidates = product.variants?.filter(v => v.options?.some(o => o.option_id === optionId && o.value === value)) ?? []
+      const sameColor = (v: HttpTypes.StoreProductVariant) => v.options?.some(o => o.option_id === template.color_option_id && o.value === options[template.color_option_id])
+      const sameOtherChoices = (v: HttpTypes.StoreProductVariant) => (v.options ?? []).every(o => [optionId, template.color_option_id].includes(o.option_id!) || !options[o.option_id!] || o.value === options[o.option_id!])
+      const fallback = candidates.find(v => sameColor(v) && sameOtherChoices(v)) || candidates.find(sameOtherChoices) || candidates.find(sameColor) || candidates[0]
       if (fallback) next = optionsAsKeymap(fallback.options) || next
     }
     setOptions(next)
@@ -206,7 +207,7 @@ export default function ProductActions({
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
               {displayOptions.map((option) => {
-                if (template?.color_option_id === option.id) { const colors = productClawColors(product, clawSize(options[template.size_option_id])).filter(c => option.values?.some(v => v.value === c.name)); return <ClawColorPicker key={option.id} colors={colors} compact purchase productName={product.title || "hair claw"} value={colors.find(c => c.name === options[option.id])?.slug || ''} disabled={!!disabled || isAdding} onChange={slug => { const color = colors.find(c => c.slug === slug); if (color) setOptionValue(option.id, color.name) }} /> }
+                if (template?.color_option_id === option.id) { const colors = productClawColors(product, clawSize(options[template.size_option_id])).filter(c => option.values?.some(v => v.value === c.name) && product.variants?.some(v => v.options?.some(o => o.option_id === option.id && o.value === c.name) && (v.options ?? []).every(o => o.option_id === option.id || !options[o.option_id!] || o.value === options[o.option_id!]))); return <ClawColorPicker key={option.id} colors={colors} compact purchase productName={product.title || "hair claw"} value={colors.find(c => c.name === options[option.id])?.slug || ''} disabled={!!disabled || isAdding} onChange={slug => { const color = colors.find(c => c.slug === slug); if (color) setOptionValue(option.id, color.name) }} /> }
                 return (
                   <div key={option.id}>
                     <OptionSelect

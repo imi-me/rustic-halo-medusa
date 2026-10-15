@@ -10,11 +10,27 @@ export function variantClawSize(product: HttpTypes.StoreProduct, variant: HttpTy
   const config = hairClawTemplate(product)
   return clawSize(variant.metadata?.physical_size ?? variant.options?.find(o => o.option_id === config?.size_option_id)?.value ?? config?.unlabelled_size)
 }
+export function clawVariantGroupKey(product: HttpTypes.StoreProduct, variant: HttpTypes.StoreProductVariant): string {
+  const config = hairClawTemplate(product)
+  const options = (variant.options ?? []).filter(o => config?.option_ids?.includes(o.option_id!) && o.option_id !== config.color_option_id).map(o => [o.option_id!, o.value]).sort((a, b) => a[0].localeCompare(b[0]))
+  return JSON.stringify([variantClawSize(product, variant) ?? 'unknown', options])
+}
 export function productClawColors(product: HttpTypes.StoreProduct, size?: ClawSize): ClawColor[] {
   const palette: ClawColor[] = (product.metadata?.hair_claw_palette_v1 as { colors?: ClawColor[] } | undefined)?.colors ?? healingHeartsColors.map(c => ({ ...c, active: true }))
-  const settings = product.metadata?.hair_claw_colors_v1 as { excluded?: string[]; excluded_by_size?: Record<ClawSize, string[]> } | undefined
-  return palette.filter(c => c.active && (size ? [size] : ['2', '4'] as ClawSize[]).some(key =>
-    (!c.sizes || c.sizes.includes(key)) && !(settings?.excluded_by_size?.[key] ?? settings?.excluded ?? []).some(n => n.toLowerCase() === c.name.toLowerCase())))
+  const settings = product.metadata?.hair_claw_colors_v1 as { excluded?: string[]; excluded_by_size?: Record<ClawSize, string[]>; excluded_by_group?: Record<string, string[]> } | undefined
+  return palette.filter(c => c.active && (size ? [size] : ['2', '4'] as ClawSize[]).some(key => {
+    const excluded = settings?.excluded_by_size?.[key] ?? settings?.excluded ?? []
+    const override = Object.entries(settings?.excluded_by_group ?? {}).some(([group, names]) => { try { return JSON.parse(group)[0] === key && !names.some(n => n.toLowerCase() === c.name.toLowerCase()) } catch { return false } })
+    return (!c.sizes || c.sizes.includes(key)) && (!excluded.some(n => n.toLowerCase() === c.name.toLowerCase()) || override)
+  }))
+}
+export function clawGroupColorAvailable(product: HttpTypes.StoreProduct, variant: HttpTypes.StoreProductVariant) {
+  const settings = product.metadata?.hair_claw_colors_v1 as { excluded?: string[]; excluded_by_size?: Record<ClawSize, string[]>; excluded_by_group?: Record<string, string[]> } | undefined
+  const size = variantClawSize(product, variant)
+  const inherited = size ? settings?.excluded_by_size?.[size] ?? settings?.excluded ?? [] : [...(settings?.excluded_by_size?.['2'] ?? settings?.excluded ?? []), ...(settings?.excluded_by_size?.['4'] ?? settings?.excluded ?? [])]
+  const excluded = settings?.excluded_by_group?.[clawVariantGroupKey(product, variant)] ?? inherited
+  const name = String(variant.metadata?.base_claw_color ?? variant.options?.find(o => o.option_id === hairClawTemplate(product)?.color_option_id)?.value)
+  return !excluded?.some(n => n.toLowerCase() === name.toLowerCase())
 }
 
 type Template = { version: number; variant_ids: string[]; option_ids: string[]; color_option_id: string; size_option_id: string; finish_option_id?: string; offer_mode?: boolean; default_variant_id: string; option_titles?: Record<string, string>; unlabelled_size?: string }
@@ -34,7 +50,7 @@ export function applyHairClawTemplate(product: HttpTypes.StoreProduct): HttpType
   const variants = (product.variants || []).filter(v => {
     const size = variantClawSize(product, v)
     const available = size ? productClawColors(product, size) : productClawColors(product, '2').filter(c => productClawColors(product, '4').some(other => other.name === c.name))
-    return ids.has(v.id) && available.some(c => c.name.toLowerCase() === String(v.metadata?.base_claw_color ?? v.options?.find(o => o.option_id === config.color_option_id)?.value).toLowerCase())
+    return ids.has(v.id) && clawGroupColorAvailable(product, v) && available.some(c => c.name.toLowerCase() === String(v.metadata?.base_claw_color ?? v.options?.find(o => o.option_id === config.color_option_id)?.value).toLowerCase())
   }).map(v => ({ ...v, options: v.options?.filter(o => Boolean(o.option_id) && optionIds.has(o.option_id!)) || null }))
   const options = (product.options || []).filter(o => optionIds.has(o.id)).map(o => ({
     ...o,
@@ -48,7 +64,7 @@ export function initialProductOptions(product: HttpTypes.StoreProduct, requested
   const config = hairClawTemplate(product)
   const variant = product.variants?.find(v => v.id === requestedId) ||
     (config ? product.variants?.find(v => v.id === config.default_variant_id) : undefined) ||
-    (config?.offer_mode ? product.variants?.find(v => v.options?.some(o=>o.option_id===config.color_option_id && o.value==='Taupe')) || product.variants?.[0] : undefined) ||
+    (config ? product.variants?.find(v => v.options?.some(o=>o.option_id===config.color_option_id && o.value==='Taupe')) || product.variants?.[0] : undefined) ||
     (product.variants?.length === 1 ? product.variants[0] : undefined)
   if (variant) return Object.fromEntries((variant.options || []).map(o => [o.option_id, o.value])) as Record<string, string | undefined>
   return Object.fromEntries((product.options || []).filter(o => o.title?.toLowerCase() === "title" && o.values?.length === 1 && o.values[0].value === "Default Title").map(o => [o.id, o.values?.[0].value])) as Record<string, string | undefined>

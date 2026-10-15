@@ -22,6 +22,11 @@ export const clawPaletteSchema = z.array(z.object({
 })
 export const clawExclusionsSchema = z.array(z.string().min(1).max(40)).max(60).refine(names => new Set(names.map(n => n.toLowerCase())).size === names.length, 'Remove duplicate color exclusions.')
 export const clawSizeExclusionsSchema = z.object({ '2': clawExclusionsSchema, '4': clawExclusionsSchema }).strict()
+export const clawColorSettingsSchema = z.object({
+  excluded: clawExclusionsSchema.default([]),
+  excluded_by_size: clawSizeExclusionsSchema.optional(),
+  excluded_by_group: z.record(z.string().max(2000), clawExclusionsSchema).refine(groups => Object.keys(groups).length <= 200, 'Too many color groups.').default({}),
+}).strict()
 export function clawSize(value: unknown): ClawSize | undefined {
   return String(value ?? '').trim().match(/^([24])(?:\s*(?:["“”″]|in(?:ch(?:es)?)?\.?))?$/i)?.[1] as ClawSize | undefined
 }
@@ -36,6 +41,11 @@ export function productColorExclusions(product: any, size: ClawSize): string[] {
   const settings = product.metadata?.[CLAW_COLORS_KEY]
   return settings?.excluded_by_size?.[size] ?? settings?.excluded ?? []
 }
+export function clawVariantGroupKey(product: any, variant: any): string {
+  const config = product.metadata?.hair_claw_template_v2
+  const options = (variant.options ?? []).filter((o: any) => config?.option_ids?.includes(o.option_id) && o.option_id !== config.color_option_id).map((o: any) => [o.option_id, o.value]).sort((a: any, b: any) => a[0].localeCompare(b[0]))
+  return JSON.stringify([variantClawSize(product, variant) ?? 'unknown', options])
+}
 export function variantClawColor(product: any, variant: any): string | undefined {
   return variant.metadata?.base_claw_color || variant.options?.find((o: any) => o.option_id === product.metadata?.hair_claw_template_v2?.color_option_id)?.value
 }
@@ -43,6 +53,7 @@ export function clawColorAvailable(product: any, variant: any, palette?: ClawCol
   const name = variantClawColor(product, variant)
   if (!name) return true
   const size = variantClawSize(product, variant)
-  const excluded = size ? productColorExclusions(product, size) : [...productColorExclusions(product, '2'), ...productColorExclusions(product, '4')]
+  const group = product.metadata?.[CLAW_COLORS_KEY]?.excluded_by_group?.[clawVariantGroupKey(product, variant)]
+  const excluded: string[] = group ?? (size ? productColorExclusions(product, size) : [...productColorExclusions(product, '2'), ...productColorExclusions(product, '4')])
   return !excluded.some(n => n.toLowerCase() === name.toLowerCase()) && (!palette || palette.some(c => c.active && colorSupportsSize(c, size) && c.name.toLowerCase() === name.toLowerCase()))
 }

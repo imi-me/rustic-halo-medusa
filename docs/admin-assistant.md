@@ -587,3 +587,54 @@ plan, exact scoped source and verification reports are in
 `.local/staging-four-inch-catalog-20261015/`. Coastal Catch remains an existing
 draft because its source image is missing. Final deployment/cart/browser
 acceptance is recorded in this milestone's release and handoff reports.
+
+Final acceptance complete: compatibility commit
+`629b1bef11c61ee8dd575026ece1c89331ae5c23`, deployment
+`4rsflao8kikfqbu5fc0lf7lk` finished 2026-10-15T14:31:32Z; both services healthy.
+The catalog still has 419 products. All 69 claws have configured 4-inch choices
+(1,248 variants total); 68 are published and Coastal Catch remains draft.
+Snapshot comparisons verify all existing variant records/prices/weights/images
+and statuses, 353 unrelated products, and Coffee Cup are unchanged. Nine actual
+cart combinations across five products matched saved prices; hidden 2-inch and
+legacy IDs were rejected, and all test cart items were removed. Browser checks
+verified Mandala $12 Natural / $14 Colors by Cate with real Rose variant URL,
+and Seashell Admin's 13 active / 25 saved variants with no duplicate option rows.
+
+A disposable shared-color test created 24 native variants across two preserved
+style prices, added no hidden 2-inch variants, and retried with zero additions.
+Original variant fields/prices stayed unchanged; Medusa's native option linking
+refreshes option-value timestamps as expected. The fixture was soft-deleted and
+catalog/palette/Coffee Cup rechecked. All 69 color plans have no missing current
+colors. Evidence and exact file paths are in
+`.local/staging-four-inch-catalog-20261015/final-handoff.md`, with snapshots,
+`catalog-verification.json`, `checkout-checks.json`, `cart-cleanup.json`,
+`color-sync-checks.json`, `color-fixture-cleanup.json`, `catalog-color-plans.json`,
+`browser-checks.json`, `deployed-services.json`, `staging-mandala-colors.png` and
+`release.json`. Queue report at 14:27:38Z was OK with no failed/waiting jobs.
+External Etsy writes and label purchases remain gated off; production/Shopify
+were untouched. Remaining: owner testing, Coastal Catch's missing photo, and
+the separate measured/approved 2-inch setup.
+
+### 2026-10-15: Grouped size/finish prices and color checkboxes
+
+Hair-claw Variants, pricing & stock now shows collapsible size/finish (or saved
+style) groups, one base price per currency applying to every saved color in the
+group, and per-group color checkboxes. Prices and color availability share the
+main Save changes action and draft/navigation guard. Individual SKUs, stock,
+advanced prices and legacy rows remain behind Individual variants, stock &
+identifiers. Unoffered configured groups start collapsed and saving their price
+does not enable their size/artwork. Non-claw option editing is unchanged.
+
+Group overrides preserve old size-wide exclusions until a group is edited.
+Storefront variant filtering, compatible finish/size switching, cart guards and
+Etsy exports honor the selected group's color availability. Group prices retain
+other currencies/regions/tiers and native IDs. The workspace route now verifies
+a shared native/API price revision under both product locks before price writes;
+color updates validate group identities and the shared palette revision.
+
+Local checks: 50 backend tests in five focused suites, five storefront tests,
+backend/Admin/storefront TypeScript and builds. Browser verification: one price
+field produced 13 price patches, other finish price/color stayed unchanged,
+combined main save persisted, individual rows stayed collapsed, and navigation
+kept an unsaved group draft. Exact source, logs and staging acceptance live in
+`.local/admin-grouped-claws-20261015/`. Final deployment acceptance is pending.
