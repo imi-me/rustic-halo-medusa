@@ -1,6 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import EtsyOrdersWorkspace, { OrderChannels } from "../../components/etsy-orders-workspace";
 import {
   filterOrders,
   loadOrders,
@@ -41,7 +42,7 @@ function OrdersIcon() {
     </svg>
   );
 }
-const OrdersWorkspace = () => {
+const WebsiteOrdersWorkspace = () => {
   const [orders, setOrders] = useState<WorkspaceOrder[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -109,6 +110,7 @@ const OrdersWorkspace = () => {
     "Guest customer";
   return (
     <div className="ow-workspace" aria-busy={loading}>
+      <OrderChannels />
       <header className="ow-header">
         <div>
           <h1>Orders</h1>
@@ -426,4 +428,8 @@ export const config = defineRouteConfig({
   icon: OrdersIcon,
 });
 
+const OrdersWorkspace = () => {
+  const [params] = useSearchParams()
+  return params.get("source") === "etsy" ? <EtsyOrdersWorkspace /> : <WebsiteOrdersWorkspace />
+}
 export default OrdersWorkspace

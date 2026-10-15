@@ -93,3 +93,51 @@ AntiqueSoft sale or customer record.
 References: [Etsy webhooks](https://developers.etsy.com/documentation/essentials/webhooks/),
 [Etsy API reference](https://developers.etsy.com/documentation/reference), and
 [Medusa raw webhook bodies](https://docs.medusajs.com/learn/fundamentals/api-routes/parse-body).
+
+## Etsy preparation workspace — October 15, 2026
+
+Owner authorized building and deploying the next staging milestone: a shared
+Orders workspace with Website/Etsy channels, preparation stages, detailed order
+selections/personalization, ship-by dates, packing suggestions/slips, an Etsy
+label link, and shipment/tracking reads. This supersedes the report-only UI
+boundary above for this milestone. Etsy owns payment, refunds, cancellation and
+shipment status. No normal Medusa order, payment, inventory write, outbound
+Etsy notification, label purchase, or listing update is part of this phase.
+
+Preflight through the existing staging OAuth connection returned HTTP 200:
+seven receipts in the last 90 days, all paid/shipped; all seven expose complete
+shipping address fields and existing shipment tracking. Four have variations;
+all have expected ship dates. No additional OAuth scope is needed. Only field
+names and aggregate counts were retained in the private capability report.
+
+The new `/admin/integrations/etsy/workspace` API and per-receipt route use staff
+actor checks and order/product/shipping policies; local writes require the
+existing allowed-origin check. Existing report enablement gates the workspace
+and a 15-minute scheduled refresh. Refresh reads the last 90 days plus older
+unshipped orders, reconciles previously open receipts individually, deduplicates
+by shop/receipt, retains saved preparation stages, and reports bounded-page
+truncation/failures without replacing good snapshots with invalid data. No
+webhook subscription or transaction-write scope is required for this phase.
+
+Minimal operational snapshots and preparation revisions use the existing
+admin-operations module. Names, addresses, email, messages, personalizations,
+tracking codes and raw provider responses are not stored in the cache.
+A one-way content fingerprint detects changes to live fulfillment details.
+Opening an order fetches permitted details on demand with private/no-store
+responses. Packing slips are printed from those details and omit prices.
+Exact case-insensitive SKU matching must identify one native variant; no title
+or color guess is used. Missing/duplicate SKUs, refunds, cancellations, unpaid,
+digital-only and partly shipped orders cannot be marked ready. Product mapping
+and the existing shipping calculator provide the complete-order box suggestion;
+any unmatched physical item blocks automatic packing for the whole order.
+
+Preparation changes are local to Medusa, revision-checked and serialized with
+refresh/detail reads. Each change re-reads Etsy first, rejecting any changed
+receipt, newly shipped/canceled/refunded order, or changed product mapping.
+Etsy payment and shipment state always override local preparation stages.
+Shippo remains limited to the existing website workflow; Etsy labels are bought
+in Etsy. The feature does not enable any external write/purchase gate.
+
+Implementation/evidence: `.local/admin-etsy-orders-20261015/` (isolated source,
+`capabilities.json`, focused tests, typechecks, build and staging acceptance).
+Staging release and final browser/API results will be appended after verification.
