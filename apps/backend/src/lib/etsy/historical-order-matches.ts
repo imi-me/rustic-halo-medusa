@@ -35,13 +35,18 @@ export async function resolveHistoricalPacking(items: any[], products: any) {
   const resolved: { variant_id: string; quantity: number }[] = []
   for (const item of items) {
     if (!item.packing_variant_ids) { resolved.push(item); continue }
-    const ids: string[] = item.packing_variant_ids
+    resolved.push({ variant_id: await equivalentPackingReference(item.packing_variant_ids, item.packing_product_id, products, item.legacy_sku), quantity:item.quantity })
+  }
+  return resolved
+}
+
+export async function equivalentPackingReference(ids:string[],productId:string,products:any,legacySku?:string):Promise<string> {
     if (!ids.length || ids.length > 100 || new Set(ids).size !== ids.length) throw new Error('Historical packing references need review.')
     const candidates: any[] = await products.listProductVariants({ id: ids }, { relations: ['product'], take: 100 })
     if (candidates.length !== ids.length || ids.some(id => !candidates.some(v => v.id === id))) throw new Error('A historical packing reference is missing. Review the product match.')
     const fingerprints = candidates.map(variant => {
       const product = variant.product
-      if (product?.id !== item.packing_product_id || String(variant.metadata?.base_sku ?? '').trim().toLowerCase() !== String(item.legacy_sku).trim().toLowerCase()) throw new Error('Historical packing references no longer match the approved product and size.')
+      if (product?.id !== productId || (legacySku !== undefined && String(variant.metadata?.base_sku ?? '').trim().toLowerCase() !== legacySku.trim().toLowerCase())) throw new Error('Historical packing references no longer match the approved product and size.')
       const override = variant.metadata?.[SHIPPING_KEY] ? assignmentSchema.parse(variant.metadata[SHIPPING_KEY]) : null
       const assigned = product.metadata?.[SHIPPING_KEY] ? assignmentSchema.parse(product.metadata[SHIPPING_KEY]) : null
       const assignment = override?.package_id ? override : assigned
@@ -52,7 +57,5 @@ export async function resolveHistoricalPacking(items: any[], products: any) {
     if (new Set(fingerprints).size !== 1) throw new Error('This historical product has different shipping settings across colors. Review its packing match before suggesting boxes.')
     // Every approved candidate has identical shipping settings. This reference is
     // used only by the packing calculator; it is never the purchased color/variant.
-    resolved.push({ variant_id: candidates[0].id, quantity: item.quantity })
-  }
-  return resolved
+    return candidates[0].id
 }

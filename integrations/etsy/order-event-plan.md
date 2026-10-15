@@ -232,4 +232,80 @@ refreshing restores the prior unmatched state without touching catalog/orders.
 Source/evidence: `.local/admin-etsy-sku-links-20261015/`, especially
 `etsy-identities.json`, `prior-sku-matches.json`, `catalog-history.json`,
 `live-products.json`, and `approved-plan.json`. Final release and acceptance
-results will be appended after deployment and verification.
+results are recorded below.
+
+
+### Historical SKU staging acceptance — October 15, 2026
+
+Completed and verified on staging: release
+`11c538d67ed1d2cc2379845a21ff089847643522`, Coolify deployment
+`9zhz4ocsexdkgadxwqiovdxf` finished 2026-10-15T18:53:13Z. Both services are
+healthy; job-health report at 2026-10-15T18:54:01Z is OK with zero failed,
+waiting, active, delayed or paused jobs. 84 tests in 12 Etsy suites, backend/Admin
+TypeScript, and full backend/Admin build pass. The shared shipping calculator
+and storefront were not changed.
+
+The staging-only reviewed operation saved seven receipt/transaction-scoped
+product matches across six orders and five old SKUs. It re-read each Etsy
+transaction and every target group before one configuration save. All target
+products agree with the prior exact Etsy listing/product/SKU audit and current
+native base-SKU groups. No color or purchased native variant is invented.
+
+All seven real orders now produce packing suggestions without warnings:
+- Daisy + Paisley 2-inch, one each: one 6×4×3-inch accessory box, 2.801 oz packed.
+- Three individual Nurse orders and one Playful Cat order: 2.601 oz each.
+- Three Freebird claws: one box, 4.601 oz packed.
+- Previously matched Mallard Duck earrings: one box, 2.101 oz packed.
+
+Native gram precision is conservatively rounded up to 0.001 oz for parcel
+weights; these correspond to the confirmed item weights plus packaging once.
+API acceptance verifies every historical line's intended product ID and null
+purchased-variant identity, all parcel weights, shipped-order rejection, 401
+anonymous/403 cross-origin guards, unchanged complete responses for all 419
+products, native order count still 10, and unchanged Etsy receipt summaries.
+Browser verification on the actual two-inch order shows both correct product
+links, the 2.801-oz suggestion, and no warnings/errors. A fresh Etsy preview is
+open with that order selected. Refresh older tabs to load the new match labels.
+
+Exact evidence: `.local/admin-etsy-sku-links-20261015/` contains
+`release.json`, `approved-plan.json`, `applied-links.json`, `links-before.json`,
+`staging-checks.json`, `final-verification.json`, `browser-checks.json`,
+`deployed-services.json`, `staging-packing-match.png`, and build/test/typecheck
+logs. Source audit inputs are `etsy-identities.json`, `prior-sku-matches.json`,
+`catalog-history.json`, and `live-products.json`.
+
+No blocker remains for historical packing on these orders. Additional unknown
+orders need their own evidence-backed match; the old SKUs are not global aliases
+for future orders with unrecorded colors. External Etsy listing/color writes,
+Shippo purchases, production, Shopify, native catalog/prices/stock and existing
+receipt records remain unchanged. No labels, rates, payments or new orders were
+created. Physical packing-slip/printer acceptance remains a separate task.
+
+### Order-screen matching and tracked-label controls — October 15, 2026
+
+Adds inline **Match product and size** for unmatched, historical and manually
+matched physical Etsy items. Search native products by name/SKU/barcode, choose
+the exact size/finish, and optionally select the purchased color/variant. Native
+legacy two-inch options are respected before the four-inch fallback. Color may
+remain unrecorded: that yields a packing-only match and keeps an unshipped order
+in Needs review. The picker is excluded from printed packing slips.
+
+Review shows the selected identity and a packing suggestion for this line;
+Save rechecks the live Etsy receipt, current native references, confirmed
+weights/package settings, order revision, matching-config revision and review
+hash under the existing workspace lock. The full order packing is recalculated
+when the order reopens. Staff read/update policies, origin checks and no-store
+responses protect the new `/admin/integrations/etsy/workspace/:id/match` route.
+The optional future rule is limited to the exact Etsy listing, Etsy product,
+normalized SKU and complete option values. Missing source IDs/SKU cannot create
+such a rule. No fuzzy or prefix aliases are introduced. Changed references or
+source selections require review instead of silently falling back to another
+SKU. Matches live separately in `etsy-order-item-matches:<shop>`; the reviewed
+historical `etsy-order-matches:<shop>` crosswalk remains intact.
+
+When any shipment has a nonblank tracking number, **Open in Etsy to buy label**
+is a gray disabled button with no link. **View order in Etsy** remains available.
+Untracked orders retain the label link. Label purchases remain in Etsy.
+
+Evidence directory: `.local/admin-etsy-match-screen-20261015/`. Validation and
+staging deployment acceptance are recorded below once complete.

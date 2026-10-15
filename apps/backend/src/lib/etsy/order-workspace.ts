@@ -1,19 +1,21 @@
 import { createHash } from 'node:crypto'
+import { itemMatch, type ItemMatches } from './order-item-matches'
 import { summarizeEtsyReceipt } from './order-report'
 import { historicalItemMatch, type HistoricalOrderMatch } from './historical-order-matches'
 
 const text = (value: unknown, max = 500) => typeof value === 'string' ? value.slice(0, max) : ''
 const time = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 946684800 && Number(value) < 253402300800 ? new Date(Number(value) * 1000).toISOString() : null
 export type PreparationStage = 'needs_making' | 'ready_to_pack'
-export type VariantIdentity = { id: string; sku?: string | null; product_id?: string | null; metadata?: any }
-export function summarizeWorkspaceReceipt(raw: any, variants: VariantIdentity[], historicalMatches: HistoricalOrderMatch[] = []) {
+export type VariantIdentity = { id: string; sku?: string | null; product_id?: string | null; metadata?: any; options?: any[] }
+export function summarizeWorkspaceReceipt(raw: any, variants: VariantIdentity[], historicalMatches: HistoricalOrderMatch[] = [], manualMatches: ItemMatches | null = null) {
   const summary = summarizeEtsyReceipt(raw)
   const transactions = summary.transactions.map((item, i) => {
     const source = raw.transactions[i]
     const matches = item.sku ? variants.filter(v => v.sku?.trim().toLowerCase() === item.sku!.trim().toLowerCase()) : []
     const digital = source.is_digital === true
-    const historical = !digital ? historicalItemMatch(summary.receiptId, source, variants, historicalMatches) : null
-    return { ...item, digital, shippedAt: time(source.shipped_timestamp), shipBy: time(source.expected_ship_date), variantId: !digital && !historical && matches.length === 1 ? matches[0].id : null, productId: historical?.productId ?? null, matchedProductTitle: historical?.matchedProductTitle ?? null, packingVariantIds: historical?.packingVariantIds ?? [], match: historical?.match ?? (digital ? 'digital' : matches.length === 1 ? 'matched' : matches.length > 1 ? 'duplicate_sku' : item.sku ? 'unmatched_sku' : 'missing_sku') }
+    const manual = !digital ? itemMatch(summary.receiptId,source,variants,manualMatches) : null
+    const historical = manual ?? (!digital ? historicalItemMatch(summary.receiptId, source, variants, historicalMatches) : null)
+    return { ...item, digital, shippedAt: time(source.shipped_timestamp), shipBy: time(source.expected_ship_date), variantId: manual?.manualVariantId ?? (!digital && !historical && matches.length === 1 ? matches[0].id : null), productId: historical?.productId ?? null, matchedProductTitle: historical?.matchedProductTitle ?? null, packingVariantIds: historical?.packingVariantIds ?? [], matchedGroupLabel:manual?.matchedGroupLabel??null, matchedVariantLabel:manual?.matchedVariantLabel??null, match: historical?.match ?? (digital ? 'digital' : matches.length === 1 ? 'matched' : matches.length > 1 ? 'duplicate_sku' : item.sku ? 'unmatched_sku' : 'missing_sku') }
   })
   const dates = transactions.filter(t => !t.digital).map(t => t.shipBy).filter((v): v is string => Boolean(v)).sort()
   return { ...summary, contentRevision: createHash('sha256').update(JSON.stringify(receiptDetails(raw))).digest('hex'), transactions, shipBy: dates[0] ?? null, canceled: /cancel(?:led|ed)/i.test(summary.status ?? ''), hasRefunds: Array.isArray(raw.refunds) && raw.refunds.length > 0 }
@@ -25,7 +27,7 @@ export function preparationStatus(order: WorkspaceReceipt, stage: PreparationSta
   if (order.shipped) return 'shipped'
   if (!order.paid) return 'awaiting_payment'
   if (order.transactions.some(t => !t.digital && t.shippedAt)) return 'needs_review'
-  if (!order.transactions.length || order.transactions.some(t => !['matched', 'digital'].includes(t.match))) return 'needs_review'
+  if (!order.transactions.length || order.transactions.some(t => !['matched', 'manual_variant', 'digital'].includes(t.match))) return 'needs_review'
   if (order.transactions.every(t => t.digital)) return 'digital'
   return stage
 }
@@ -49,8 +51,8 @@ export function packingItems(order: WorkspaceReceipt) {
   const physical = order.transactions.filter(t => !t.digital)
   if (!order.shipped && physical.some(t => t.shippedAt)) throw new Error('This order is partly shipped. Review the remaining items in Etsy before packing.')
   if (!physical.length) throw new Error('This order has no physical items to pack.')
-  if (physical.some(t => t.match === 'historical_product' ? !t.productId || !t.packingVariantIds.length : t.match !== 'matched' || !t.variantId)) throw new Error('Every physical item must match exactly one saved SKU before suggesting boxes. Review missing or duplicate SKUs.')
-  return physical.map(t => t.match === 'historical_product' ? { packing_product_id: t.productId!, packing_variant_ids: t.packingVariantIds, legacy_sku: t.sku!, quantity: t.quantity } : { variant_id: t.variantId!, quantity: t.quantity })
+  if (physical.some(t => ['historical_product','manual_product'].includes(t.match) ? !t.productId || !t.packingVariantIds.length : !['matched','manual_variant'].includes(t.match) || !t.variantId)) throw new Error('Every physical item must match exactly one saved SKU before suggesting boxes. Review missing or duplicate SKUs.')
+  return physical.map(t => ['historical_product','manual_product'].includes(t.match) ? { packing_product_id: t.productId!, packing_variant_ids: t.packingVariantIds, legacy_sku: t.match==='historical_product'?t.sku!:undefined, quantity: t.quantity } : { variant_id: t.variantId!, quantity: t.quantity })
 }
 export function safeWorkspaceError(error: unknown) {
   const message = error instanceof Error ? error.message : ''

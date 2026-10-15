@@ -10,6 +10,12 @@ import { guardHairClawOffer, guardCartClawColors } from '../lib/guard-hair-claw-
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/integrations/etsy/workspace/:id/match', method: ['GET'],
+    policies: [{ resource: 'order', operation: PolicyOperation.read }, { resource: 'product', operation: PolicyOperation.read }, { resource: 'shipping_option', operation: PolicyOperation.read }], middlewares: [],
+  }, {
+    matcher: '/admin/integrations/etsy/workspace/:id/match', method: ['POST'],
+    policies: [{ resource: 'order', operation: PolicyOperation.update }, { resource: 'product', operation: PolicyOperation.read }, { resource: 'shipping_option', operation: PolicyOperation.read }], middlewares: [],
+  }, {
     matcher: '/admin/integrations/etsy/workspace', method: ['GET', 'POST'],
     policies: [{ resource: 'order', operation: PolicyOperation.read }, { resource: 'product', operation: PolicyOperation.read }], middlewares: [],
   }, {

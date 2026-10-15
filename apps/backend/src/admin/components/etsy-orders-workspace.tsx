@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { EtsyItemMatcher } from './etsy-item-matcher'
 import { Link } from 'react-router-dom'
 import type { WorkspaceReceipt, PreparationStage } from '../../lib/etsy/order-workspace'
 import type { PackedParcel } from '../../lib/shipping-plan'
@@ -26,7 +27,7 @@ function Address({ details }: { details: Detail['details'] }) {
   const a = details.address
   return details.addressAvailable ? <address>{a.name}<br />{a.line1}<br />{a.line2 && <>{a.line2}<br /></>}{[a.city, a.state, a.postalCode].filter(Boolean).join(', ')}<br />{a.country}</address> : <p className="ew-notice">Shipping address is unavailable or incomplete. Check the address in Etsy.</p>
 }
-function OrderItems({ detail }: { detail: Detail }) {
+function OrderItems({ detail, onMatched }: { detail: Detail; onMatched?:()=>void }) {
   return <ul className="ew-items">{detail.order.transactions.map(item => {
     const selection = detail.details.selections.find(s => s.transactionId === item.transactionId)
     return <li key={item.transactionId}><strong>{item.quantity} × {item.title || 'Untitled item'}</strong><small>SKU: {item.sku || 'Missing'}{item.digital ? ' · Digital' : ''}</small>
@@ -34,7 +35,9 @@ function OrderItems({ detail }: { detail: Detail }) {
       {selection?.shippingMethod && <small>Shipping: {selection.shippingMethod}{selection.shippingUpgrade ? ` · ${selection.shippingUpgrade}` : ''}</small>}
       {item.shipBy && <small>Ship by {date(item.shipBy)}</small>}
       {item.match === 'historical_product' && <p className="ew-sync">Matched product: <Link to={`/products/${item.productId}`}>{item.matchedProductTitle}</Link>. Original color was not recorded; packing uses the saved measurements for this size.</p>}
-      {!['matched', 'digital', 'historical_product'].includes(item.match) && <p className="ew-notice">{item.match === 'duplicate_sku' ? 'This SKU matches multiple variants.' : 'This item needs a matching product SKU.'} Review before packing.</p>}
+      {!['matched', 'digital', 'historical_product', 'manual_product', 'manual_variant'].includes(item.match) && <p className="ew-notice">{item.match === 'duplicate_sku' ? 'This SKU matches multiple variants.' : 'This item needs a matching product SKU.'} Review before packing.</p>}
+      {['manual_product','manual_variant'].includes(item.match) && <p className="ew-sync">Matched product: <Link to={`/products/${item.productId}`}>{item.matchedProductTitle}</Link> · {item.matchedGroupLabel}{item.matchedVariantLabel ? ` · ${item.matchedVariantLabel}` : ' · Color not recorded; packing match only'}.</p>}
+      {onMatched && !['matched','digital'].includes(item.match) && <EtsyItemMatcher key={`${detail.order.receiptId}:${item.transactionId}:${detail.order.revision}`} receiptId={detail.order.receiptId} transactionId={item.transactionId} revision={detail.order.revision} onSaved={onMatched} />}
     </li>
   })}</ul>
 }
@@ -77,6 +80,7 @@ export default function EtsyOrdersWorkspace() {
     } catch (cause) { setDetailError((cause as Error).message) }
     finally { setSaving(false) }
   }
+  const hasTracking = detail?.details.shipments.some(s=>Boolean(s.tracking.trim()))
   const canPrepare = detail && ['needs_making', 'ready_to_pack'].includes(detail.order.fulfillment)
   return <div className="ow-workspace ew-workspace" aria-busy={loading || refreshing}>
     <OrderChannels etsy />
@@ -103,12 +107,12 @@ export default function EtsyOrdersWorkspace() {
         {detail.order.hasRefunds && <p className="ew-notice">This order has refunds. Review the remaining items in Etsy before packing.</p>}
         <h3>Preparation</h3><p className="ew-sync">These stages track your work in Medusa. Etsy supplies the shipped status.</p>
         <div className="ew-stage-actions">{(['needs_making', 'ready_to_pack'] as PreparationStage[]).map(stage => <button key={stage} disabled={!canPrepare || saving || refreshing || detail.order.stage === stage} onClick={() => void saveStage(stage)}>{stage === 'needs_making' ? 'Needs making' : 'Mark ready to pack'}</button>)}</div>
-        <h3>Items · ship by {date(detail.order.shipBy)}</h3><OrderItems detail={detail} />
+        <h3>Items · ship by {date(detail.order.shipBy)}</h3><OrderItems detail={detail} onMatched={()=>setDetailVersion(v=>v+1)} />
         {detail.details.buyerNote && <><h3>Buyer note</h3><p className="ew-message">{detail.details.buyerNote}</p></>}
         {(detail.details.gift || detail.details.giftMessage) && <><h3>Gift details</h3><p className="ew-message">{detail.details.giftMessage || 'Marked as a gift'}{detail.details.giftSender ? ` — ${detail.details.giftSender}` : ''}</p></>}
         <h3>Shipping address</h3><Address details={detail.details} />
         <h3>Suggested packing</h3>{detail.packingMessage ? <p className="ew-notice">{detail.packingMessage}</p> : <><ul className="ew-parcels">{detail.parcels.map((parcel, i) => <li key={i}><strong>Box {i + 1}: {parcel.package_name}</strong><p>{parcel.length} × {parcel.width} × {parcel.height} in · {parcel.weight} oz packed · {parcel.item_count} items</p></li>)}</ul><p className="ew-sync">Includes empty packaging weight. Confirm the actual packed weight before purchasing a label.</p></>}
-        <div className="ew-detail-actions"><button disabled={!detail.details.addressAvailable || saving} onClick={() => window.print()}>Print packing slip</button><a className="ow-primary" href={detail.etsyUrl} target="_blank" rel="noopener noreferrer">Open in Etsy to buy label ↗</a></div>
+        <div className="ew-detail-actions"><button disabled={!detail.details.addressAvailable || saving} onClick={() => window.print()}>Print packing slip</button>{hasTracking ? <button className="ow-primary ew-label-disabled" disabled title="Tracking is already recorded for this order">Open in Etsy to buy label ↗</button> : <a className="ow-primary" href={detail.etsyUrl} target="_blank" rel="noopener noreferrer">Open in Etsy to buy label ↗</a>}<a href={detail.etsyUrl} target="_blank" rel="noopener noreferrer">View order in Etsy ↗</a></div>
         <h3>Tracking from Etsy</h3>{detail.details.shipments.length ? detail.details.shipments.map((shipment, i) => <p className="ew-tracking" key={shipment.id ?? i}><strong>{shipment.carrier || 'Carrier not supplied'}</strong><br />{shipment.tracking || 'Tracking not supplied'}{shipment.notifiedAt && <small>Reported {date(shipment.notifiedAt)}</small>}</p>) : <p className="ow-muted">No shipment reported yet. Refresh after buying the label in Etsy.</p>}
         <p className="ew-sync">Order details checked {new Date(detail.readAt).toLocaleString()}.</p>
       </>}
