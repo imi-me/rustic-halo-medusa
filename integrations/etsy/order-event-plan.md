@@ -1,7 +1,8 @@
 # Etsy order-event plan
 
-Status: disabled webhook scaffold and enabled, verified read-only order report,
-September 22, 2026.
+Status: Etsy preparation workspace deployed and verified on staging October 15,
+2026. Webhook intake remains disabled. Current acceptance is recorded in the
+final section; the earlier report-only boundaries below are historical.
 
 ## Current boundary
 
@@ -141,3 +142,94 @@ in Etsy. The feature does not enable any external write/purchase gate.
 Implementation/evidence: `.local/admin-etsy-orders-20261015/` (isolated source,
 `capabilities.json`, focused tests, typechecks, build and staging acceptance).
 Staging release and final browser/API results will be appended after verification.
+
+
+### Staging acceptance — October 15, 2026
+
+Completed and verified: feature release `9813e350cd7e19aa76915ad12824d7c7902cd0e5`,
+with preparation-save repair `6713329b603a6576ee1a6e01b2a23fcb9a7fc8f1`.
+Final Coolify deployment `0nluuadhpz5sqr3r6pejpz4p` finished
+2026-10-15T18:32:38Z; both services are healthy. The fresh sanitized job-health
+report at 2026-10-15T18:34:20.210Z is OK with zero failed/waiting/active/delayed/paused jobs.
+
+73 tests in 11 Etsy suites, backend/Admin TypeScript, and the full backend/Admin
+build pass. The initial real-order negative check exposed JSONB object-key
+reordering: a stringified-object comparison rejected unchanged receipts. The
+repair uses structural equality; regression fixtures now roundtrip objects with
+sorted keys. A disposable internal Etsy workspace fixture against staging's real
+database persisted Needs making → Ready to pack → Needs making, rejected a stale
+revision, reconciled a simulated shipment to Shipped, and produced a correct
+6×4×3-inch, 2.601-oz box for two mapped accessory items. Provider receipt reads
+were simulated for that fixture; no Etsy order, native order, stock or payment
+was created. The internal fixture was soft-deleted and seven real cached orders
+remain, with no duplicate keys or private fulfillment fields in stored payloads.
+
+Real staging API checks opened all seven historical paid/shipped orders: all
+seven provide usable shipping addresses and tracking. Shipped-order preparation
+changes return 409, anonymous requests return 401, and untrusted origins return
+403. One historical line matches the current native catalog; seven lines across
+six other receipts have older unmatched SKUs. Those details display a review
+warning and block automatic packing for the entire order. Do not guess SKU
+aliases or alter historical Etsy records. The matched one-item order gives the
+approved 6×4×3-inch accessory box at 2.101 oz packed. All 419 complete original
+product responses match the baseline, the native order count remains 10, and
+all original Etsy receipt summaries match their baseline exactly.
+
+A real scheduled refresh ran at 18:30:00Z and finished at 18:30:01Z, fetching all
+seven orders without errors. Native browser checks confirm both channels load,
+actual packing/tracking/address availability, shipped-stage controls disabled,
+and no UI errors. A fresh verified Etsy order list is open in the preview at
+`https://staging.rustichalo.com/app/orders-workspace?source=etsy`.
+
+Exact evidence: `.local/admin-etsy-orders-20261015/` contains
+`initial-release.json`, `release.json`, `capabilities.json`, `unit-tests.log`,
+`backend-typecheck.log`, `admin-typecheck.log`, `build.log`,
+`local-browser-checks.json`, `native-preparation.json`, `scheduled-refresh.json`,
+`staging-checks.json`, `native-cache-check.json`, `staging-browser-checks.json`,
+`deployed-services.json`, and `staging-etsy-orders.png`.
+
+Remaining work: deliberate matching for historical/unknown SKUs as needed,
+physical packing-slip printer acceptance, and any future separately scoped
+Etsy listing-write or Shippo-for-Etsy label milestone. Preparation saves are
+verified with a disposable native-database fixture; all seven actual available
+orders are already shipped. Label purchasing stays in Etsy, all external
+listing/color/Shippo purchase gates remain off, and production/Shopify were not
+changed. No blocker remains for testing the workspace on staging.
+
+## Historical Etsy SKU matching — October 15, 2026
+
+Owner authorized linking old Etsy order SKUs to the correct products so historical
+packing suggestions work. Seven previously unmatched lines across six receipts
+trace to five source SKUs: `38308-2` Daisy 2-inch, `38290-2` Paisley 2-inch,
+`39082-4` Floral Nurse 4-inch, `38510` Playful Cat 4-inch, and `HC38559` Freebird
+4-inch (Etsy title: Flying Mallard). The September 22 exact-SKU audit independently
+records each original Etsy listing/product ID and unchanged native variant ID;
+current variant `base_sku` metadata and saved size-specific measurements agree.
+
+These older transactions record no color. A reviewed, shop-scoped crosswalk is
+saved under `etsy-order-matches:<shop>` in admin-operations, keyed by receipt and
+transaction. It binds the original listing/product/SKU/quantity/selection
+fingerprint to the native product and original audited variant's source group.
+It never rewrites native/Etsy SKUs, prices, inventory, historical orders, or
+product availability. No global prefix/fuzzy/title-only SKU guessing is added.
+
+Historical matches carry product identity with no purchased native variant or
+invented color. Their saved size-specific reference group must still exist,
+belong to the approved product/base SKU, and have identical explicit positive
+item weights and effective package/mixing/capacity settings across every color.
+Only after that check can one equivalent reference be passed privately into the
+unchanged packing calculator. Deleted, changed-source, cross-product, divergent
+or unmeasured references require review. A product-only match cannot authorize
+making/ready-to-pack work on an unshipped order where a color remains unknown.
+
+UI details show the matched product link and explain that the original color was
+not recorded. The reviewed staging-only operation is
+`deploy/staging/link-historical-etsy-orders.cjs`; it preflights every source and
+reference before saving one crosswalk record, requires explicit staging flags,
+and checks the expected prior revision. Removing the reviewed links and
+refreshing restores the prior unmatched state without touching catalog/orders.
+
+Source/evidence: `.local/admin-etsy-sku-links-20261015/`, especially
+`etsy-identities.json`, `prior-sku-matches.json`, `catalog-history.json`,
+`live-products.json`, and `approved-plan.json`. Final release and acceptance
+results will be appended after deployment and verification.

@@ -7,6 +7,7 @@ import { etsyWorkspaceAccess } from './listing-workspace'
 import { assertPreparationAllowed, packingItems, preparationStatus, receiptDetails, safeWorkspaceError, summarizeWorkspaceReceipt, type PreparationStage, type WorkspaceReceipt } from './order-workspace'
 import { readPackageConfig } from '../shipping-package-store'
 import { planShipping } from '../shipping-plan'
+import { readHistoricalMatches, resolveHistoricalPacking } from './historical-order-matches'
 const prefix = (shop: number) => `etsy-order:${shop}:`
 const syncKey = (shop: number) => `etsy-orders-sync:${shop}`
 const enabled = () => { if (process.env.ETSY_ORDER_REPORT_ENABLED !== 'true') throw new Error('Etsy order workspace is disabled.') }
@@ -19,7 +20,7 @@ export async function workspaceShop(scope: any) {
 async function variants(scope: any) {
   const all: any[] = [], products = scope.resolve(Modules.PRODUCT)
   for (let skip = 0; skip < 20000; skip += 500) {
-    const page = await products.listProductVariants({}, { select: ['id', 'sku', 'product_id'], take: 500, skip })
+    const page = await products.listProductVariants({}, { select: ['id', 'sku', 'product_id', 'metadata'], take: 500, skip })
     all.push(...page)
     if (page.length < 500) return all
   }
@@ -84,9 +85,9 @@ export async function refreshOrderWorkspace(scope: any, request: typeof fetch = 
       const oldOpen = existing.filter((row: any) => !row.payload.order.shipped && !row.payload.order.canceled && !collected.has(row.payload.order.receiptId))
       if (oldOpen.length > 100) truncated = true
       for (const row of oldOpen.slice(0, 100)) collected.set(row.payload.order.receiptId, await readReceipt(access, row.payload.order.receiptId, request))
-      const identities = await variants(scope)
+      const identities = await variants(scope), matches = await readHistoricalMatches(ops, shop)
       // Validate every receipt before writing the first snapshot.
-      const orders = [...collected.values()].map(r => summarizeWorkspaceReceipt(r, identities))
+      const orders = [...collected.values()].map(r => summarizeWorkspaceReceipt(r, identities, matches))
       for (const order of orders) await saveReceipt(ops, shop, order, existing.find((row: any) => row.payload.order.receiptId === order.receiptId))
       await saveSync({ startedAt, lastSuccessAt: new Date().toISOString(), fetched: orders.length, truncated, error: null }, 'ok')
       return { fetched: orders.length, truncated }
@@ -102,11 +103,11 @@ export async function readOrderDetails(scope: any, id: number, request: typeof f
     const ops = scope.resolve(ADMIN_OPERATIONS), access = await etsyWorkspaceAccess(scope)
     if (access.shopId !== shop) throw new Error('Etsy shop connection changed.')
     const raw = await readReceipt(access, id, request)
-    const order = summarizeWorkspaceReceipt(raw, await variants(scope))
+    const order = summarizeWorkspaceReceipt(raw, await variants(scope), await readHistoricalMatches(ops, shop))
     const [existing] = await ops.listAdminOperations({ operation_key: prefix(shop) + id })
     const saved = await saveReceipt(ops, shop, order, existing)
     let parcels: Awaited<ReturnType<typeof planShipping>> = [], packingMessage = ''
-    try { parcels = await planShipping(packingItems(order), await readPackageConfig(ops), scope.resolve(Modules.PRODUCT)) }
+    try { parcels = await planShipping(await resolveHistoricalPacking(packingItems(order), scope.resolve(Modules.PRODUCT)), await readPackageConfig(ops), scope.resolve(Modules.PRODUCT)) }
     catch (error) { packingMessage = error instanceof Error ? error.message : 'Review package settings before packing.' }
     return { order: view(saved), details: receiptDetails(raw), parcels, packingMessage, readAt: new Date().toISOString(), etsyUrl: `https://www.etsy.com/your/orders/sold?order_id=${id}` }
   }, { timeout: 5, expire: 120 })
@@ -119,7 +120,7 @@ export async function savePreparation(scope: any, id: number, input: { stage: Pr
     // Recheck Etsy immediately before local preparation changes, including cancellation/refund/shipment.
     const access = await etsyWorkspaceAccess(scope)
     if (access.shopId !== shop) throw new Error('Etsy shop connection changed.')
-    const current = summarizeWorkspaceReceipt(await readReceipt(access, id, request), await variants(scope))
+    const current = summarizeWorkspaceReceipt(await readReceipt(access, id, request), await variants(scope), await readHistoricalMatches(ops, shop))
     if (!isDeepStrictEqual(current, row.payload.order)) { await saveReceipt(ops, shop, current, row); throw new Error('Etsy order details changed. Reopen and review the latest order before changing its preparation stage.') }
     assertPreparationAllowed(current)
     const payload = { ...row.payload, stage: input.stage, revision: randomUUID(), preparationUpdatedAt: new Date().toISOString(), preparationActor: actor }

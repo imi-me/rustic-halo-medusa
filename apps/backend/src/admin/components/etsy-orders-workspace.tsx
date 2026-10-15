@@ -33,7 +33,8 @@ function OrderItems({ detail }: { detail: Detail }) {
       {selection?.options.map((option, i) => <p key={i}><b>{option.name || 'Selection'}:</b> {option.value}</p>)}
       {selection?.shippingMethod && <small>Shipping: {selection.shippingMethod}{selection.shippingUpgrade ? ` · ${selection.shippingUpgrade}` : ''}</small>}
       {item.shipBy && <small>Ship by {date(item.shipBy)}</small>}
-      {!['matched', 'digital'].includes(item.match) && <p className="ew-notice">{item.match === 'duplicate_sku' ? 'This SKU matches multiple variants.' : 'This item needs a matching product SKU.'} Review before packing.</p>}
+      {item.match === 'historical_product' && <p className="ew-sync">Matched product: <Link to={`/products/${item.productId}`}>{item.matchedProductTitle}</Link>. Original color was not recorded; packing uses the saved measurements for this size.</p>}
+      {!['matched', 'digital', 'historical_product'].includes(item.match) && <p className="ew-notice">{item.match === 'duplicate_sku' ? 'This SKU matches multiple variants.' : 'This item needs a matching product SKU.'} Review before packing.</p>}
     </li>
   })}</ul>
 }
