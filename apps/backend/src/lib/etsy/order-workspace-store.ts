@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { isDeepStrictEqual } from 'node:util'
 import { Modules } from '@medusajs/framework/utils'
 import { ETSY_MODULE } from '../../modules/etsy'
 import { ADMIN_OPERATIONS } from '../../modules/admin-operations'
@@ -119,7 +120,7 @@ export async function savePreparation(scope: any, id: number, input: { stage: Pr
     const access = await etsyWorkspaceAccess(scope)
     if (access.shopId !== shop) throw new Error('Etsy shop connection changed.')
     const current = summarizeWorkspaceReceipt(await readReceipt(access, id, request), await variants(scope))
-    if (JSON.stringify(current) !== JSON.stringify(row.payload.order)) { await saveReceipt(ops, shop, current, row); throw new Error('Etsy order details changed. Reopen and review the latest order before changing its preparation stage.') }
+    if (!isDeepStrictEqual(current, row.payload.order)) { await saveReceipt(ops, shop, current, row); throw new Error('Etsy order details changed. Reopen and review the latest order before changing its preparation stage.') }
     assertPreparationAllowed(current)
     const payload = { ...row.payload, stage: input.stage, revision: randomUUID(), preparationUpdatedAt: new Date().toISOString(), preparationActor: actor }
     const saved = await ops.updateAdminOperations({ id: row.id, status: preparationStatus(current, input.stage), payload })

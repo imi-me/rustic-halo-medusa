@@ -2,10 +2,16 @@ jest.mock('../listing-workspace', () => ({ etsyWorkspaceAccess: jest.fn(async ()
 import { randomUUID } from 'node:crypto'
 import { readOrderWorkspace, refreshOrderWorkspace, savePreparation } from '../order-workspace-store'
 const raw = () => ({ receipt_id: 99, is_paid: true, is_shipped: false, status: 'paid', create_timestamp: Math.floor(Date.now()/1000), update_timestamp: 1780000100, name: 'Do not persist me', first_line: 'Private address', transactions: [{ transaction_id: 1, title: 'Claw', sku: 'CLAW', quantity: 1, expected_ship_date: 1780000300, variations: [{ formatted_name: 'Personalization', formatted_value: 'Private engraving' }] }] })
+// PostgreSQL JSONB does not retain object insertion order. Model that roundtrip.
+function databaseRoundtrip(value: any): any {
+ if (Array.isArray(value)) return value.map(databaseRoundtrip)
+ if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(key => [key, databaseRoundtrip(value[key])]))
+ return value
+}
 function fixture() {
  const records: any[] = []
  const ops = {
-  listAdminOperations: jest.fn(async (filter: any) => records.filter(row => Object.entries(filter).every(([k,v]) => row[k] === v))),
+  listAdminOperations: jest.fn(async (filter: any) => records.filter(row => Object.entries(filter).every(([k,v]) => row[k] === v)).map(databaseRoundtrip)),
   createAdminOperations: jest.fn(async (data: any) => { const row = { id: randomUUID(), ...data }; records.push(row); return row }),
   updateAdminOperations: jest.fn(async (data: any) => { const row = records.find(r => r.id === data.id); Object.assign(row, data); return row }),
  }
@@ -18,7 +24,7 @@ function fixture() {
  return { records, ops, products, scope, current, request, locks }
 }
 beforeEach(() => { process.env.ETSY_ORDER_REPORT_ENABLED = 'true' })
-test('refresh is idempotent, preserves prep stage, and stores no raw provider/customer data', async () => {
+test('refresh is idempotent, preparation survives JSONB key ordering, and no private data is cached', async () => {
  const f = fixture()
  await refreshOrderWorkspace(f.scope, f.request)
  const report = await readOrderWorkspace(f.scope), order = report.orders[0]
