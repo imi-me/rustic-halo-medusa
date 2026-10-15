@@ -19,7 +19,6 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   const params = useSearchParams()
   const { productSelection } = useHappyCowPreview()
   const template = hairClawTemplate(product)
-  const colors = template ? productClawColors(product) : healingHeartsColors
   const variants = product.variants || []
   const variant = variants.find(v => v.id === params.get('v_id')) || (variants.length === 1 ? variants[0] : undefined)
   const sizeOption = product.options?.find(o => o.title?.trim().toLowerCase() === 'size')
@@ -28,7 +27,6 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   const localOptions = productSelection?.productId === product.id ? productSelection.options : undefined
   const selectedSize = sizeOption ? localOptions?.[sizeOption.id] || variant?.options?.find(o => o.option_id === sizeOption.id)?.value : undefined
   const selectedColorName = colorOption ? localOptions?.[colorOption.id] || variant?.options?.find(o => o.option_id === colorOption.id)?.value : undefined
-  const selectedColor = colors.find(c => c.name === selectedColorName)?.slug
   const settings = product.metadata?.hair_claw_overlays_v1 as {recipes?:Record<string,Recipe>} | undefined
   // Admin explicitly records the reviewed physical size for products without a Size option.
   const reviewedFour = settings?.recipes?.['4']
@@ -39,13 +37,15 @@ export default function SharedClawGallery({product, children}: {product:HttpType
     sizeValues: sizeOption ? (sizeOption.values || []).map(v => v.value) : undefined,
     reviewedFour: reviewedFour?.editor_version === 2 && Boolean(reviewedFour.enabled),
   })
+  const colors = template ? productClawColors(product, size) : healingHeartsColors
+  const selectedColor = colors.find(c => c.name === selectedColorName)?.slug
   const selectedFinish = finishOption ? localOptions?.[finishOption.id] || variant?.options?.find(o => o.option_id === finishOption.id)?.value || finishOption.values?.[0]?.value : undefined
   const finish = selectedFinish === 'Colors by Cate' ? 'cbc' : selectedFinish === 'Natural' ? 'natural' : undefined
   const recipe = size ? settings?.recipes?.[template?.offer_mode ? `${size}-${finish}` : size] : undefined
   const [previewColor,setPreviewColor] = useState('taupe')
   const [failed,setFailed] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
-  useEffect(() => {setPreviewColor(selectedColor || 'taupe');setFailed(false)}, [selectedColor, size, finish, recipe?.url])
+  useEffect(() => {setPreviewColor(selectedColor || colors.find(c => c.slug === 'taupe')?.slug || colors[0]?.slug || '');setFailed(false)}, [selectedColor, size, finish, recipe?.url])
   const swatch = colors.find(c => c.slug === previewColor)
   const send = useCallback(() => {
     if (recipe) frame.current?.contentWindow?.postMessage({type:'hair-claw-preview',recipe,size,color:previewColor,colorOverride:swatch ? {name:swatch.name,hex:swatch.hex,slug:swatch.slug} : undefined,outline:false}, window.location.origin)

@@ -21,3 +21,11 @@ test('new shared color names and swatches work without changing the built-in pal
  const product={metadata:{hair_claw_palette_v1:{colors:[{name:'Ocean Blue',slug:'ocean-blue',hex:'#123abc',active:true}]}}};
  const colors=productClawColors(product);assert.equal(colors[0].slug,'ocean-blue');assert.equal(colors[0].hex,'#123abc');assert.equal(productClawColors({metadata:{}}).length,13);
 });
+
+test('2-inch and 4-inch color choices filter real variants independently and preserve prices',()=>{
+ const colors=[{name:'Black',slug:'black',hex:'#222222',active:true,sizes:['2','4']},{name:'Rose',slug:'rose',hex:'#bd8582',active:true,sizes:['4']}];
+ const make=(size,color)=>({id:size+color,metadata:{physical_size:size,base_claw_color:color},options:[{option_id:'size',value:size+' inch'},{option_id:'color',value:color}],calculated_price:{calculated_amount:size==='2'?12:15}});
+ const p={metadata:{hair_claw_template_v2:{version:2,variant_ids:['2Black','2Rose','4Black','4Rose'],option_ids:['size','color'],size_option_id:'size',color_option_id:'color'},hair_claw_palette_v1:{colors},hair_claw_colors_v1:{excluded_by_size:{'2':['Black'],'4':[]}}},options:[{id:'size',values:[{value:'2 inch'},{value:'4 inch'}]},{id:'color',values:[{value:'Black'},{value:'Rose'}]}],variants:[make('2','Black'),make('2','Rose'),make('4','Black'),make('4','Rose')]};
+ let result=applyHairClawTemplate(p);assert.deepEqual(Array.from(result.variants,v=>v.id),['4Black','4Rose']);assert.equal(productClawColors(p,'2').length,0);assert.equal(productClawColors(p,'4').length,2);assert.equal(result.variants[0].calculated_price.calculated_amount,15);
+ p.metadata.hair_claw_colors_v1.excluded_by_size['2']=[];result=applyHairClawTemplate(p);assert.deepEqual(Array.from(result.variants,v=>v.id),['2Black','4Black','4Rose']);assert.equal(result.variants[0].calculated_price.calculated_amount,12);assert.equal(productClawColors(p,'2')[0].name,'Black');assert.equal(productClawColors(p,'4').length,2);
+});

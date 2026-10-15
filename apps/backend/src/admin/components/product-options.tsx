@@ -29,9 +29,14 @@ export function ProductOptions({ product, disabled, onDirty, saved }: { product:
     } catch (failure) { setError((failure as Error).message) }
     finally { setBusy(false) }
   }
+  // Hair claws use dedicated size-aware availability; legacy imported option
+  // rows remain saved for historical variants but are not editable duplicates.
+  if (isHairClaw(product)) return <ProductSection title="Options" open={false} className="rh-options-card">
+    <ProductClawColors product={product} disabled={disabled || busy} onDirty={setColorDirty} saved={saved}/>
+    {disabled && <p role="status">Save or discard product edits to manage colors.</p>}
+  </ProductSection>
   const update = (index: number, option: WorkspaceOption) => setDraft(previous => previous.map((row, i) => i === index ? option : row))
   return <ProductSection title="Options" open={false} className="rh-options-card">
-    {isHairClaw(product) && <ProductClawColors product={product} disabled={disabled || dirty || busy} onDirty={setColorDirty} saved={saved}/>}
     <p>Choose sizes, colors and other variant options here. Save option changes before editing the rest of the product.</p>
     {disabled && <p role="status">Save or discard product edits to manage options.</p>}
     <fieldset disabled={disabled || busy || colorDirty}>

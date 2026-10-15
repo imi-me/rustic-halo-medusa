@@ -389,6 +389,26 @@ option saves preserving variant SKU and price. Staging acceptance is recorded
 in the release/report files after deployment. Production and Shopify untouched.
 
 
+Staging acceptance (2026-10-14, 1:34:44 p.m. Eastern): commit
+`386bbe3cba001f4bef735c048c65f457c477665d`, Coolify
+`rdioacvr9bgixjqb6khcmqou`, finished; backend and storefront healthy. Native
+Coffee Cup preview refreshed to the new gallery and inline Options editor.
+Actual mouse drag moved the cover photo from first to third; Discard restored
+its first position without saving. Live description and Etsy tag generation
+both used all five selected photos; Etsy returned 13 unique tags within 20
+characters. Suggestions were dismissed and temporary notes cleared. Product
+and option Save buttons remain disabled, indicating no pending edits. The
+424-product catalog and full Coffee Cup record stayed unchanged. Option-route
+authentication (401), origin (403), stale snapshot (409), and aggregate photo
+payload (400) checks passed. Seven focused tests, Admin TypeScript, and the
+backend/Admin build passed. Evidence and exact scoped release:
+`.local/admin-workspace-flow-20261014/{release.json,live-browser-checks.json,options-checks.json,staging-checks.json,deployed-services.json,staging-workspace.png}`.
+Remaining UI work: variant creation, shared catalog option renaming, metadata
+and image fitting retain their dedicated editors; Options management itself
+is now inline. No credentials or blockers remain for testing this milestone.
+Production/Shopify and Etsy/label purchase gates were not changed.
+
+
 ### 2026-10-14: Direct Etsy listing fields
 
 Removed the redundant nested Prepare Etsy listing / Manage Etsy listing
@@ -400,6 +420,13 @@ Scoped source and validation evidence: `.local/admin-etsy-expander-20261014/`
 (`release.json`, `typecheck.log`, `build.log`, `browser-checks.json`,
 `deployed-services.json`, `staging-etsy-listing.png`). Staging acceptance is
 recorded in the release and browser reports after deployment.
+
+Etsy expander staging acceptance: commit
+`f57fe9113d1b04c759ea6c0c8adc1824b3430b9f`, deployment
+`jyqaembuhkmxkoly4g0gtqp6`, finished 2026-10-15T01:55:49Z. Direct fields and
+outer-section collapse/draft preservation passed in the browser; temporary
+input was restored and Save disabled. Both services healthy; catalog count
+419 and full Coffee Cup record unchanged. No blocker remains.
 
 
 ### 2026-10-14: Shared hair-claw colors and product availability
@@ -440,3 +467,76 @@ requests to exposed color variant IDs, preserving old SKUs for references.
 Options labels shared colors whose variants are still pending. 30 focused
 backend tests and the final backend/Admin build and type check passed. Final
 staging acceptance is recorded in `.local/admin-claw-colors-20261014/`.
+
+Final shared-color staging acceptance: feature commit
+`bb31caf2431ed7337bc64001dd026cc1b21cfe30`, permission correction
+`e950cc3c832916780fcc8a91877ad45da97a43b9`, final native-link/legacy-guard repair
+`e891a4df998ccec18d22f8f6eb915536c0cfcf46`. Deployment
+`nryhpsv7yhng4dgjycgeid31` finished 2026-10-15T02:29:09Z. Both services healthy;
+queue report at 02:34:54Z is OK with zero failed/waiting/active/delayed/paused.
+
+Verified actual Medusa variant creation (12 missing colors), unique generated
+barcodes, inherited prices/weights/inventory policy, preserved source variant,
+and a zero-creation retry. Product exclusion save, stale revision, origin and
+invalid-input guards passed. Excluded colors were rejected on cart creation,
+direct adds, quantity changes and completion. Real Admin uncheck/save removed
+Purple from the storefront; Select all/save restored it. Selecting generated
+Rose preserved the real variant in the URL. A separate legacy fixture added
+13 colors, preserved its original variant and blocked the old uncolored SKU.
+All disposable products were soft-deleted and test cart lines removed.
+
+The catalog still contains 419 products. All 69 hair claws were reviewed against
+the shared 13-color palette. Coffee Cup and Giraffe Kisses were already
+configured. Autumn Leaf Claw Clip gained 13 color variants using its explicit
+4-inch description, existing $14 price, inventory policy, confirmed 1 oz weight
+and assigned accessory box. Its original SKU, barcode, prices and inventory
+record remain unchanged. The other 418 products match their fresh snapshots.
+66 templated claws have no approved size/finish offers; they are reported for
+review and stay disabled. Their color defaults remain selected, but approving
+size/finish offers is still required before selling or applying new color
+variants. Do not bypass those approval/physical-template checks.
+
+Six packing previews and four actual Shippo sandbox checkout quotes still pass
+($6.07 single claw/pair, $12.41 four claws, $6.34 two claws plus four pairs to
+synthetic ZIP 94105). No payments, orders or labels were created. Etsy write/color
+and label gates remain off; production and Shopify were untouched.
+
+Evidence: `.local/admin-claw-colors-20261014/` contains `release.json`,
+`initial-release.json`, `permission-release.json`, `staging-checks.json`,
+`security-checks.json`, `legacy-checks.json`, `browser-checks.json`,
+`renderer-checks.json`, `cleanup-report.json`, `catalog-before-palette-apply.json`,
+`catalog-palette-apply.json`, `catalog-palette-verified.json`, full legacy product
+before/after snapshots, `legacy-product-shipping.json`, `packing-verification.json`,
+`sandbox-rates.json`, `deployed-services.json`, `staging-product-colors.png`, scoped
+source and build/typecheck/test logs. The clean Coffee Cup preview is open with
+Options expanded; the owner's original unsaved tab was preserved. Remaining work
+is owner testing and the 66 pre-existing offer approvals; no code blocker remains.
+
+Owner clarification: base hair-claw color is included in the product price, with
+no additional color charge. Each color uses the full existing price for its
+size/finish; adding a shared color must never add a surcharge. Color checkboxes
+control availability only. The color-sync planner already copies that price.
+
+### 2026-10-15: Color availability by physical size
+
+Hair-claw Options replaces the generic imported Option name editor with the
+dedicated swatches; historical option and variant records are retained. Other
+product types keep their normal option editor. Separate 2-inch and 4-inch
+controls save product exclusions independently. Shared colors also have size
+checkboxes, including when adding a new color. Existing palettes without a
+size setting retain availability in both sizes; existing product exclusions
+apply to both until edited. No catalog migration or offer activation is needed.
+
+Storefront purchase choices, selected-size previews, Etsy exports, native color
+sync and cart create/add/update/complete checks honor size-specific availability.
+Changing size selects a compatible saved variant if the prior color is absent.
+Offer price updates support different color counts per size and preserve the
+full size/finish price without a color surcharge. Unapproved 2-inch artwork
+and the 66 pre-existing unconfigured offers remain disabled.
+
+Local validation: 35 backend tests in four suites, four storefront tests,
+backend/Admin/storefront TypeScript, backend/Admin build and storefront build
+passed. Local UI verified zero Option name rows, independent size selections,
+save payloads, and a new shared color assigned to only one size. Staging
+acceptance and exact release scope are recorded in
+`.local/admin-claw-sizes-20261015/`; deployment verification is pending.

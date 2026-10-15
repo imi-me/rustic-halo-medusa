@@ -2,6 +2,9 @@ import { createHash, randomUUID } from 'node:crypto'
 import { MedusaError, Modules } from '@medusajs/framework/utils'
 import { createProductOptionsWorkflow, createProductVariantsWorkflow, updateProductVariantsWorkflow } from '@medusajs/medusa/core-flows'
 import { HAIR_CLAW_KEY } from './hair-claw-settings'
+import { colorSupportsSize, variantClawColor } from './hair-claw-colors'
+import { readClawPalette } from './hair-claw-color-store'
+import { ADMIN_OPERATIONS } from '../modules/admin-operations'
 
 export const offerTypes = [
   { key:'2-natural', size:'2', finish:'natural', label:'2 inch · Natural' },
@@ -61,6 +64,10 @@ export async function saveTypeOffer(scope:any,id:string,input:any) {
     }
     let nextConfig={...config}
     if (recipe?.enabled) {
+      const palette = await readClawPalette(scope.resolve(ADMIN_OPERATIONS))
+      const colors = palette.colors.filter(c => c.active && colorSupportsSize(c, type.size)).map(c => c.name)
+      if (!colors.length) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Choose shared colors for this size before enabling its offer.')
+      if (colors.some(name => !config.palette.includes(name))) throw new MedusaError(MedusaError.Types.CONFLICT, 'Apply shared colors to this product before enabling its offer.')
       if (!existing.length) {
         const source=product.variants.find((v:any)=>config.variant_ids.includes(v.id) && v.metadata?.physical_size===type.size) || product.variants.find((v:any)=>v.id===config.default_variant_id)
         if (!source) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Set up a source variant with shipping fields first.')
@@ -73,14 +80,14 @@ export async function saveTypeOffer(scope:any,id:string,input:any) {
         const colorTitle=product.options.find((o:any)=>o.id===config.color_option_id)?.title
         if (!sizeTitle || !colorTitle) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Size/color setup changed. Reload before saving.')
         const sourceOptions=Object.fromEntries(source.options.map((o:any)=>[product.options.find((p:any)=>p.id===o.option_id)?.title || o.option?.title,o.value]))
-        const skus=config.palette.map((color:string)=>`RH-HC3-${id.slice(-10)}-${type.key}-${color.toUpperCase()}`)
+        const skus=colors.map((color:string)=>`RH-HC3-${id.slice(-10)}-${type.key}-${color.toUpperCase()}`)
         const collision=await products.listProductVariants({sku:skus},{take:100})
         if (collision.length) throw new MedusaError(MedusaError.Types.CONFLICT,'An earlier save created variants without confirming the fit. Check this option before retrying.')
-        const {result}=await createProductVariantsWorkflow(scope).run({input:{product_variants:config.palette.map((color:string,i:number)=>({product_id:id,title:`${type.label} / ${color}`,sku:skus[i],options:{...sourceOptions,[sizeTitle]:`${type.size} inch`,[colorTitle]:color,[finishOption.title]:type.finish==='cbc'?'Colors by Cate':'Natural'},prices:[{currency_code:'usd',amount:input.price}],manage_inventory:true,allow_backorder:true,requires_shipping:true,weight:source.weight,material:source.material,hs_code:source.hs_code,origin_country:source.origin_country,mid_code:source.mid_code,length:source.length,height:source.height,width:source.width,metadata:{hair_claw_template:'rustic_halo_hair_claw_v3',physical_size:type.size,claw_finish:type.finish,base_claw_color:color,inventory_mode:'made_to_order_color_option'}}))}})
+        const {result}=await createProductVariantsWorkflow(scope).run({input:{product_variants:colors.map((color:string,i:number)=>({product_id:id,title:`${type.label} / ${color}`,sku:skus[i],options:{...sourceOptions,[sizeTitle]:`${type.size} inch`,[colorTitle]:color,[finishOption.title]:type.finish==='cbc'?'Colors by Cate':'Natural'},prices:[{currency_code:'usd',amount:input.price}],manage_inventory:true,allow_backorder:true,requires_shipping:true,weight:source.weight,material:source.material,hs_code:source.hs_code,origin_country:source.origin_country,mid_code:source.mid_code,length:source.length,height:source.height,width:source.width,metadata:{hair_claw_template:'rustic_halo_hair_claw_v3',physical_size:type.size,claw_finish:type.finish,base_claw_color:color,inventory_mode:'made_to_order_color_option'}}))}})
         offers[type.key]={variant_ids:result.map((v:any)=>v.id)}
         nextConfig={...nextConfig,finish_option_id:finishOption.id,variant_ids:[...config.variant_ids,...result.map((v:any)=>v.id)],option_ids:[config.size_option_id,finishOption.id,config.color_option_id]}
       } else {
-        if (existing.length!==config.palette.length) throw new MedusaError(MedusaError.Types.CONFLICT,'This option’s color variants are incomplete. Review before saving.')
+        if (colors.some(name => !existing.some((v:any) => variantClawColor(product, v) === name))) throw new MedusaError(MedusaError.Types.CONFLICT,'This option’s color variants are incomplete. Review before saving.')
         const updates=existing.map((v:any)=>{
           const prices=(v.price_set?.prices || []).filter((p:any)=>!p.price_list_id)
           if (prices.filter(baseUsd).length!==1) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Each color needs one base USD price. Review advanced prices first.')

@@ -1,4 +1,5 @@
-import { CLAW_COLORS_KEY, clawColorAvailable, clawPaletteSchema, defaultClawColors } from '../hair-claw-colors'
+import { POST as saveProductColors } from '../../api/admin/products/[id]/workspace/colors/route'
+import { CLAW_COLORS_KEY, clawColorAvailable, clawPaletteSchema, defaultClawColors, clawSizeExclusionsSchema } from '../hair-claw-colors'
 import { readClawPalette, saveClawPalette } from '../hair-claw-color-store'
 import { planClawColorSync, syncClawProduct } from '../hair-claw-color-sync'
 import { createAndLinkProductOptionsToProductWorkflow, createProductVariantsWorkflow } from '@medusajs/medusa/core-flows'
@@ -10,7 +11,7 @@ import { activeOfferVariantIds } from '../hair-claw-offers'
 const black = defaultClawColors[0], rose = defaultClawColors.find(c => c.name === 'Rose')!
 function fixture() {
   const product: any = { id: 'prod_test', options: [{ id: 'color', title: 'Base color', is_exclusive: true, values: [{ value: 'Black' }] }, { id: 'size', title: 'Size' }], metadata: { hair_claw_template_v2: { version: 2, offer_mode: true, palette: ['Black'], variant_ids: ['black'], color_option_id: 'color' }, hair_claw_overlays_v1: { recipes: { '4-natural': { enabled: true } }, offers: { '4-natural': { variant_ids: ['black'] } } } } }
-  const variant = { id: 'black', metadata: { base_claw_color: 'Black' }, options: [{ option_id: 'color', value: 'Black' }, { option_id: 'size', value: '4 inch' }], manage_inventory: true, allow_backorder: false, weight: 28.349524, price_set: { prices: [{ currency_code: 'usd', amount: 15, min_quantity: null, max_quantity: null, price_rules: [] }] } }
+  const variant = { id: 'black', metadata: { base_claw_color: 'Black', physical_size: '4' }, options: [{ option_id: 'color', value: 'Black' }, { option_id: 'size', value: '4 inch' }], manage_inventory: true, allow_backorder: false, weight: 28.349524, price_set: { prices: [{ currency_code: 'usd', amount: 15, min_quantity: null, max_quantity: null, price_rules: [] }] } }
   product.variants = [variant]; return { product, variant }
 }
 it('defaults all shared colors on; product exclusions and shared retirement both disable purchasing', () => {
@@ -93,4 +94,59 @@ it('rejects colors disabled after a cart was created and blocks incomplete new v
   await expect(guardCartClawColors(req, {}, next)).rejects.toThrow('color is not currently available'); expect(next).not.toHaveBeenCalled()
   delete product.metadata[CLAW_COLORS_KEY]; variant.metadata = { base_claw_color: 'Black', claw_palette_offer: '4-natural' } as any; product.metadata.hair_claw_template_v2.variant_ids = []
   await expect(guardCartClawColors(req, {}, next)).rejects.toThrow('still being prepared')
+})
+
+it('keeps product exclusions and shared colors independent for each physical size', () => {
+  const { product, variant } = fixture()
+  product.metadata[CLAW_COLORS_KEY] = { excluded_by_size: { '2': ['Black'], '4': [] } }
+  const two = { ...variant, metadata: { ...variant.metadata, physical_size: '2' } }
+  expect(clawColorAvailable(product, variant, defaultClawColors)).toBe(true)
+  expect(clawColorAvailable(product, two, defaultClawColors)).toBe(false)
+  product.metadata[CLAW_COLORS_KEY].excluded_by_size['2'] = []
+  const restricted = [{ ...black, sizes: ['4'] as ('2' | '4')[] }]
+  expect(clawColorAvailable(product, two, restricted)).toBe(false)
+  expect(clawColorAvailable(product, variant, restricted)).toBe(true)
+  expect(clawColorAvailable(product, { ...variant, metadata: { base_claw_color: 'Black' } }, restricted)).toBe(false)
+  expect(clawPaletteSchema.safeParse([{ ...black, sizes: ['3'] }]).success).toBe(false)
+  expect(clawPaletteSchema.safeParse([{ ...black, sizes: [] }]).success).toBe(false)
+  expect(clawSizeExclusionsSchema.safeParse({ '2': [], '4': [], '3': [] }).success).toBe(false)
+  expect(clawSizeExclusionsSchema.safeParse({ '2': ['Black', 'black'], '4': [] }).success).toBe(false)
+})
+it('creates new colors only in their assigned size at the existing full price', () => {
+  const { product, variant } = fixture()
+  product.variants.push({ ...variant, id: 'two-black', metadata: { base_claw_color: 'Black', physical_size: '2' }, options: [{ option_id: 'color', value: 'Black' }, { option_id: 'size', value: '2 inch' }] })
+  product.metadata.hair_claw_overlays_v1.offers['2-natural'] = { variant_ids: ['two-black'] }
+  const { plans } = planClawColorSync(product, [black, { ...rose, sizes: ['2'] }])
+  expect(plans).toHaveLength(1)
+  expect(plans[0].type.key).toBe('2-natural')
+  expect(plans[0].variant.prices[0].amount).toBe(15)
+})
+it('rejects unavailable size/color combinations on cart create, add, quantity changes and completion', async () => {
+  const { product, variant } = fixture(), next = jest.fn()
+  product.metadata[CLAW_COLORS_KEY] = { excluded_by_size: { '2': [], '4': ['Black'] } }
+  const scope = { resolve: (name: string) => name === 'query' ? { graph: async ({ entity }: any) => ({ data: entity === 'cart' ? [{ items: [{ id: 'line', variant: { ...variant, product } }] }] : [{ ...variant, product }] }) } : { listAdminOperations: async () => [] } }
+  for (const body of [{ variant_id: 'black' }, { items: [{ variant_id: 'black', quantity: 1 }] }]) await expect(guardHairClawOffer({ body, scope } as any, {}, next)).rejects.toThrow('color is not currently available')
+  for (const params of [{ id: 'cart', line_id: 'line' }, { id: 'cart' }]) await expect(guardCartClawColors({ params, scope } as any, {}, next)).rejects.toThrow('color is not currently available')
+  variant.metadata.physical_size = '2'
+  await guardHairClawOffer({ body: { variant_id: 'black' }, scope } as any, {}, next)
+  expect(next).toHaveBeenCalledTimes(1)
+})
+
+it('saves size availability separately with stale and invalid-input protection, preserving other metadata', async () => {
+  const { product } = fixture(); product.updated_at = '2026-10-15T00:00:00.000Z'; product.metadata.unrelated = 'keep'
+  const update = jest.fn(async (_id: string, input: any) => { product.metadata = input.metadata })
+  const scope = { resolve: (name: string) => name === 'product' ? { retrieveProduct: async () => product, updateProducts: update } : name === 'locking' ? { execute: async (_key: string, fn: any) => fn() } : { listAdminOperations: async () => [] } }
+  const req: any = { auth_context: { actor_id: 'staff', actor_type: 'user' }, headers: {}, params: { id: product.id }, scope, body: { excluded_by_size: { '2': ['Black'], '4': [] }, expected_updated_at: product.updated_at, expected_palette_revision: 'default-v1' } }
+  const res: any = { setHeader: jest.fn(), sendStatus: jest.fn(), status: jest.fn().mockReturnThis(), json: jest.fn() }
+  await saveProductColors(req, res)
+  expect(update).toHaveBeenCalledTimes(1)
+  expect(product.metadata[CLAW_COLORS_KEY]).toEqual({ excluded: [], excluded_by_size: { '2': ['Black'], '4': [] } })
+  expect(product.metadata.unrelated).toBe('keep')
+  req.body.expected_updated_at = '2020-01-01'
+  await saveProductColors(req, res); expect(res.status).toHaveBeenLastCalledWith(409)
+  req.body.expected_updated_at = product.updated_at; req.body.excluded_by_size['2'] = ['Unknown']
+  await saveProductColors(req, res); expect(res.status).toHaveBeenLastCalledWith(409)
+  req.body.excluded_by_size = { '2': [], '4': [], '3': [] }
+  await saveProductColors(req, res); expect(res.status).toHaveBeenLastCalledWith(400)
+  expect(update).toHaveBeenCalledTimes(1)
 })

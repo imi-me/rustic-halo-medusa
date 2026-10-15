@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Modules } from '@medusajs/framework/utils'
 import { createProductOptionsWorkflow, createProductVariantsWorkflow, createAndLinkProductOptionsToProductWorkflow } from '@medusajs/medusa/core-flows'
 import { offerProduct, offerTypes } from './hair-claw-offers'
-import { variantClawColor, type ClawColor } from './hair-claw-colors'
+import { variantClawColor, colorSupportsSize, type ClawColor } from './hair-claw-colors'
 import { HAIR_CLAW_KEY } from './hair-claw-settings'
 import { allocateBarcodes, pendingBarcodes } from './admin-product-create'
 
@@ -19,7 +19,7 @@ export function planClawColorSync(product: any, palette: ClawColor[]) {
     const ids = new Set(settings.offers?.[type.key]?.variant_ids ?? [])
     const group = product.variants.filter((v: any) => ids.has(v.id))
     if (!group.length) continue // Never invent or enable an unconfigured offer.
-    for (const color of palette.filter(c => c.active)) {
+    for (const color of palette.filter(c => c.active && colorSupportsSize(c, type.size))) {
       if (group.some((v: any) => variantClawColor(product, v) === color.name)) continue
       const source = group[0], price = prices(source)
       if (!price.some((p: any) => p.currency_code === 'usd' && p.min_quantity == null && p.max_quantity == null && !Object.keys(p.rules).length) || group.some((v: any) => JSON.stringify(prices(v)) !== JSON.stringify(price))) throw Error(`${type.label}: colors have different or missing prices. Review prices before adding a color.`)
@@ -51,7 +51,7 @@ async function legacyColorSetup(scope: any, product: any, palette: ClawColor[]) 
     }
     return found
   }
-  const sizeOption = await option('Claw size', [`${size} inch`]), colorOption = await option('Base color', palette.filter(c => c.active).map(c => c.name))
+  const sizeOption = await option('Claw size', [`${size} inch`]), colorOption = await option('Base color', palette.filter(c => c.active && colorSupportsSize(c, size as '2' | '4')).map(c => c.name))
   const config = { version: 2, policy: source.allow_backorder ? 'made_to_order' : 'stocked', palette: [], variant_ids: [], option_ids: [sizeOption.id, colorOption.id], size_option_id: sizeOption.id, color_option_id: colorOption.id, unlabelled_size: size }
   // Build an in-memory source group. The legacy storefront remains intact until
   // every new variant is saved and the final template metadata is published.

@@ -1,16 +1,17 @@
 import {activeOfferVariantIds,offerPrices,priceRevision,saveTypeOffer} from '../hair-claw-offers'
+import {defaultClawColors} from '../hair-claw-colors'
 import {guardHairClawOffer} from '../guard-hair-claw-offer'
 import {POST} from '../../api/admin/products/[id]/hair-claw-media/route'
 import {updateProductVariantsWorkflow,createProductVariantsWorkflow,createProductOptionsWorkflow} from '@medusajs/medusa/core-flows'
 jest.mock('@medusajs/medusa/core-flows',()=>({updateProductVariantsWorkflow:jest.fn(),createProductVariantsWorkflow:jest.fn(),createProductOptionsWorkflow:jest.fn()}))
 const fit={image_id:'owned',editor_version:2,width:300,height:110,scale:1,x:0,y:0,vertical:false,enabled:true}
 function setup(){
- const variants=Array.from({length:13},(_,i)=>({id:'v'+i,price_set:{prices:[{id:'usd'+i,currency_code:'usd',amount:10,updated_at:'old',min_quantity:null,max_quantity:null,price_rules:[]},{id:'eur'+i,currency_code:'eur',amount:8,updated_at:'old',min_quantity:5,max_quantity:10,price_rules:[{attribute:'region_id',value:'europe'}]}]}}))
- const product:any={id:'p',images:[{id:'owned',url:'https://cdn.example.com/photo.jpg'}],variants,metadata:{unrelated:'keep',hair_claw_template_v2:{offer_mode:true,palette:Array(13).fill('color'),variant_ids:variants.map(v=>v.id)},hair_claw_overlays_v1:{revision:'r',recipes:{'4-natural':fit,'4-cbc':{...fit,x:10}},offers:{'4-natural':{variant_ids:variants.map(v=>v.id)}}}}}
+ const variants=Array.from({length:13},(_,i)=>({id:'v'+i,metadata:{base_claw_color:defaultClawColors[i].name,physical_size:'4'},price_set:{prices:[{id:'usd'+i,currency_code:'usd',amount:10,updated_at:'old',min_quantity:null,max_quantity:null,price_rules:[]},{id:'eur'+i,currency_code:'eur',amount:8,updated_at:'old',min_quantity:5,max_quantity:10,price_rules:[{attribute:'region_id',value:'europe'}]}]}}))
+ const product:any={id:'p',images:[{id:'owned',url:'https://cdn.example.com/photo.jpg'}],variants,metadata:{unrelated:'keep',hair_claw_template_v2:{offer_mode:true,palette:defaultClawColors.map(c=>c.name),variant_ids:variants.map(v=>v.id)},hair_claw_overlays_v1:{revision:'r',recipes:{'4-natural':fit,'4-cbc':{...fit,x:10}},offers:{'4-natural':{variant_ids:variants.map(v=>v.id)}}}}}
  const products={retrieveProduct:jest.fn(async()=>product),updateProducts:jest.fn(async(_id,update)=>{product.metadata=update.metadata})}
  const native=jest.fn(async({input})=>{for(const update of input.product_variants){const variant=product.variants.find((v:any)=>v.id===update.id);for(const p of update.prices){const old=variant.price_set.prices.find((x:any)=>x.id===p.id);old.amount=p.amount;old.updated_at='new'}}return{result:[]}})
  ;(updateProductVariantsWorkflow as unknown as jest.Mock).mockReturnValue({run:native})
- const scope={resolve:(name:string)=>name==='query'?{graph:async()=>({data:[product]})}:name==='product'?products:name==='locking'?{execute:async(_key,fn)=>fn()}:null}
+ const scope:any={resolve:(name:string)=>name==='query'?{graph:async()=>({data:[product]})}:name==='product'?products:name==='locking'?{execute:async(_key,fn)=>fn()}:name==='admin_operations'?{listAdminOperations:async()=>[]}:null}
  const input:any={size:'4',finish:'natural',price:20,revision:'r',pricing_revision:priceRevision(variants),recipe:fit}
  return{product,products,scope,input,native}
 }
@@ -68,4 +69,14 @@ it('requires authenticated staff and an allowed origin for price-capable saves',
  const req:any={params:{id:'p'},body:{size:'4',finish:'natural',price:15,pricing_revision:'hash',revision:null,recipe:fit},headers:{},scope:{resolve:jest.fn()}}
  await POST(req,response);expect(response.sendStatus).toHaveBeenCalledWith(401);expect(req.scope.resolve).not.toHaveBeenCalled()
  req.auth_context={actor_id:'staff',actor_type:'user'};req.headers.origin='https://foreign.example';await POST(req,response);expect(response.sendStatus).toHaveBeenCalledWith(403);expect(req.scope.resolve).not.toHaveBeenCalled()
+})
+it('updates a smaller size-specific color group without requiring the other size’s colors',async()=>{
+ const x=setup(),resolve=x.scope.resolve
+ x.product.variants=x.product.variants.slice(0,3)
+ x.product.metadata.hair_claw_overlays_v1.offers['4-natural'].variant_ids=x.product.variants.map(v=>v.id)
+ x.input.pricing_revision=priceRevision(x.product.variants)
+ x.scope.resolve=(name:string)=>name==='admin_operations'?{listAdminOperations:async()=>[{payload:{revision:'sizes',colors:defaultClawColors.map((c,i)=>({...c,sizes:i<3?['4']:['2']}))}}]}:resolve(name)
+ const result=await saveTypeOffer(x.scope,'p',x.input)
+ expect(x.native.mock.calls[0][0].input.product_variants).toHaveLength(3)
+ expect(result.offer_prices['4-natural'].amount).toBe(20)
 })
