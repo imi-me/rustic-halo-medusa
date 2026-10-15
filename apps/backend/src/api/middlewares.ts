@@ -14,7 +14,7 @@ export default defineMiddlewares({
   }, {
     matcher: '/admin/hair-claw-colors', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }], middlewares: [],
   }, {
-    matcher: '/admin/hair-claw-colors/sync', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }, { resource: 'product_option', operation: PolicyOperation.update }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }], middlewares: [],
+    matcher: '/admin/hair-claw-colors/sync', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }, { resource: 'product_option', operation: [PolicyOperation.create, PolicyOperation.update] }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }], middlewares: [],
   }, {
     matcher: '/admin/products/:id/workspace/colors', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }], middlewares: [],
   }, {
