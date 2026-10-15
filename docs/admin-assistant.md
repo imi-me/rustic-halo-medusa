@@ -431,3 +431,12 @@ shared add/retire/save and blocked navigation with pending edits. Exact scope,
 source, logs and staging acceptance: `.local/admin-claw-colors-20261014/`.
 Staging verification is pending deployment and recorded in its release/report
 files; do not treat local checks as deployed acceptance.
+
+Color acceptance repair: the first staging fixture exposed that native global
+option values also require product-specific links. Color sync now uses Medusa's
+create-and-link workflow before creating variants. A regression checks those
+links and duplicate-free retries. Legacy template cart guards also restrict
+requests to exposed color variant IDs, preserving old SKUs for references.
+Options labels shared colors whose variants are still pending. 30 focused
+backend tests and the final backend/Admin build and type check passed. Final
+staging acceptance is recorded in `.local/admin-claw-colors-20261014/`.

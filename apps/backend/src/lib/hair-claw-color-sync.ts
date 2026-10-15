@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Modules } from '@medusajs/framework/utils'
-import { createProductOptionsWorkflow, createProductVariantsWorkflow, updateProductOptionsWorkflow } from '@medusajs/medusa/core-flows'
+import { createProductOptionsWorkflow, createProductVariantsWorkflow, createAndLinkProductOptionsToProductWorkflow } from '@medusajs/medusa/core-flows'
 import { offerProduct, offerTypes } from './hair-claw-offers'
 import { variantClawColor, type ClawColor } from './hair-claw-colors'
 import { HAIR_CLAW_KEY } from './hair-claw-settings'
@@ -71,7 +71,8 @@ export async function syncClawProduct(scope: any, id: string, palette: ClawColor
     const collisions = pending.length ? await products.listProductVariants({ sku: pending.map(p => p.variant.sku) }, { take: 300 }) : []
     if (collisions.length) throw Error('A color SKU already exists elsewhere. Review before retrying.')
     const barcodes = await allocateBarcodes(products, pending.map(() => ({ barcode: '' })), await pendingBarcodes(scope))
-    await updateProductOptionsWorkflow(scope).run({ input: { selector: { id: colorOption.id }, update: { values: names } } })
+    const addedValues = names.filter(name => !colorOption.values.some((v: any) => v.value === name))
+    if (addedValues.length) await createAndLinkProductOptionsToProductWorkflow(scope).run({ input: { product_id: id, update: [{ product_option_id: colorOption.id, add: addedValues.map(value => ({ value })) }] } })
     const result = pending.length ? (await createProductVariantsWorkflow(scope).run({ input: { product_variants: pending.map((p, i) => ({ ...p.variant, barcode: barcodes[i] })) } })).result : []
     const variants = plans.map(p => p.recovered ?? result.find((v: any) => v.sku === p.variant.sku))
     if (variants.some(v => !v)) throw Error('Some new colors could not be confirmed. Retry to recover existing variants without duplicates.')

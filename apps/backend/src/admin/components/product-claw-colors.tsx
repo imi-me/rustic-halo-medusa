@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminRequest, type Entity } from '../lib/inline-edit'
-import { CLAW_COLORS_KEY, type ClawColor } from '../../lib/hair-claw-colors'
+import { CLAW_COLORS_KEY, variantClawColor, type ClawColor } from '../../lib/hair-claw-colors'
 
 export function ProductClawColors({ product, disabled, onDirty, saved }: { product: Entity; disabled: boolean; onDirty: (value: boolean) => void; saved: () => void }) {
   const original: string[] = product.metadata?.[CLAW_COLORS_KEY]?.excluded ?? []
@@ -21,12 +21,12 @@ export function ProductClawColors({ product, disabled, onDirty, saved }: { produ
   }
   return <div className="rh-product-claw-colors">
     <h3>Available base colors</h3>
-    <p>Checked colors can be purchased on the storefront. All shared colors are selected by default.</p>
+    <p>Checked colors with saved variants can be purchased on the storefront. All shared colors are selected by default.</p>
     {!product.metadata?.hair_claw_template_v2 && <p role="status">This legacy product needs purchasable color variants before color availability can be changed.</p>}
     <fieldset disabled={disabled || busy || !palette || !product.metadata?.hair_claw_template_v2}>
       <div className="rh-claw-color-checks">{palette?.colors.map(color => <label key={color.slug} className={!color.active ? 'rh-claw-color-retired' : ''}>
         <input type="checkbox" aria-label={`Available in ${color.name}`} disabled={!color.active} checked={color.active && !excluded.includes(color.name)} onChange={event => setExcluded(previous => event.target.checked ? previous.filter(name => name !== color.name) : [...previous, color.name])}/>
-        <span className="rh-claw-color-swatch" style={{ backgroundColor: color.hex }}/><span>{color.name}{!color.active && <small> · retired</small>}</span>
+        <span className="rh-claw-color-swatch" style={{ backgroundColor: color.hex }}/><span>{color.name}{!color.active ? <small> · retired</small> : !(product.variants ?? []).some((v: Entity) => variantClawColor(product, v) === color.name) && <small> · setup pending</small>}</span>
       </label>)}</div>
       <div className="rh-inline-buttons"><button type="button" onClick={() => setExcluded([])}>Select all colors</button><button type="button" disabled={!dirty} onClick={() => void save()}>{busy ? 'Saving colors…' : 'Save color availability'}</button><button type="button" disabled={!dirty} onClick={() => setExcluded(original)}>Discard color changes</button></div>
     </fieldset>

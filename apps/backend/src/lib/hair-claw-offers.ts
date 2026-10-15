@@ -30,7 +30,9 @@ export function offerPrices(product:any) {
   }))
 }
 export function activeOfferVariantIds(metadata:any):Set<string> | null {
-  if (!metadata?.hair_claw_template_v2?.offer_mode) return null
+  const config = metadata?.hair_claw_template_v2
+  if (!config) return null
+  if (!config.offer_mode) return Array.isArray(config.variant_ids) ? new Set(config.variant_ids) : null
   const media = metadata[HAIR_CLAW_KEY] || {}
   return new Set(offerTypes.flatMap(type=>media.recipes?.[type.key]?.enabled ? media.offers?.[type.key]?.variant_ids || [] : []))
 }

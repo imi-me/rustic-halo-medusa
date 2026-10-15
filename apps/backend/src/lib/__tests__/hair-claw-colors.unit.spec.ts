@@ -1,8 +1,12 @@
 import { CLAW_COLORS_KEY, clawColorAvailable, clawPaletteSchema, defaultClawColors } from '../hair-claw-colors'
 import { readClawPalette, saveClawPalette } from '../hair-claw-color-store'
-import { planClawColorSync } from '../hair-claw-color-sync'
+import { planClawColorSync, syncClawProduct } from '../hair-claw-color-sync'
+import { createAndLinkProductOptionsToProductWorkflow, createProductVariantsWorkflow } from '@medusajs/medusa/core-flows'
+jest.mock('@medusajs/medusa/core-flows', () => ({ createProductOptionsWorkflow: jest.fn(), createProductVariantsWorkflow: jest.fn(), createAndLinkProductOptionsToProductWorkflow: jest.fn() }))
+jest.mock('../admin-product-create', () => ({ allocateBarcodes: jest.fn(async (_service, rows) => rows.map((_: any, i: number) => 'BC' + i)), pendingBarcodes: jest.fn(async () => []) }))
 import { guardHairClawOffer, guardCartClawColors } from '../guard-hair-claw-offer'
 import { visibleProductVariants, isHairClaw } from '../product-admin'
+import { activeOfferVariantIds } from '../hair-claw-offers'
 const black = defaultClawColors[0], rose = defaultClawColors.find(c => c.name === 'Rose')!
 function fixture() {
   const product: any = { id: 'prod_test', options: [{ id: 'color', title: 'Base color', is_exclusive: true, values: [{ value: 'Black' }] }, { id: 'size', title: 'Size' }], metadata: { hair_claw_template_v2: { version: 2, offer_mode: true, palette: ['Black'], variant_ids: ['black'], color_option_id: 'color' }, hair_claw_overlays_v1: { recipes: { '4-natural': { enabled: true } }, offers: { '4-natural': { variant_ids: ['black'] } } } } }
@@ -22,6 +26,9 @@ it('defaults all shared colors on; product exclusions and shared retirement both
 it('recognizes an approved claw template despite legacy source taxonomy, while respecting an explicit current product type', () => {
   expect(isHairClaw({ metadata: { source_product_type: 'Hair Accessories', hair_claw_template_v2: { version: 2 } } })).toBe(true)
   expect(isHairClaw({ type: { value: 'Earrings' }, metadata: { hair_claw_template_v2: { version: 2 } } })).toBe(false)
+})
+it('restricts a migrated legacy product to its new real color variants, retaining the old SKU only for historical references', () => {
+  expect([...activeOfferVariantIds({ hair_claw_template_v2: { version: 2, variant_ids: ['color-black', 'color-rose'] } })!]).toEqual(['color-black', 'color-rose'])
 })
 it('rejects duplicate names, unsafe swatches, mismatched identifiers, and retiring every color', () => {
   for (const colors of [[black, { ...rose, name: 'black' }], [{ ...black, hex: 'url(secret)' }], [{ ...black, slug: 'other' }], [{ ...black, active: false }]]) expect(clawPaletteSchema.safeParse(colors).success).toBe(false)
@@ -56,6 +63,18 @@ it('recovers an already created matching color SKU and refuses foreign collision
   expect(planClawColorSync(product, [rose]).plans[0].recovered.id).toBe('recovered')
   product.variants[1].metadata.claw_palette_offer = '2-natural'
   expect(() => planClawColorSync(product, [rose])).toThrow('different variant')
+})
+it('links new option values to the product before creating variants and retries without duplicates', async () => {
+  const { product } = fixture(); product.metadata.unrelated = 'keep'
+  const link = jest.fn(async () => ({})), create = jest.fn(async ({ input }) => { const result = input.product_variants.map((v: any, i: number) => ({ ...v, id: 'new-' + i, price_set: { prices: v.prices } })); product.variants.push(...result); return { result } })
+  ;(createAndLinkProductOptionsToProductWorkflow as unknown as jest.Mock).mockReturnValue({ run: link })
+  ;(createProductVariantsWorkflow as unknown as jest.Mock).mockReturnValue({ run: create })
+  const products = { listProductVariants: async () => [], retrieveProduct: async () => product, updateProducts: async (_id: string, data: any) => { product.metadata = data.metadata } }
+  const scope = { resolve: (name: string) => name === 'query' ? { graph: async () => ({ data: [product] }) } : name === 'product' ? products : { execute: async (_key: string, fn: () => any) => fn() } }
+  expect((await syncClawProduct(scope, product.id, [black, rose])).created).toBe(1)
+  expect(link).toHaveBeenCalledWith({ input: { product_id: product.id, update: [{ product_option_id: 'color', add: [{ value: 'Rose' }] }] } })
+  expect(product.metadata.unrelated).toBe('keep'); expect(product.metadata.hair_claw_overlays_v1.recipes).toEqual({ '4-natural': { enabled: true } })
+  expect((await syncClawProduct(scope, product.id, [black, rose])).created).toBe(0); expect(create).toHaveBeenCalledTimes(1)
 })
 it('blocks excluded and globally retired colors for direct adds and cart creation', async () => {
   const { product, variant } = fixture(), next = jest.fn()
