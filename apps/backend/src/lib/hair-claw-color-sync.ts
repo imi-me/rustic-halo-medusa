@@ -1,8 +1,8 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { Modules } from '@medusajs/framework/utils'
 import { createProductOptionsWorkflow, createProductVariantsWorkflow, createAndLinkProductOptionsToProductWorkflow } from '@medusajs/medusa/core-flows'
 import { offerProduct, offerTypes } from './hair-claw-offers'
-import { variantClawColor, colorSupportsSize, type ClawColor } from './hair-claw-colors'
+import { variantClawColor, variantClawSize, colorSupportsSize, type ClawColor } from './hair-claw-colors'
 import { HAIR_CLAW_KEY } from './hair-claw-settings'
 import { allocateBarcodes, pendingBarcodes } from './admin-product-create'
 
@@ -14,10 +14,27 @@ export function planClawColorSync(product: any, palette: ClawColor[]) {
   if (!config || !settings) throw Error('Set up size/finish color variants for this legacy product first.')
   const colorOption = product.options.find((o: any) => o.id === config.color_option_id)
   if (!colorOption?.is_exclusive) throw Error('Review this product’s shared color option before adding colors.')
-  const plans: any[] = []
-  for (const type of offerTypes) {
+  const plans: any[] = [], groups: { type: any; group: any[] }[] = []
+  // Retain each approved size/style/finish combination and its existing price.
+  if (!config.offer_mode && !product.legacySourceId) {
+    const approved = new Set(config.variant_ids), byOptions = new Map<string, any[]>()
+    for (const variant of product.variants.filter((v: any) => approved.has(v.id))) {
+      const size = variantClawSize(product, variant)
+      if (!size) throw Error('Confirm each approved variant’s physical size before adding colors.')
+      const options = variant.options.filter((o: any) => config.option_ids.includes(o.option_id) && o.option_id !== config.color_option_id).map((o: any) => [o.option_id, o.value]).sort((a: any, b: any) => a[0].localeCompare(b[0]))
+      const signature = JSON.stringify({ size, options })
+      byOptions.set(signature, [...(byOptions.get(signature) ?? []), variant])
+    }
+    for (const [signature, group] of byOptions) {
+      const source = group[0], size = variantClawSize(product, source)!
+      const values = source.options.filter((o: any) => config.option_ids.includes(o.option_id) && o.option_id !== config.color_option_id).map((o: any) => o.value)
+      groups.push({ type: { key: `${size}-catalog-${createHash('sha256').update(signature).digest('hex').slice(0, 10)}`, size, finish: source.metadata?.claw_finish, label: values.join(' · ') }, group })
+    }
+  } else for (const type of offerTypes) {
     const ids = new Set(settings.offers?.[type.key]?.variant_ids ?? [])
-    const group = product.variants.filter((v: any) => ids.has(v.id))
+    groups.push({ type, group: product.variants.filter((v: any) => ids.has(v.id)) })
+  }
+  for (const { type, group } of groups) {
     if (!group.length) continue // Never invent or enable an unconfigured offer.
     for (const color of palette.filter(c => c.active && colorSupportsSize(c, type.size))) {
       if (group.some((v: any) => variantClawColor(product, v) === color.name)) continue
@@ -30,10 +47,10 @@ export function planClawColorSync(product: any, palette: ClawColor[]) {
       const sku = `RH-HCC-${product.id.slice(-10)}-${type.key}-${color.slug.toUpperCase()}`
       const recovered = product.variants.find((v: any) => v.sku === sku)
       if (recovered && (recovered.metadata?.claw_palette_offer !== type.key || recovered.metadata?.base_claw_color !== color.name)) throw Error('A color SKU already belongs to a different variant. Review before retrying.')
-      plans.push({ type, color, recovered, variant: { product_id: product.id, title: `${type.label} / ${color.name}`, sku, options, prices: price, manage_inventory: source.manage_inventory, allow_backorder: source.allow_backorder, weight: source.weight, material: source.material, hs_code: source.hs_code, origin_country: source.origin_country, mid_code: source.mid_code, length: source.length, width: source.width, height: source.height, metadata: { hair_claw_template: 'rustic_halo_hair_claw_v3', physical_size: type.size, claw_finish: type.finish, base_claw_color: color.name, claw_palette_offer: type.key, inventory_mode: source.metadata?.inventory_mode, ...(source.metadata?.shipping_package_v1 ? { shipping_package_v1: source.metadata.shipping_package_v1 } : {}) } } })
+      plans.push({ type, groupIds: group.map((v: any) => v.id), color, recovered, variant: { product_id: product.id, title: `${type.label} / ${color.name}`, sku, options, prices: price, manage_inventory: source.manage_inventory, allow_backorder: source.allow_backorder, weight: source.weight, material: source.material, hs_code: source.hs_code, origin_country: source.origin_country, mid_code: source.mid_code, length: source.length, width: source.width, height: source.height, metadata: { hair_claw_template: 'rustic_halo_hair_claw_v3', physical_size: type.size, ...(type.finish ? { claw_finish: type.finish } : {}), base_claw_color: color.name, claw_palette_offer: type.key, inventory_mode: source.metadata?.inventory_mode, ...(source.metadata?.shipping_package_v1 ? { shipping_package_v1: source.metadata.shipping_package_v1 } : {}) } } })
     }
   }
-  if (!Object.values(settings.offers ?? {}).some((o: any) => o.variant_ids?.length)) throw Error('Configure an approved size/finish offer before adding color variants.')
+  if (!groups.some(g => g.group.length)) throw Error('Configure an approved size/finish offer before adding color variants.')
   return { plans, colorOption, config, settings }
 }
 async function legacyColorSetup(scope: any, product: any, palette: ClawColor[]) {
@@ -76,9 +93,9 @@ export async function syncClawProduct(scope: any, id: string, palette: ClawColor
     const result = pending.length ? (await createProductVariantsWorkflow(scope).run({ input: { product_variants: pending.map((p, i) => ({ ...p.variant, barcode: barcodes[i] })) } })).result : []
     const variants = plans.map(p => p.recovered ?? result.find((v: any) => v.sku === p.variant.sku))
     if (variants.some(v => !v)) throw Error('Some new colors could not be confirmed. Retry to recover existing variants without duplicates.')
-    const offers = structuredClone(settings.offers)
+    const offers = structuredClone(settings.offers ?? {})
     if (product.legacySourceId) for (const offer of Object.values(offers) as any[]) offer.variant_ids = offer.variant_ids.filter((variantId: string) => variantId !== product.legacySourceId)
-    plans.forEach((p, i) => { offers[p.type.key].variant_ids = [...new Set([...offers[p.type.key].variant_ids, variants[i].id])] })
+    plans.forEach((p, i) => { offers[p.type.key] ??= { variant_ids: p.groupIds }; offers[p.type.key].variant_ids = [...new Set([...offers[p.type.key].variant_ids, variants[i].id])] })
     const latest = await products.retrieveProduct(id)
     await products.updateProducts(id, { metadata: { ...latest.metadata,
       hair_claw_template_v2: { ...config, palette: [...new Set([...config.palette, ...plans.map(p => p.color.name)])], variant_ids: [...new Set([...config.variant_ids, ...variants.map(v => v.id)])], ...(!config.default_variant_id ? { default_variant_id: variants[0].id } : {}) },

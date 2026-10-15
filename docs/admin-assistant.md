@@ -540,3 +540,50 @@ passed. Local UI verified zero Option name rows, independent size selections,
 save payloads, and a new shared color assigned to only one size. Staging
 acceptance and exact release scope are recorded in
 `.local/admin-claw-sizes-20261015/`; deployment verification is pending.
+
+Staging acceptance complete: `a4a39a7f2133d58d676f2af76963e014f58f6f11`,
+Coolify `3lqxn3gkbgzhbnvrpnygiwsg`, finished 2026-10-15T13:55:54Z with both
+services healthy. Coffee Cup shows zero Option name rows and both size controls.
+A disposable two-size product verified independent save, actual storefront size
+switching to a compatible real variant, unchanged full prices ($1/$2 fixture),
+and rejected unavailable cart creation/add/quantity/completion. A real Admin
+2-inch exclusion save preserved 4-inch availability; removing all 2-inch colors
+removed that size from storefront choices. Shared size checkboxes were present.
+The fixture was soft-deleted and its cart cleared. Catalog count remains 419;
+Coffee Cup and the shared palette match their pre-test snapshots. No real
+product availability, prices, inventory, Etsy writes, paid labels or production
+settings changed. Latest queue report read at acceptance was OK (13:51:27Z).
+
+Evidence and handoff: `release.json`, `browser-checks.json`, `staging-checks.json`,
+`cleanup-report.json`, `deployed-services.json`, `staging-size-colors.png`, scoped
+source and validation logs in `.local/admin-claw-sizes-20261015/`. Owner testing
+and the existing 66 size/finish approvals remain; no code/deployment blocker.
+
+### 2026-10-15: Remaining existing 4-inch catalog approved for staging tests
+
+The owner authorized the remaining 4-inch hair claws using their existing saved
+prices and color choices. This supersedes the earlier pending approval for those
+4-inch variants only. The bounded setup script
+`deploy/staging/configure-existing-four-inch-claws.cjs` selected 1,209 existing
+4-inch variants across 66 products and changed only template availability.
+No variants, prices, stock, shipping weights, images, fits or product statuses
+were rewritten. Original/hidden variant records remain saved. Two-inch choices
+stay hidden; no geometry or new artwork fit was synthesized.
+
+Catalog products use their approved real variant IDs directly, so purchasing
+from original photos does not require enabling an unfinished overlay. Existing
+style/finish options and prices ($12, $14, $15, $16) remain distinct. Shared-color
+sync now groups these approved combinations by their saved size/style/finish,
+copying the full existing price and policy for new colors without adding hidden
+sizes or flattening finishes. Existing Coffee Cup/Giraffe offer setup is intact.
+
+Coffee Cup has 50 saved variants and 13 active 4-inch color variants. Active
+records carry the selected color through cart/orders/inventory/Etsy; historical
+and hidden records are retained and excluded from normal editing by default.
+
+Local validation: 37 focused backend tests, four storefront tests, backend
+TypeScript and backend/Admin build passed. Catalog execution backups, snapshots,
+plan, exact scoped source and verification reports are in
+`.local/staging-four-inch-catalog-20261015/`. Coastal Catch remains an existing
+draft because its source image is missing. Final deployment/cart/browser
+acceptance is recorded in this milestone's release and handoff reports.

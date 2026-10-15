@@ -150,3 +150,33 @@ it('saves size availability separately with stale and invalid-input protection, 
   await saveProductColors(req, res); expect(res.status).toHaveBeenLastCalledWith(400)
   expect(update).toHaveBeenCalledTimes(1)
 })
+it('keeps catalog-approved styles and prices independent, ignoring hidden 2-inch and legacy rows', () => {
+  const { product, variant } = fixture()
+  product.metadata.hair_claw_template_v2 = { ...product.metadata.hair_claw_template_v2, offer_mode: false, option_ids: ['size','style','color'], variant_ids: ['black','painted'] }
+  product.metadata.hair_claw_overlays_v1.offers = {}
+  product.options.push({ id: 'style', title: 'Design finish' })
+  variant.options.push({ option_id: 'style', value: 'Natural' })
+  product.variants.push({ ...variant, id: 'painted', options: variant.options.map(o => o.option_id === 'style' ? { ...o, value: 'Colors by Cate' } : o), price_set: { prices: [{ currency_code: 'usd', amount: 19 }] } }, { ...variant, id: 'hidden-two', metadata: { ...variant.metadata, physical_size: '2' } })
+  const plans = planClawColorSync(product, [black, rose]).plans
+  expect(plans).toHaveLength(2)
+  expect(new Set(plans.map(p => p.type.key)).size).toBe(2)
+  expect(plans.map(p => p.variant.options['Design finish'])).toEqual(['Natural','Colors by Cate'])
+  expect(plans.map(p => p.variant.prices[0].amount)).toEqual([15,19])
+  expect(plans.every(p => p.type.size === '4')).toBe(true)
+})
+it('publishes a new color only into the approved catalog combinations and retries without duplicates', async () => {
+  const { product } = fixture()
+  product.metadata.hair_claw_template_v2 = { ...product.metadata.hair_claw_template_v2, offer_mode: false, option_ids: ['size','color'] }
+  product.metadata.hair_claw_overlays_v1.offers = {}
+  const link = jest.fn(async () => ({})), create = jest.fn(async ({ input }) => { const result = input.product_variants.map((v: any, i: number) => ({ ...v, options: Object.entries(v.options).map(([title, value]) => ({ option_id: product.options.find((o: any) => o.title === title).id, value })), id: 'catalog-new-' + i, price_set: { prices: v.prices } })); product.variants.push(...result); return { result } })
+  ;(createAndLinkProductOptionsToProductWorkflow as unknown as jest.Mock).mockReturnValue({ run: link })
+  ;(createProductVariantsWorkflow as unknown as jest.Mock).mockReturnValue({ run: create })
+  const products = { listProductVariants: async () => [], retrieveProduct: async () => product, updateProducts: async (_id: string, data: any) => { product.metadata = data.metadata } }
+  const scope = { resolve: (name: string) => name === 'query' ? { graph: async () => ({ data: [product] }) } : name === 'product' ? products : { execute: async (_key: string, fn: () => any) => fn() } }
+  const fitBefore = JSON.stringify(product.metadata.hair_claw_overlays_v1.recipes)
+  expect((await syncClawProduct(scope, product.id, [black,rose])).created).toBe(1)
+  expect(product.metadata.hair_claw_template_v2.variant_ids).toEqual(['black','catalog-new-0'])
+  expect(product.metadata.hair_claw_template_v2.offer_mode).toBe(false)
+  expect(JSON.stringify(product.metadata.hair_claw_overlays_v1.recipes)).toBe(fitBefore)
+  expect((await syncClawProduct(scope, product.id, [black,rose])).created).toBe(0)
+})
