@@ -1,4 +1,4 @@
-import { renderClaw } from './compositor.js?v=editor7'
+import { renderClaw } from './compositor.js?v=palette1'
 import { placement, updateInteractiveArtwork } from './editor-claw.js?v=editor7'
 import { validCorners } from './editor-transform.js?v=editor7'
 import { fittingView } from './editor-viewport.js?v=editor7'
@@ -30,14 +30,14 @@ function selection() {
   rotate.setAttribute('r',8/unit);rotate.setAttribute('stroke-width',1.5/unit)
 }
 function draw() {
-  const signature=JSON.stringify([data?.recipe,data?.size,data?.color,data?.outline,data?.editable,Boolean(drag),data?.workspacePhoto])
+  const signature=JSON.stringify([data?.recipe,data?.size,data?.color,data?.colorOverride,data?.outline,data?.editable,Boolean(drag),data?.workspacePhoto])
   if(signature===renderedState)return
   renderedState=signature
   if(!data?.recipe){stage.textContent='Choose an image to begin fitting.';return}
   if(data.size!=='4'){stage.textContent='2-inch preview awaits its measured physical template. Save placement as a draft.';return}
   try {
     const photoMode=data.workspacePhoto===true&&data.recipe.editor_version===2
-    const structure=JSON.stringify([data.size,data.color,data.outline,data.editable,data.recipe.url,data.recipe.side,data.recipe.vertical,data.recipe.border,photoMode])
+    const structure=JSON.stringify([data.size,data.color,data.colorOverride,data.outline,data.editable,data.recipe.url,data.recipe.side,data.recipe.vertical,data.recipe.border,photoMode])
     if(photoMode&&structure===renderedStructure&&stage.querySelector('[data-editor-photo]')) {
       if(!drag)stage.querySelector('svg').setAttribute('viewBox',fittingView(placement(data.recipe).corners,data.recipe).join(' '))
       stage.dataset.dragging=String(Boolean(drag));updateEditorPhoto(stage,data.recipe);selection();return
@@ -45,7 +45,7 @@ function draw() {
     if(!photoMode&&drag&&interactiveReady&&updateInteractiveArtwork(stage,data.recipe)){selection();return}
     renderedStructure=structure
     const focusedCorner=stage.contains(document.activeElement)?document.activeElement?.dataset?.corner:undefined
-    stage.innerHTML=renderClaw({colorSlug:data.color,uploaded:data.recipe,scale:data.recipe.scale,vertical:data.recipe.vertical,showOutline:data.outline===true,id:'uploaded',interactive:Boolean(drag),editing:photoMode})
+    stage.innerHTML=renderClaw({colorSlug:data.color,colorOverride:data.colorOverride,uploaded:data.recipe,scale:data.recipe.scale,vertical:data.recipe.vertical,showOutline:data.outline===true,id:'uploaded',interactive:Boolean(drag),editing:photoMode})
     interactiveReady=Boolean(drag)
     stage.dataset.editable=String(data.editable===true)
     stage.dataset.photoWorkspace=String(photoMode)

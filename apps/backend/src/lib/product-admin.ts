@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { clawColorAvailable, type ClawColor } from './hair-claw-colors'
 
 export const ETSY_DRAFT_KEY = 'etsy_listing_draft_v1'
 export const etsyDraftSchema = z
@@ -60,8 +61,11 @@ export const emptyEtsyDraft = (): EtsyDraft => ({
   colors: [],
 })
 export function isHairClaw(product: any) {
-  const type = product?.type?.value ?? product?.metadata?.source_product_type
+  const type = product?.type?.value
   if (typeof type === 'string' && type.trim()) return /^hair[ -]?claws?$/i.test(type.trim())
+  if (product?.metadata?.hair_claw_template_v2) return true
+  const source = product?.metadata?.source_product_type
+  if (typeof source === 'string' && source.trim()) return /^hair[ -]?claws?$/i.test(source.trim())
   return Boolean(
     product?.metadata?.hair_claw_template_v2 ||
     /^rustic_halo_hair_claw_v[1-3]$/.test(product?.metadata?.product_template ?? ''),
@@ -97,7 +101,7 @@ export function searchReadiness(draft: EtsyDraft) {
   ]
   return checks
 }
-export function visibleProductVariants(product: any): any[] {
+export function visibleProductVariants(product: any, palette?: ClawColor[]): any[] {
   const config = product?.metadata?.hair_claw_template_v2
   const media = product?.metadata?.hair_claw_overlays_v1
   const ids = config?.offer_mode
@@ -105,7 +109,7 @@ export function visibleProductVariants(product: any): any[] {
         media?.recipes?.[key]?.enabled ? (value.variant_ids ?? []) : [],
       )
     : config?.variant_ids
-  return (product?.variants ?? []).filter((variant: any) => !ids || ids.includes(variant.id))
+  return (product?.variants ?? []).filter((variant: any) => (!ids || ids.includes(variant.id)) && clawColorAvailable(product, variant, palette ?? product.metadata?.hair_claw_palette_v1?.colors))
 }
 export function sellableColorVariants(product: any): any[] {
   return visibleProductVariants(product).filter(

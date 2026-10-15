@@ -105,6 +105,11 @@ export const InlineEditor = ({ kind, id, onEditingChange, editRequest = 0, works
       if (token !== generation.current) return
       const next = data[kind === 'products' ? 'product' : 'order']
       if (!next) throw new Error('This record could not be loaded.')
+      if (kind === 'products' && isHairClaw(next)) {
+        const palette = await adminRequest('/admin/hair-claw-colors')
+        if (token !== generation.current) return
+        next.metadata = { ...next.metadata, hair_claw_palette_v1: palette }
+      }
       setRecord(next); setDraft(normalizer(next))
       if (kind === 'products') {
         const results = await Promise.allSettled(lookups.map(loadChoices))

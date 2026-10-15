@@ -76,12 +76,13 @@ export const listProducts = async ({
         cache: "no-store",
       }
     )
-    .then(({ products, count }) => {
+    .then(async ({ products, count }) => {
+      const palette = products.some(p => p.metadata?.hair_claw_template_v2) ? await sdk.client.fetch('/store/hair-claw-colors', { headers, cache: 'no-store' }) : undefined
       const nextPage = count > offset + limit ? pageParam + 1 : null
 
       return {
         response: {
-          products: products.map(applyHairClawTemplate),
+          products: products.map(product => applyHairClawTemplate(palette ? { ...product, metadata: { ...product.metadata, hair_claw_palette_v1: palette } } : product)),
           count,
         },
         nextPage: nextPage,

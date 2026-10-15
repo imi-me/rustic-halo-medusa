@@ -1,5 +1,7 @@
 import type { AuthenticatedMedusaRequest, MedusaResponse } from '@medusajs/framework/http'
 import { Modules } from '@medusajs/framework/utils'
+import { readClawPalette } from '../../../../../lib/hair-claw-color-store'
+import { ADMIN_OPERATIONS } from '../../../../../modules/admin-operations'
 import { allowedOrigin } from '../../../assistant/route'
 import { etsyDraftSchema, colorExport, ETSY_DRAFT_KEY } from '../../../../../lib/product-admin'
 import { reviewColorImages, shareColorImages } from '../../../../../lib/etsy/color-images'
@@ -19,7 +21,8 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
       if (['export', 'review-colors', 'share-colors', 'review-images', 'share-images'].includes(req.body.action)) {
         const query = req.scope.resolve('query')
         const { data } = await query.graph({ entity: 'product', filters: { id: req.params.id }, fields: ['id', 'handle', 'metadata', 'type.*', 'options.*', 'images.*', 'variants.*', 'variants.options.*', 'variants.options.option.*', 'variants.price_set.prices.*', 'variants.price_set.prices.price_rules.*'] })
-        const selection = colorExport(data[0], saved)
+        const palette = await readClawPalette(req.scope.resolve(ADMIN_OPERATIONS))
+        const selection = colorExport({ ...data[0], metadata: { ...data[0].metadata, hair_claw_palette_v1: palette } }, saved)
         if (req.body.action === 'export') return { export: selection }
         const access = await etsyWorkspaceAccess(req.scope)
         return req.scope.resolve(Modules.LOCKING).execute(`etsy-listing:${saved.listing_id}`, async (): Promise<any> => req.body.action === 'review-colors' ? reviewColorSharing(access, selection, saved.existing_finish) : req.body.action === 'review-images' ? reviewColorImages(access, selection) : req.body.action === 'share-images' ? shareColorImages(req.scope, access, selection, req.body.expected_links) : applyColorSharing(req.scope, access, selection, saved.existing_finish, req.body.expected_inventory), { timeout: 5, expire: 300 })

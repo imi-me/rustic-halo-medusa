@@ -176,3 +176,11 @@
 .rh-packages-combination .rh-inline-field { flex: 1 1 100px; }
 .rh-packages-page small { display: block; color: #6b7280; margin-top: 8px; }
 @media (max-width: 600px) { .rh-packages-page .rh-inline-toolbar { position: static; flex-direction: column; align-items: stretch; } .rh-packages-page .rh-inline-grid { grid-template-columns: minmax(0, 1fr); } }
+.rh-product-claw-colors { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #e0e5ef; }
+.rh-claw-color-checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 14px 0; }
+.rh-claw-color-checks label { display: flex; gap: 8px; align-items: center; padding: 8px; border: 1px solid #e0e5ef; border-radius: 8px; cursor: pointer; }
+.rh-claw-color-swatch { display: inline-block; flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid #9996; }
+.rh-claw-color-retired { opacity: .6; }
+.rh-claw-palette-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 20px 0; }
+.rh-claw-palette-grid .rh-inline-card { display: grid; gap: 12px; }
+.rh-claw-palette-page fieldset { border: 0; padding: 0; }

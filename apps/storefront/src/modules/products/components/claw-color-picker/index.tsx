@@ -10,6 +10,7 @@ export default function ClawColorPicker({
   compact = false,
   purchase = false,
   disabled = false,
+  colors = healingHeartsColors,
 }: {
   productName: string
   value: string
@@ -17,13 +18,14 @@ export default function ClawColorPicker({
   compact?: boolean
   purchase?: boolean
   disabled?: boolean
+  colors?: { name: string; slug: string; hex: string }[]
 }) {
-  const selected = healingHeartsColors.find(color => color.slug === value)
+  const selected = colors.find(color => color.slug === value)
   return (
     <fieldset className={`${styles.picker}${compact ? ` ${styles.compact}` : ""}`}>
       <legend>Base color{purchase ? "" : " preview"}: <strong>{selected?.name}</strong></legend>
       <div className={styles.colors}>
-        {healingHeartsColors.map(color => (
+        {colors.map(color => (
           <button
             key={color.slug}
             type="button"

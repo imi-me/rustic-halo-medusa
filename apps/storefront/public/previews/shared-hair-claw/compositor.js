@@ -71,8 +71,9 @@ const fixedOutline = target.map(([x,y],i)=>`${i?'L':'M'}${x},${y}`).join(' ')+' 
 const fittedPhotos = Object.fromEntries(Object.entries(designs).map(([key, design])=>[key,fitPhoto(design,target)]))
 
 // The ids must be unique when several previews appear on the same page.
-export function renderClaw({ designId, colorSlug, showOverlay = true, showOutline = true, vertical = false, scale = 1, id = "preview", uploaded = null, interactive = false, editing = false }) {
-  if (uploaded?.editor_version === 2) return renderEditorClaw({recipe:uploaded,color:colors.find(c=>c.slug===colorSlug)||colors[6],outline:showOutline,id,interactive,editing})
+export function renderClaw({ designId, colorSlug, colorOverride, showOverlay = true, showOutline = true, vertical = false, scale = 1, id = "preview", uploaded = null, interactive = false, editing = false }) {
+  const custom = colorOverride && /^#[a-f0-9]{6}$/i.test(colorOverride.hex) && /^[A-Za-z0-9][A-Za-z0-9 -]{0,39}$/.test(colorOverride.name) ? colorOverride : undefined
+  if (uploaded?.editor_version === 2) return renderEditorClaw({recipe:uploaded,color:custom||colors.find(c=>c.slug===colorSlug)||colors[6],outline:showOutline,id,interactive,editing})
   const design = uploaded ? { name: 'Uploaded wood overlay' } : designs[designId]
   const color = colors.find((item) => item.slug === colorSlug)
   if (!design || !color || !/^[a-z0-9-]+$/i.test(id)) throw new Error("Invalid preview recipe")

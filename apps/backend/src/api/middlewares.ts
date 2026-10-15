@@ -6,10 +6,24 @@ import { limitPasswordReset } from '../lib/email/reset-rate-limit'
 
 import { guardResetReplay } from '../lib/email/reset-replay-guard'
 
-import { guardHairClawOffer } from '../lib/guard-hair-claw-offer'
+import { guardHairClawOffer, guardCartClawColors } from '../lib/guard-hair-claw-offer'
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/hair-claw-colors', method: ['GET'], policies: [{ resource: 'product', operation: PolicyOperation.read }], middlewares: [],
+  }, {
+    matcher: '/admin/hair-claw-colors', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }], middlewares: [],
+  }, {
+    matcher: '/admin/hair-claw-colors/sync', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }, { resource: 'product_option', operation: PolicyOperation.update }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }], middlewares: [],
+  }, {
+    matcher: '/admin/products/:id/workspace/colors', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.update }], middlewares: [],
+  }, {
+    matcher: '/store/carts', method: ['POST'], middlewares: [guardHairClawOffer],
+  }, {
+    matcher: '/store/carts/:id/line-items/:line_id', method: ['POST'], middlewares: [guardCartClawColors],
+  }, {
+    matcher: '/store/carts/:id/complete', method: ['POST'], middlewares: [guardCartClawColors],
+  }, {
     matcher: '/admin/shipping-packages/preview', method: ['POST'], policies: [{ resource: 'shipping_option', operation: PolicyOperation.read }, { resource: 'product', operation: PolicyOperation.read }], middlewares: [],
   }, {
     matcher: '/admin/shipping-packages', method: ['GET'], policies: [{ resource: 'shipping_option', operation: PolicyOperation.read }], middlewares: [],

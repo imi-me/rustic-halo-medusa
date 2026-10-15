@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { adminRequest, type Entity } from '../lib/inline-edit'
 import { optionsChanges, optionsSnapshot, type WorkspaceOption } from '../../lib/product-options-edit'
 import { ProductSection } from './product-section'
+import { ProductClawColors } from './product-claw-colors'
+import { isHairClaw } from '../../lib/product-admin'
 
 export function ProductOptions({ product, disabled, onDirty, saved }: { product: Entity; disabled: boolean; onDirty: (dirty: boolean) => void; saved: () => void }) {
   const original: WorkspaceOption[] = (product.options ?? []).map((option: any) => ({ id: option.id, title: option.title, is_exclusive: option.is_exclusive, values: (option.values ?? []).map((value: any) => ({ id: value.id, value: value.value })) }))
@@ -9,8 +11,9 @@ export function ProductOptions({ product, disabled, onDirty, saved }: { product:
   const [catalog, setCatalog] = useState<WorkspaceOption[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [colorDirty, setColorDirty] = useState(false)
   const dirty = optionsSnapshot(original) !== optionsSnapshot(draft)
-  useEffect(() => { onDirty(dirty || busy) }, [dirty, busy, onDirty])
+  useEffect(() => { onDirty(dirty || busy || colorDirty) }, [dirty, busy, colorDirty, onDirty])
   useEffect(() => () => onDirty(false), [onDirty])
   useEffect(() => { setDraft(original); setError('') }, [product])
   const loadCatalog = async () => {
@@ -28,10 +31,11 @@ export function ProductOptions({ product, disabled, onDirty, saved }: { product:
   }
   const update = (index: number, option: WorkspaceOption) => setDraft(previous => previous.map((row, i) => i === index ? option : row))
   return <ProductSection title="Options" open={false} className="rh-options-card">
+    {isHairClaw(product) && <ProductClawColors product={product} disabled={disabled || dirty || busy} onDirty={setColorDirty} saved={saved}/>}
     <p>Choose sizes, colors and other variant options here. Save option changes before editing the rest of the product.</p>
     {disabled && <p role="status">Save or discard product edits to manage options.</p>}
-    <fieldset disabled={disabled || busy}>
-      {draft.map((option, index) => <div className="rh-option-row" key={option.id ?? `new-${index}`}>
+    <fieldset disabled={disabled || busy || colorDirty}>
+      {draft.map((option, index) => option.id === product.metadata?.hair_claw_template_v2?.color_option_id ? null : <div className="rh-option-row" key={option.id ?? `new-${index}`}>
         <label className="rh-inline-field"><span>Option name</span><input aria-label={`Option ${index + 1} name`} readOnly={!!option.id} value={option.title} onChange={event => update(index, { ...option, title: event.target.value })}/></label>
         <div className="rh-options-values">{option.values.map((value, i) => <span key={value.id ?? `new-${i}`}><span>{value.value}</span><button type="button" aria-label={`Remove ${value.value} from ${option.title}`} onClick={() => update(index, { ...option, values: option.values.filter((_, n) => n !== i) })}>×</button></span>)}</div>
         {(option.is_exclusive || !option.id) && <label className="rh-inline-field"><span>Add a value (press Enter)</span><input aria-label={`Add value to option ${index + 1}`} onKeyDown={event => { if (event.key !== 'Enter') return; event.preventDefault(); const value = event.currentTarget.value.trim(); if (value) { update(index, { ...option, values: [...option.values, { value }] }); event.currentTarget.value = '' } }}/></label>}

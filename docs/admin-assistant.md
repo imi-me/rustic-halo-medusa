@@ -400,3 +400,34 @@ Scoped source and validation evidence: `.local/admin-etsy-expander-20261014/`
 (`release.json`, `typecheck.log`, `build.log`, `browser-checks.json`,
 `deployed-services.json`, `staging-etsy-listing.png`). Staging acceptance is
 recorded in the release and browser reports after deployment.
+
+
+### 2026-10-14: Shared hair-claw colors and product availability
+
+Options now shows storefront-style color swatches with availability checkboxes;
+all shared colors are selected by default. Product exclusions save separately
+with product timestamp and palette revision guards, preserve variant records,
+and participate in the workspace draft/navigation guard. The shared Hair-claw
+colors page adds, retires/restores and edits swatches for the entire catalog.
+Retirement keeps existing names, SKUs, inventory and order references intact.
+
+Shared additions apply in small resumable batches, creating only missing native
+color variants with generated barcodes, existing size/finish prices, inventory
+policies and shipping fields. Price/policy ambiguity is reported per product.
+Existing offers/overlays and unconfigured sizes remain unchanged; deterministic
+SKUs support recovery after interrupted native writes. A legacy single-source
+product can gain color variants only with an explicit physical size in its
+description and a saved base USD price; its original variant is retained.
+
+Storefront choices, preview swatches and available variants read the shared
+palette; excluded/retired colors are also rejected for cart creation, direct
+adds, quantity updates and completion. Etsy color export/sharing validates the
+same availability. No external Etsy write gate or label gate is enabled.
+
+Local checks: 28 focused backend tests, three storefront offer/color tests, Admin
+and storefront TypeScript, full backend/Admin build and storefront build. A
+local browser fixture verified default checks, product-only save, draft guards,
+shared add/retire/save and blocked navigation with pending edits. Exact scope,
+source, logs and staging acceptance: `.local/admin-claw-colors-20261014/`.
+Staging verification is pending deployment and recorded in its release/report
+files; do not treat local checks as deployed acceptance.

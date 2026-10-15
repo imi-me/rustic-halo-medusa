@@ -9,7 +9,7 @@ export const offerTypes = [
   { key:'4-natural', size:'4', finish:'natural', label:'4 inch · Natural' },
   { key:'4-cbc', size:'4', finish:'cbc', label:'4 inch · Colors by Cate' },
 ] as const
-const fields = ['id','title','metadata','options.*','options.values.*','images.*','variants.*','variants.options.*','variants.options.option.title','variants.price_set.prices.*','variants.price_set.prices.price_rules.*']
+const fields = ['id','title','description','metadata','options.*','options.values.*','images.*','variants.*','variants.options.*','variants.options.option.title','variants.price_set.prices.*','variants.price_set.prices.price_rules.*']
 export async function offerProduct(scope:any,id:string) {
   const { data } = await scope.resolve('query').graph({entity:'product',filters:{id},fields})
   if (!data[0]) throw new MedusaError(MedusaError.Types.NOT_FOUND,'Product not found.')

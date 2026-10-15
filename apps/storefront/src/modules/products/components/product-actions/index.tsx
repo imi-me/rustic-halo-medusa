@@ -27,7 +27,7 @@ import { GalleryControlsTarget } from "@modules/products/components/gallery-cont
 import { isHairClaw } from "@lib/util/is-hair-claw"
 import { hairClawTemplate, initialProductOptions } from "@lib/util/hair-claw-template"
 import ClawColorPicker from "@modules/products/components/claw-color-picker"
-import { healingHeartsColors } from "@lib/brand/healing-hearts-colors"
+import { productClawColors } from '@lib/util/hair-claw-template'
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -204,7 +204,7 @@ export default function ProductActions({
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
               {displayOptions.map((option) => {
-                if (template?.color_option_id === option.id) return <ClawColorPicker key={option.id} compact purchase productName={product.title || "hair claw"} value={options[option.id]?.toLowerCase() || "taupe"} disabled={!!disabled || isAdding} onChange={slug => { const color = healingHeartsColors.find(c => c.slug === slug); if (color) setOptionValue(option.id, color.name) }} />
+                if (template?.color_option_id === option.id) { const colors = productClawColors(product).filter(c => option.values?.some(v => v.value === c.name)); return <ClawColorPicker key={option.id} colors={colors} compact purchase productName={product.title || "hair claw"} value={colors.find(c => c.name === options[option.id])?.slug || ''} disabled={!!disabled || isAdding} onChange={slug => { const color = colors.find(c => c.slug === slug); if (color) setOptionValue(option.id, color.name) }} /> }
                 return (
                   <div key={option.id}>
                     <OptionSelect
