@@ -21,13 +21,19 @@ import {
   getHealingHeartsColor,
   HEALING_HEARTS_HANDLE,
 } from "@lib/brand/healing-hearts-colors"
-import { HAPPY_COW_HANDLE, isHappyCowFourInchSize } from "@lib/brand/happy-cow-colors"
+import {
+  HAPPY_COW_HANDLE,
+  isHappyCowFourInchSize,
+} from "@lib/brand/happy-cow-colors"
 import { useHappyCowPreview } from "@modules/products/components/happy-cow-color-preview-context"
 import { GalleryControlsTarget } from "@modules/products/components/gallery-controls"
 import { isHairClaw } from "@lib/util/is-hair-claw"
-import { hairClawTemplate, initialProductOptions } from "@lib/util/hair-claw-template"
+import {
+  hairClawTemplate,
+  initialProductOptions,
+} from "@lib/util/hair-claw-template"
 import ClawColorPicker from "@modules/products/components/claw-color-picker"
-import { productClawColors, clawSize } from '@lib/util/hair-claw-template'
+import { productClawColors, clawSize } from "@lib/util/hair-claw-template"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -53,10 +59,15 @@ export default function ProductActions({
   const searchParams = useSearchParams()
   const { setCanPreviewFourInch, setProductSelection } = useHappyCowPreview()
 
-  const [options, setOptions] = useState<Record<string, string | undefined>>(() => initialProductOptions(product, searchParams.get("v_id")))
+  const [options, setOptions] = useState<Record<string, string | undefined>>(
+    () => initialProductOptions(product, searchParams.get("v_id"))
+  )
   const template = hairClawTemplate(product)
   const ownNavigations = useRef(new Set<string>())
-  const lastRoute = useRef({ productId: product.id, variantId: searchParams.get("v_id") })
+  const lastRoute = useRef({
+    productId: product.id,
+    variantId: searchParams.get("v_id"),
+  })
   const [isAdding, setIsAdding] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const countryCode = useParams().countryCode as string
@@ -72,23 +83,37 @@ export default function ProductActions({
     [product.options]
   )
   const previewColor = getHealingHeartsColor(searchParams.get("color"))
-  const isHealingHeartsProof = !template && product.handle === HEALING_HEARTS_HANDLE
-  const isPreviewOnlyColor = isHealingHeartsProof && previewColor.slug !== "black"
+  const isHealingHeartsProof =
+    !template && product.handle === HEALING_HEARTS_HANDLE
+  const isPreviewOnlyColor =
+    isHealingHeartsProof && previewColor.slug !== "black"
 
   useEffect(() => {
     setProductSelection({ productId: product.id, options })
     const selectedSize = sizeOptionId ? options[sizeOptionId] : undefined
     setCanPreviewFourInch(
-      product.handle === HAPPY_COW_HANDLE && isHappyCowFourInchSize(selectedSize)
+      product.handle === HAPPY_COW_HANDLE &&
+        isHappyCowFourInchSize(selectedSize)
     )
-  }, [product.id, product.handle, options, setCanPreviewFourInch, setProductSelection, sizeOptionId])
+  }, [
+    product.id,
+    product.handle,
+    options,
+    setCanPreviewFourInch,
+    setProductSelection,
+    sizeOptionId,
+  ])
 
   // Preselect a sole variant and imported "Default Title" placeholders. The
   // placeholder remains part of variant matching but is not a customer choice.
   // Preserve an explicit card/gallery variant after Next refreshes the route.
   useEffect(() => {
     const variantId = searchParams.get("v_id")
-    if (lastRoute.current.productId === product.id && lastRoute.current.variantId === variantId) return
+    if (
+      lastRoute.current.productId === product.id &&
+      lastRoute.current.variantId === variantId
+    )
+      return
     lastRoute.current = { productId: product.id, variantId }
     const routeKey = `${product.id}:${variantId || ""}`
     if (ownNavigations.current.delete(routeKey)) return
@@ -105,7 +130,11 @@ export default function ProductActions({
       const variantOptions = optionsAsKeymap(product.variants[0].options)
       setOptions(variantOptions ?? {})
     } else {
-      setOptions(template ? initialProductOptions(product, variantId) : hiddenDefaultSelections)
+      setOptions(
+        template
+          ? initialProductOptions(product, variantId)
+          : hiddenDefaultSelections
+      )
     }
   }, [product, hiddenDefaultSelections, searchParams, template])
 
@@ -123,15 +152,39 @@ export default function ProductActions({
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
     let next = { ...options, [optionId]: value }
-    if (template && optionId !== template.color_option_id && !product.variants?.some(v => isEqual(optionsAsKeymap(v.options), next))) {
-      const candidates = product.variants?.filter(v => v.options?.some(o => o.option_id === optionId && o.value === value)) ?? []
-      const sameColor = (v: HttpTypes.StoreProductVariant) => v.options?.some(o => o.option_id === template.color_option_id && o.value === options[template.color_option_id])
-      const sameOtherChoices = (v: HttpTypes.StoreProductVariant) => (v.options ?? []).every(o => [optionId, template.color_option_id].includes(o.option_id!) || !options[o.option_id!] || o.value === options[o.option_id!])
-      const fallback = candidates.find(v => sameColor(v) && sameOtherChoices(v)) || candidates.find(sameOtherChoices) || candidates.find(sameColor) || candidates[0]
+    if (
+      template &&
+      optionId !== template.color_option_id &&
+      !product.variants?.some((v) => isEqual(optionsAsKeymap(v.options), next))
+    ) {
+      const candidates =
+        product.variants?.filter((v) =>
+          v.options?.some((o) => o.option_id === optionId && o.value === value)
+        ) ?? []
+      const sameColor = (v: HttpTypes.StoreProductVariant) =>
+        v.options?.some(
+          (o) =>
+            o.option_id === template.color_option_id &&
+            o.value === options[template.color_option_id]
+        )
+      const sameOtherChoices = (v: HttpTypes.StoreProductVariant) =>
+        (v.options ?? []).every(
+          (o) =>
+            [optionId, template.color_option_id].includes(o.option_id!) ||
+            !options[o.option_id!] ||
+            o.value === options[o.option_id!]
+        )
+      const fallback =
+        candidates.find((v) => sameColor(v) && sameOtherChoices(v)) ||
+        candidates.find(sameOtherChoices) ||
+        candidates.find(sameColor) ||
+        candidates[0]
       if (fallback) next = optionsAsKeymap(fallback.options) || next
     }
     setOptions(next)
-    const match = product.variants?.find(v => isEqual(optionsAsKeymap(v.options), next))
+    const match = product.variants?.find((v) =>
+      isEqual(optionsAsKeymap(v.options), next)
+    )
     const params = new URLSearchParams(searchParams.toString())
     const variantId = match?.id || null
     if (params.get("v_id") === variantId) return
@@ -192,26 +245,105 @@ export default function ProductActions({
     setIsAdding(false)
   }
 
-  if (template?.offer_mode && !product.variants?.length) return <div><GalleryControlsTarget/><p className="rh-made-to-order" role="status">This design has no available size and finish options yet.</p></div>
+  if (template?.offer_mode && !product.variants?.length)
+    return (
+      <div>
+        <GalleryControlsTarget />
+        <p className="rh-made-to-order" role="status">
+          This design has no available size and finish options yet.
+        </p>
+      </div>
+    )
 
   return (
     <>
-      <div className="flex flex-col gap-y-2" ref={isHairClaw(product) ? undefined : actionsRef}>
+      <div
+        className="rh-product-actions flex flex-col gap-y-2"
+        ref={isHairClaw(product) ? undefined : actionsRef}
+      >
         <ProductPrice product={product} variant={selectedVariant} />
         <GalleryControlsTarget />
-        {isHairClaw(product) && (product.variants?.length ?? 0) === 1 && displayOptions.map(option => (
-          <p className="rh-sole-option" key={option.id}>{option.title}: <strong>{options[option.id] || option.values?.[0]?.value}</strong></p>
-        ))}
+        {isHairClaw(product) &&
+          (product.variants?.length ?? 0) === 1 &&
+          displayOptions.map((option) => (
+            <p className="rh-sole-option" key={option.id}>
+              {option.title}:{" "}
+              <strong>{options[option.id] || option.values?.[0]?.value}</strong>
+            </p>
+          ))}
         {!isHairClaw(product) && <ProductDescription product={product} />}
         <div>
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
               {displayOptions.map((option) => {
-                if (template?.color_option_id === option.id) { const colors = productClawColors(product, clawSize(options[template.size_option_id])).filter(c => option.values?.some(v => v.value === c.name) && product.variants?.some(v => v.options?.some(o => o.option_id === option.id && o.value === c.name) && (v.options ?? []).every(o => o.option_id === option.id || !options[o.option_id!] || o.value === options[o.option_id!]))); return <ClawColorPicker key={option.id} colors={colors} compact purchase productName={product.title || "hair claw"} value={colors.find(c => c.name === options[option.id])?.slug || ''} disabled={!!disabled || isAdding} onChange={slug => { const color = colors.find(c => c.slug === slug); if (color) setOptionValue(option.id, color.name) }} /> }
+                if (template?.color_option_id === option.id) {
+                  const colors = productClawColors(
+                    product,
+                    clawSize(options[template.size_option_id])
+                  ).filter(
+                    (c) =>
+                      option.values?.some((v) => v.value === c.name) &&
+                      product.variants?.some(
+                        (v) =>
+                          v.options?.some(
+                            (o) =>
+                              o.option_id === option.id && o.value === c.name
+                          ) &&
+                          (v.options ?? []).every(
+                            (o) =>
+                              o.option_id === option.id ||
+                              !options[o.option_id!] ||
+                              o.value === options[o.option_id!]
+                          )
+                      )
+                  )
+                  return (
+                    <ClawColorPicker
+                      key={option.id}
+                      colors={colors}
+                      compact
+                      purchase
+                      productName={product.title || "hair claw"}
+                      value={
+                        colors.find((c) => c.name === options[option.id])
+                          ?.slug || ""
+                      }
+                      disabled={!!disabled || isAdding}
+                      onChange={(slug) => {
+                        const color = colors.find((c) => c.slug === slug)
+                        if (color) setOptionValue(option.id, color.name)
+                      }}
+                    />
+                  )
+                }
                 return (
                   <div key={option.id}>
                     <OptionSelect
-                      option={template?.offer_mode && option.id === template.finish_option_id ? {...option,values:option.values?.filter(value => product.variants?.some(v => v.options?.some(o => o.option_id === option.id && o.value === value.value) && v.options?.some(o => o.option_id === template.size_option_id && o.value === options[template.size_option_id])))} : option}
+                      option={
+                        template?.offer_mode &&
+                        option.id === template.finish_option_id
+                          ? {
+                              ...option,
+                              values: option.values?.filter((value) =>
+                                product.variants?.some(
+                                  (v) =>
+                                    v.options?.some(
+                                      (o) =>
+                                        o.option_id === option.id &&
+                                        o.value === value.value
+                                    ) &&
+                                    v.options?.some(
+                                      (o) =>
+                                        o.option_id ===
+                                          template.size_option_id &&
+                                        o.value ===
+                                          options[template.size_option_id]
+                                    )
+                                )
+                              ),
+                            }
+                          : option
+                      }
                       current={options[option.id]}
                       updateOption={setOptionValue}
                       title={option.title ?? ""}
@@ -226,32 +358,58 @@ export default function ProductActions({
           )}
         </div>
 
-        <div className="rh-purchase-row" ref={isHairClaw(product) ? actionsRef : undefined}>
-        <div className="rh-quantity" aria-label="Quantity"><span>Quantity</span><div><button type="button" aria-label="Decrease quantity" onClick={() => setQuantity((current) => Math.max(1, current - 1))} disabled={isAdding || quantity === 1}>−</button><output aria-live="polite">{quantity}</output><button type="button" aria-label="Increase quantity" onClick={() => setQuantity((current) => current + 1)} disabled={isAdding}>+</button></div></div>
-
-        <Button
-          onClick={handleAddToCart}
-          disabled={
-            !inStock ||
-            !selectedVariant ||
-            !!disabled ||
-            isAdding ||
-            isPreviewOnlyColor ||
-            !isValidVariant
-          }
-          variant="primary"
-          className="w-full min-h-12 rh-add-to-cart"
-          isLoading={isAdding}
-          data-testid="add-product-button"
+        <div
+          className="rh-purchase-row"
+          ref={isHairClaw(product) ? actionsRef : undefined}
         >
-          {isPreviewOnlyColor
-            ? "Color preview only"
-            : !selectedVariant
-            ? "Select variant"
-            : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Add to cart"}
-        </Button>
+          <div className="rh-quantity" aria-label="Quantity">
+            <span>Quantity</span>
+            <div>
+              <button
+                type="button"
+                aria-label="Decrease quantity"
+                onClick={() =>
+                  setQuantity((current) => Math.max(1, current - 1))
+                }
+                disabled={isAdding || quantity === 1}
+              >
+                −
+              </button>
+              <output aria-live="polite">{quantity}</output>
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                onClick={() => setQuantity((current) => current + 1)}
+                disabled={isAdding}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <Button
+            onClick={handleAddToCart}
+            disabled={
+              !inStock ||
+              !selectedVariant ||
+              !!disabled ||
+              isAdding ||
+              isPreviewOnlyColor ||
+              !isValidVariant
+            }
+            variant="primary"
+            className="w-full min-h-12 rh-add-to-cart"
+            isLoading={isAdding}
+            data-testid="add-product-button"
+          >
+            {isPreviewOnlyColor
+              ? "Color preview only"
+              : !selectedVariant
+              ? "Select variant"
+              : !inStock || !isValidVariant
+              ? "Out of stock"
+              : "Add to cart"}
+          </Button>
         </div>
         {isPreviewOnlyColor && (
           <p className="rh-color-preview-note" role="status">

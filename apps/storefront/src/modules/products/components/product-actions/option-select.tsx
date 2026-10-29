@@ -1,56 +1,39 @@
 import { HttpTypes } from "@medusajs/types"
-import { clx } from "@modules/common/components/ui"
-import React from "react"
-
-type OptionSelectProps = {
+type Props = {
   option: HttpTypes.StoreProductOption
   current: string | undefined
-  updateOption: (title: string, value: string) => void
+  updateOption: (id: string, value: string) => void
   title: string
   disabled: boolean
   "data-testid"?: string
 }
-
-const OptionSelect: React.FC<OptionSelectProps> = ({
+export default function OptionSelect({
   option,
   current,
   updateOption,
   title,
-  "data-testid": dataTestId,
   disabled,
-}) => {
-  const filteredOptions = (option.values ?? []).map((v) => v.value)
-
+  "data-testid": testId,
+}: Props) {
   return (
-    <div className="flex flex-col gap-y-3">
-      <span className="text-sm">Select {title}</span>
-      <div
-        className="flex flex-wrap gap-2"
-        data-testid={dataTestId}
+    <label className="rh-b-product-option">
+      <span>{title}</span>
+      <select
+        value={current || ""}
+        onChange={(event) => updateOption(option.id, event.target.value)}
+        disabled={disabled}
+        data-testid={testId}
+        aria-label={title}
       >
-        {filteredOptions.map((v) => {
-          return (
-            <button
-              onClick={() => updateOption(option.id, v)}
-              key={v}
-              className={clx(
-                "border-ui-border-base bg-ui-bg-subtle border text-small-regular min-h-10 rounded-rounded px-3 py-2 whitespace-nowrap",
-                {
-                  "border-ui-border-interactive": v === current,
-                  "hover:shadow-elevation-card-rest transition-shadow ease-in-out duration-150":
-                    v !== current,
-                }
-              )}
-              disabled={disabled}
-              data-testid="option-button"
-            >
-              {v}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+        <option value="" disabled>
+          Choose {title.toLowerCase()}
+        </option>
+        {option.values?.map((v) => (
+          <option key={v.value} value={v.value}>
+            {v.value}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
-
-export default OptionSelect

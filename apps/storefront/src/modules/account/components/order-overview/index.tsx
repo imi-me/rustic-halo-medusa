@@ -1,45 +1,130 @@
 "use client"
-
-import { Button } from "@modules/common/components/ui"
-
-import OrderCard from "../order-card"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { listOrders } from "@lib/data/orders"
+import { useState } from "react"
 import { HttpTypes } from "@medusajs/types"
-
-const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
-  if (orders?.length) {
-    return (
-      <div className="flex flex-col gap-y-8 w-full">
-        {orders.map((o) => (
-          <div
-            key={o.id}
-            className="border-b border-gray-200 pb-6 last:pb-0 last:border-none"
-          >
-            <OrderCard order={o} />
-          </div>
-        ))}
-      </div>
-    )
+import { customerOrderStatus } from "@lib/util/customer-order-status"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import OrderCard from "../order-card"
+export default function OrderOverview({
+  orders,
+}: {
+  orders: HttpTypes.StoreOrder[]
+}) {
+  const [loaded, setLoaded] = useState(orders)
+  const [hasMore, setHasMore] = useState(orders.length === 10)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const loadMore = async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const next = await listOrders(10, loaded.length)
+      setLoaded((current) => [
+        ...current,
+        ...next.filter(
+          (order) => !current.some((existing) => existing.id === order.id)
+        ),
+      ])
+      setHasMore(next.length === 10)
+    } catch {
+      setError("Could not load more orders. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
-
-  return (
-    <div
-      className="w-full flex flex-col items-center gap-y-4"
-      data-testid="no-orders-container"
-    >
-      <h2 className="text-large-semi">Nothing to see here</h2>
-      <p className="text-base-regular">
-        You don&apos;t have any orders yet, let us change that {":)"}
-      </p>
-      <div className="mt-4">
-        <LocalizedClientLink href="/" passHref>
-          <Button data-testid="continue-shopping-button">
-            Continue shopping
-          </Button>
+  const [filter, setFilter] = useState("all")
+  const [query, setQuery] = useState("")
+  if (!orders?.length)
+    return (
+      <div className="rh-b-panel rh-b-empty" data-testid="no-orders-container">
+        <h2>Your order history starts here.</h2>
+        <p>
+          Your pieces and delivery details will appear here after your first
+          order.
+        </p>
+        <LocalizedClientLink
+          href="/store"
+          className="rh-b-button"
+          data-testid="continue-shopping-button"
+        >
+          Explore the collection ↗
         </LocalizedClientLink>
       </div>
-    </div>
+    )
+  const visible = loaded.filter(
+    (order) =>
+      (filter === "all" || customerOrderStatus(order).group === filter) &&
+      `${order.display_id} ${order.items
+        ?.map((item) => item.product_title || item.title)
+        .join(" ")}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase())
+  )
+  return (
+    <>
+      <div className="rh-b-orders-toolbar">
+        <div role="group" aria-label="Filter orders">
+          {[
+            { id: "all", label: "All orders" },
+            { id: "active", label: "In progress" },
+            { id: "delivered", label: "Delivered" },
+            ...(loaded.some((o) => o.status === "canceled")
+              ? [{ id: "canceled", label: "Canceled" }]
+              : []),
+          ].map((f) => (
+            <button
+              type="button"
+              key={f.id}
+              aria-pressed={filter === f.id}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search order number or piece"
+          aria-label="Search orders"
+        />
+      </div>
+      <p className="rh-product-count" aria-live="polite">
+        {visible.length} {visible.length === 1 ? "order" : "orders"}
+        {hasMore ? " in this view" : ""}
+      </p>
+      {visible.length ? (
+        visible.map((order) => <OrderCard key={order.id} order={order} />)
+      ) : (
+        <div className="rh-b-panel rh-b-empty">
+          <h2>No matching orders</h2>
+          <p>Try another order number or piece.</p>
+          <button
+            className="rh-b-button"
+            type="button"
+            onClick={() => {
+              setFilter("all")
+              setQuery("")
+            }}
+          >
+            Show all orders
+          </button>
+        </div>
+      )}
+      {hasMore && (
+        <div className="rh-load-more">
+          <button
+            type="button"
+            className="rh-b-button"
+            disabled={loading}
+            onClick={loadMore}
+          >
+            {loading ? "Loading orders…" : "Load more orders"}
+          </button>
+        </div>
+      )}
+      {error && <p role="alert">{error}</p>}
+    </>
   )
 }
-
-export default OrderOverview

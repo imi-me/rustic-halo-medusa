@@ -8,18 +8,19 @@ import { HttpTypes } from "@medusajs/types"
 
 const CheckoutSummary = ({ cart }: { cart: HttpTypes.StoreCart }) => {
   return (
-    <div className="large:sticky large:top-8 self-start min-w-0 flex flex-col gap-y-8 py-8 large:py-0">
-      <div className="w-full bg-white flex flex-col">
+    <div className="rh-b-checkout-summary self-start min-w-0">
+      <div className="rh-b-panel w-full bg-white flex flex-col">
         <Divider className="my-6 small:hidden" />
         <Heading
           level="h2"
           className="flex flex-row text-3xl-regular items-baseline"
         >
-          In your Cart
+          Your little finds
         </Heading>
         <Divider className="my-6" />
-        <CartTotals totals={cart} />
         <ItemsPreviewTemplate cart={cart} />
+        <Divider className="my-6" />
+        <CartTotals totals={cart} />
         <div className="my-6">
           <DiscountCode cart={cart} />
         </div>

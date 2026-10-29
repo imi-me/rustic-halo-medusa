@@ -92,6 +92,7 @@ export default async function CategoryPage(props: Props) {
       category={productCategory}
       sortBy={sortBy}
       page={page}
+      query={typeof searchParams.q === "string" ? searchParams.q : undefined}
       countryCode={params.countryCode}
       optionValueIds={optionValueIds}
     />

@@ -1,87 +1,223 @@
-import { CSSProperties } from "react"
 import { HttpTypes } from "@medusajs/types"
+import { listProducts } from "@lib/data/products"
+import { listCategories } from "@lib/data/categories"
+import { brandCategoryHref } from "@lib/brand/category-links"
+import { getHomepageContent } from "@lib/data/homepage-content"
+import { storefrontDesign } from "@lib/brand/storefront-design"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import styles from "./home.module.css"
+import ProductCard from "@modules/products/components/product-card"
 
-// Display the approved concept's clean original photography as CSS windows.
-// The reference file is preserved byte-for-byte; no product records use it.
-function EditorialPhoto({ region, label, className = "" }: { region: [number, number, number, number]; label: string; className?: string }) {
-  const [x, y, width, height] = region
-  const style: CSSProperties = {
-    backgroundImage: "url('/brand/home-editorial-reference.png')",
-    backgroundSize: `${1015 / width * 100}% ${1550 / height * 100}%`,
-    backgroundPosition: `${x / (1015 - width) * 100}% ${y / (1550 - height) * 100}%`,
+export default async function Hero({
+  countryCode,
+  collections,
+}: {
+  countryCode: string
+  collections: HttpTypes.StoreCollection[]
+}) {
+  const { featured } = storefrontDesign
+  const { hero: campaign, explore, seo } = await getHomepageContent()
+  const productCategories = await listCategories()
+  const hrefFor = (href: string) => {
+    if (!href.startsWith("/categories/")) return href
+    const url = new URL(href, "https://rustic-halo.invalid")
+    return (
+      brandCategoryHref(
+        url.pathname.split("/").pop()!,
+        productCategories,
+        collections
+      ) +
+      url.search +
+      url.hash
+    )
   }
-  return <div role="img" aria-label={label} className={`${styles.editorialPhoto} ${className}`} style={style} />
-}
-
-export default function Hero({ collections }: { collections: HttpTypes.StoreCollection[] }) {
-  const hairHref = "/categories/hair-claws"
-  const jewelryHref = "/categories/earrings"
-  const giftsHref = "/categories/home-decor"
-  const categories = [
-    { label: "Hair Claws", href: hairHref, region: [33, 443, 312, 202] as [number, number, number, number], alt: "Floral wooden hair claw in soft natural light" },
-    { label: "Jewelry", href: jewelryHref, region: [358, 443, 301, 202] as [number, number, number, number], alt: "Leaf engraved wooden earrings" },
-    { label: "Thoughtful Gifts", href: giftsHref, region: [671, 443, 312, 202] as [number, number, number, number], alt: "Handcrafted wooden gifts with botanical and mountain details" },
-  ]
-  const favorites = [
-    { label: "Hair Claws", href: hairHref, region: [33, 771, 229, 174] as [number, number, number, number], alt: "Floral wooden hair claw" },
-    { label: "Jewelry", href: jewelryHref, region: [274, 771, 228, 174] as [number, number, number, number], alt: "Mountain engraved wooden earrings" },
-    { label: "Gifts", href: giftsHref, region: [514, 771, 228, 174] as [number, number, number, number], alt: "Earth toned beaded bracelet" },
-    { label: "Gifts", href: giftsHref, region: [755, 771, 228, 174] as [number, number, number, number], alt: "Mountain engraved wooden pendant" },
-  ]
-
+  let {
+    response: { products },
+  } = await listProducts({
+    countryCode,
+    queryParams: { handle: featured.handles, limit: 4 },
+  })
+  const hasFeaturedEdit = products.length > 0
+  if (!products.length)
+    ({
+      response: { products },
+    } = await listProducts({ countryCode, queryParams: { limit: 4 } }))
+  const themes = collections.filter((c) => c.metadata?.grouping === "theme")
   return (
-    <div className={styles.home}>
-      <section className={styles.hero} aria-labelledby="home-heading">
-        <EditorialPhoto region={[445, 50, 570, 380]} label="Floral wooden hair claws on pale stone" className={styles.heroImage} />
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Handmade accessories &amp; gifts</p>
-          <h1 id="home-heading">Made for you.<br />Made to be noticed.</h1>
-          <p className={styles.heroDescription}>Thoughtfully crafted accessories and gifts<br className={styles.desktopBreak} /> for everyday moments and meaningful ones.</p>
-          <div className={styles.heroActions}><LocalizedClientLink href="/store" className={styles.primaryButton}>Explore the collection <span aria-hidden="true">→</span></LocalizedClientLink></div>
-        </div>
-      </section>
-
-      <section id="collections" className={styles.section} aria-labelledby="categories-heading">
-        <h2 id="categories-heading" className="sr-only">Shop by category</h2>
-        <div className={styles.categoryGrid}>
-          {categories.map((tile) => <LocalizedClientLink href={tile.href} key={tile.label} className={styles.categoryCard} aria-label={`Shop ${tile.label}`}>
-            <EditorialPhoto region={tile.region} label={tile.alt} className={styles.categoryImage} />
-            <span className={styles.categoryLabel}><span>{tile.label}</span><span className={styles.categoryAction} aria-hidden="true">→</span></span>
-          </LocalizedClientLink>)}
-        </div>
-      </section>
-
-      <section id="best-sellers" className={`${styles.section} ${styles.bestSellers}`} aria-labelledby="best-sellers-heading">
-        <div className={styles.sectionHeading}><h2 id="best-sellers-heading">Discover your next favorite</h2></div>
-        <hr className={styles.fullWidthRule} />
-        <div className={styles.productGrid}>{favorites.map((tile, index) => <LocalizedClientLink href={tile.href} key={`${tile.label}-${index}`} className={styles.favoriteCard} aria-label={`Explore ${tile.label}`}>
-          <EditorialPhoto region={tile.region} label={tile.alt} className={styles.favoriteImage} />
-          <span>{tile.label}</span>
-        </LocalizedClientLink>)}</div>
-      </section>
-
-      <section className={styles.personalization} aria-labelledby="personalization-heading">
-        <EditorialPhoto region={[0, 998, 473, 249]} label="Floral hair claw securing a loose bun" className={styles.personalizationImage} />
-        <div className={styles.personalizationCopy}>
-          <h2 id="personalization-heading">Personalized just for you.</h2>
-          <p>Make it meaningful with custom touches<br className={styles.desktopBreak} /> that tell your story.</p>
-          <LocalizedClientLink href={hairHref} className={styles.primaryButton}>Explore personalized pieces <span aria-hidden="true">→</span></LocalizedClientLink>
-          <div className={styles.botanicalDetail} aria-hidden="true">
-            <svg viewBox="0 0 70 140" fill="none" stroke="currentColor" strokeWidth="1"><path d="M5 134C27 96 27 47 55 6M27 89C5 82 10 65 26 87M30 73C50 67 53 48 32 68M34 57C19 48 23 34 36 53M41 40C62 33 64 18 45 34M48 23C40 15 42 5 53 14M20 107C40 103 46 87 23 101" /></svg>
-            <span>Simple things<br />mean more</span><i />
+    <div className="rh-b-home">
+      {campaign.enabled ? (
+        <section
+          className={`rh-b-hero${
+            campaign.showText ? "" : " rh-b-hero-image-only"
+          }`}
+          aria-labelledby="home-heading"
+        >
+          {campaign.showText ? (
+            <>
+              <picture className="rh-b-hero-photo">
+                <source
+                  media="(max-width: 760px)"
+                  srcSet={campaign.mobileImage}
+                />
+                <img
+                  src={campaign.desktopImage}
+                  alt={campaign.imageAlt}
+                  width={2400}
+                  height={800}
+                  fetchPriority="high"
+                  style={{ objectFit: campaign.imageFit }}
+                />
+              </picture>
+              <div className="rh-b-hero-copy">
+                <span className="rh-b-kicker">{campaign.eyebrow}</span>
+                <h1 id="home-heading" className="rh-b-editable-title">
+                  {campaign.title}
+                </h1>
+                {campaign.description && <p>{campaign.description}</p>}
+                <LocalizedClientLink
+                  href={hrefFor(campaign.href)}
+                  className="rh-b-button"
+                >
+                  {campaign.action} ↗
+                </LocalizedClientLink>
+              </div>
+            </>
+          ) : (
+            <LocalizedClientLink
+              href={hrefFor(campaign.href)}
+              className="rh-b-hero-image-link"
+              aria-label={campaign.action}
+            >
+              <h1 id="home-heading" className="sr-only">
+                {campaign.title}
+              </h1>
+              <picture className="rh-b-hero-photo">
+                <source
+                  media="(max-width:760px)"
+                  srcSet={campaign.mobileImage}
+                />
+                <img
+                  src={campaign.desktopImage}
+                  alt={campaign.imageAlt}
+                  width={2400}
+                  height={800}
+                  fetchPriority="high"
+                  style={{ objectFit: campaign.imageFit }}
+                />
+              </picture>
+            </LocalizedClientLink>
+          )}
+        </section>
+      ) : (
+        <h1 className="sr-only">{seo.title}</h1>
+      )}
+      <section className="rh-b-section" aria-labelledby="featured-heading">
+        <div className="rh-b-section-heading">
+          <div>
+            <span className="rh-b-kicker">
+              {hasFeaturedEdit ? featured.eyebrow : "Product discovery"}
+            </span>
+            <h2 id="featured-heading">
+              {hasFeaturedEdit ? featured.title : "Find your next favorite"}
+            </h2>
           </div>
+          <LocalizedClientLink href="/store" className="rh-b-link">
+            Browse categories ↗
+          </LocalizedClientLink>
+        </div>
+        <div className="rh-b-featured-grid">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
       </section>
-
-      <section id="our-story" className={styles.story} aria-labelledby="story-heading">
-        <div>
-          <p className={styles.eyebrow}>Our story</p>
-          <h2 id="story-heading">Rooted in the little things.</h2>
-          <p>Rustic Halo began with a love for handcrafted details and the belief that everyday items can be extraordinary. We create accessories and gifts that bring a bit more beauty, intention, and joy to your day.</p>
-        </div>
-        <EditorialPhoto region={[447, 1258, 568, 207]} label="A handmade ceramic mug with flowers in soft window light" className={styles.storyImage} />
+      {explore.enabled && (
+        <section
+          className="rh-b-section rh-b-collections"
+          aria-labelledby="collections-heading"
+        >
+          <h2
+            id="collections-heading"
+            className={explore.showHeading ? undefined : "sr-only"}
+          >
+            {explore.heading}
+          </h2>
+          {explore.items
+            .filter((c) => c.enabled)
+            .map((c, i) => (
+              <article
+                className={`rh-b-collection${i % 2 ? " rh-b-reverse" : ""}${
+                  c.showText ? "" : " rh-b-collection-image-only"
+                }`}
+                key={c.id}
+              >
+                <LocalizedClientLink
+                  href={hrefFor(c.href)}
+                  className="rh-b-collection-photo"
+                  aria-label={c.action}
+                >
+                  <picture>
+                    {c.mobileImage && (
+                      <source
+                        media="(max-width:760px)"
+                        srcSet={c.mobileImage}
+                      />
+                    )}
+                    <img
+                      src={c.image}
+                      alt={c.alt}
+                      loading="lazy"
+                      width={1200}
+                      height={800}
+                      style={{
+                        objectFit: c.imageFit,
+                        padding: c.imageFit === "cover" ? 0 : 18,
+                      }}
+                    />
+                  </picture>
+                </LocalizedClientLink>
+                {c.showText ? (
+                  <div className="rh-b-collection-copy">
+                    <span className="rh-b-kicker">{c.eyebrow}</span>
+                    <h3>{c.title}</h3>
+                    {c.description && <p>{c.description}</p>}
+                    <LocalizedClientLink
+                      href={hrefFor(c.href)}
+                      className="rh-b-button"
+                    >
+                      {c.action} ↗
+                    </LocalizedClientLink>
+                  </div>
+                ) : (
+                  <h3 className="sr-only">{c.title}</h3>
+                )}
+              </article>
+            ))}
+        </section>
+      )}
+      <nav className="rh-b-more" aria-label="More collections">
+        <span className="rh-b-kicker">More to explore</span>
+        <LocalizedClientLink href={hrefFor("/categories/earrings")}>
+          Earrings ↗
+        </LocalizedClientLink>
+        {themes.slice(0, 2).map((c) => (
+          <LocalizedClientLink href={`/collections/${c.handle}`} key={c.id}>
+            {c.title} ↗
+          </LocalizedClientLink>
+        ))}
+        <LocalizedClientLink href="/store">
+          Shop everything ↗
+        </LocalizedClientLink>
+      </nav>
+      <section id="our-story" className="rh-b-story">
+        <span className="rh-b-kicker">Our story</span>
+        <h2>A little character goes a long way.</h2>
+        <p>
+          Engraved accessories. Handpainted details. Thoughtful pieces for you,
+          your home and the people you love.
+        </p>
+        <LocalizedClientLink href="/store" className="rh-b-link">
+          Explore Rustic Halo ↗
+        </LocalizedClientLink>
       </section>
     </div>
   )

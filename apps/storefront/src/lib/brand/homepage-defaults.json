@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "hero": {
+    "enabled": true,
+    "showText": true,
+    "eyebrow": "Inspired by the outside",
+    "title": "A little nature.\nA lot of you.",
+    "description": "Woodland details, warm wood and pieces that feel like you.",
+    "desktopImage": "/brand/editorial/hero-desktop.jpg",
+    "mobileImage": "/brand/editorial/hero-mobile.jpg",
+    "imageAlt": "Original Rustic Halo wooden earrings displayed on a tree slice in greenery",
+    "href": "/categories/earrings",
+    "action": "Shop the edit",
+    "imageFit": "cover"
+  },
+  "explore": {
+    "enabled": true,
+    "showHeading": true,
+    "heading": "Explore the collections",
+    "items": [
+      {
+        "id": "accessories",
+        "enabled": true,
+        "showText": true,
+        "title": "Hair claws & accessories",
+        "eyebrow": "Collection 01",
+        "description": "From Country Skies to Every Paw Matters, wear a little piece of your world.",
+        "image": "/brand/editorial/country-skies.jpg",
+        "mobileImage": "",
+        "alt": "Original Country Skies wooden bird hair claw",
+        "href": "/categories/hair-claws",
+        "action": "Explore hair claws",
+        "imageFit": "contain"
+      },
+      {
+        "id": "home-gifts",
+        "enabled": true,
+        "showText": true,
+        "title": "Home & thoughtful gifts",
+        "eyebrow": "Collection 02",
+        "description": "A warm welcome, with a little personality. Explore door hangers and d\u00e9cor.",
+        "image": "/brand/editorial/welcome-succas.jpg",
+        "mobileImage": "",
+        "alt": "Original Welcome Succas handpainted door hanger",
+        "href": "/categories/home-decor",
+        "action": "Explore home & d\u00e9cor",
+        "imageFit": "contain"
+      }
+    ]
+  },
+  "seo": {
+    "title": "Rustic Halo | Laser cut, engraved, and handpainted products",
+    "description": "Makers of laser cut, engraved, and handpainted products."
+  }
+}

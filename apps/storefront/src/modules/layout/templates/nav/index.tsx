@@ -1,52 +1,94 @@
+import NavigationLinks from "@modules/layout/components/navigation-links"
 import HeaderSearch from "@modules/layout/components/search"
 import { Suspense } from "react"
 import Image from "next/image"
-import { listLocales } from "@lib/data/locales"
-import { getLocale } from "@lib/data/locale-actions"
-import { listRegions } from "@lib/data/regions"
-import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
-import SideMenu from "@modules/layout/components/side-menu"
+import TopMenu from "@modules/layout/components/top-menu"
 import { listCollections } from "@lib/data/collections"
 import { listCategories } from "@lib/data/categories"
 import BagIcon from "@modules/layout/components/bag-icon"
 
 export default async function Nav() {
-  const [regions, locales, currentLocale, collectionResult, categories] = await Promise.all([
-    listRegions().then((regions: StoreRegion[]) => regions),
-    listLocales(),
-    getLocale(),
+  const [{ collections }, categories] = await Promise.all([
     listCollections(),
     listCategories(),
   ])
-  const shopCategories = categories.filter((category) => !category.parent_category_id)
-  const shopCollections = collectionResult.collections.filter((collection) => collection.metadata?.grouping === "theme")
-  const mobileLinks = [
-    { name: "Shop", href: "/store" },
-    ...shopCategories.map((category) => ({ name: category.name, href: `/categories/${category.handle}` })),
-    ...shopCollections.map((collection) => ({ name: collection.title, href: `/collections/${collection.handle}` })),
-    { name: "Our Story", href: "/#our-story" },
-    { name: "Account", href: "/account" },
-    { name: "Cart", href: "/cart" },
+  const links = [
+    { name: "Shop all", href: "/store" },
+    ...categories
+      .filter((c) => !c.parent_category_id)
+      .map((c) => ({ name: c.name, href: `/categories/${c.handle}` })),
+    ...(categories.length
+      ? []
+      : collections
+          .filter((c) => c.metadata?.grouping !== "theme")
+          .map((c) => ({ name: c.title, href: `/collections/${c.handle}` }))),
+    ...collections
+      .filter((c) => c.metadata?.grouping === "theme")
+      .slice(0, 2)
+      .map((c) => ({ name: c.title, href: `/collections/${c.handle}` })),
+    { name: "Our story", href: "/#our-story" },
   ]
-
   return (
     <div className="rh-header-shell sticky top-0 inset-x-0 z-50 group">
       <header className="rh-header">
-        <nav className="rh-navigation" aria-label="Main navigation">
-          <LocalizedClientLink href="/" className="rh-brand-lockup" data-testid="nav-store-link" aria-label="Rustic Halo home">
-            <Image src="/brand/rustic-halo-web-logo.png" alt="Rustic Halo" width={512} height={205} className="rh-web-logo" priority />
+        <div className="rh-navigation">
+          <LocalizedClientLink
+            href="/"
+            className="rh-brand-lockup"
+            data-testid="nav-store-link"
+            aria-label="Rustic Halo home"
+          >
+            <Image
+              src="/brand/rustic-halo-web-logo.png"
+              alt="Rustic Halo"
+              width={512}
+              height={205}
+              className="rh-web-logo"
+              priority
+            />
           </LocalizedClientLink>
-          <div className="rh-mobile-menu">
-            <SideMenu regions={regions} locales={locales} currentLocale={currentLocale} links={mobileLinks} />
-          </div>
           <HeaderSearch />
           <div className="rh-header-actions">
-            <Suspense fallback={<LocalizedClientLink className="rh-cart-link" href="/cart" data-testid="nav-cart-link" aria-label="Shopping cart"><BagIcon /></LocalizedClientLink>}>
+            <LocalizedClientLink
+              href="/account"
+              className="rh-b-account-link"
+              aria-label="Your account"
+            >
+              <span>Account</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+              </svg>
+            </LocalizedClientLink>
+            <Suspense
+              fallback={
+                <LocalizedClientLink
+                  className="rh-cart-link"
+                  href="/cart"
+                  data-testid="nav-cart-link"
+                  aria-label="Shopping cart"
+                >
+                  <BagIcon />
+                </LocalizedClientLink>
+              }
+            >
               <CartButton />
             </Suspense>
+            <TopMenu
+              links={[...links, { name: "Account", href: "/account" }]}
+            />
           </div>
+        </div>
+        <nav className="rh-b-desktop-nav" aria-label="Main navigation">
+          <NavigationLinks links={links} />
         </nav>
       </header>
     </div>

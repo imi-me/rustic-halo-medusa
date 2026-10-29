@@ -1,87 +1,67 @@
-import { Button } from "@modules/common/components/ui"
-import { useMemo } from "react"
-
+import { HttpTypes } from "@medusajs/types"
 import Thumbnail from "@modules/products/components/thumbnail"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
-import { HttpTypes } from "@medusajs/types"
-
-type OrderCardProps = {
-  order: HttpTypes.StoreOrder
-}
-
-const OrderCard = ({ order }: OrderCardProps) => {
-  const numberOfLines = useMemo(() => {
-    return (
-      order.items?.reduce((acc, item) => {
-        return acc + item.quantity
-      }, 0) ?? 0
-    )
-  }, [order])
-
-  const numberOfProducts = useMemo(() => {
-    return order.items?.length ?? 0
-  }, [order])
-
+import { customerOrderStatus } from "@lib/util/customer-order-status"
+export default function OrderCard({ order }: { order: HttpTypes.StoreOrder }) {
+  const status = customerOrderStatus(order)
+  const count = order.items?.reduce((n, item) => n + item.quantity, 0) || 0
   return (
-    <div className="bg-white flex flex-col" data-testid="order-card">
-      <div className="uppercase text-large-semi mb-1">
-        #<span data-testid="order-display-id">{order.display_id}</span>
-      </div>
-      <div className="flex items-center divide-x divide-gray-200 text-small-regular text-ui-fg-base">
-        <span className="pr-2" data-testid="order-created-at">
-          {new Date(order.created_at).toDateString()}
+    <article className="rh-b-order-card" data-testid="order-card">
+      <div className="rh-b-order-card-top">
+        <div>
+          <LocalizedClientLink
+            href={`/account/orders/details/${order.id}`}
+            className="rh-b-order-number"
+          >
+            #<span data-testid="order-display-id">{order.display_id}</span>
+          </LocalizedClientLink>
+          <time
+            data-testid="order-created-at"
+            dateTime={new Date(order.created_at).toISOString()}
+          >
+            {new Date(order.created_at).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </time>
+        </div>
+        <span className={`rh-b-status rh-b-status-${status.group}`}>
+          {status.label}
         </span>
-        <span className="px-2" data-testid="order-amount">
-          {convertToLocale({
-            amount: order.total,
-            currency_code: order.currency_code,
-          })}
-        </span>
-        <span className="pl-2">{`${numberOfLines} ${
-          numberOfLines > 1 ? "items" : "item"
-        }`}</span>
       </div>
-      <div className="grid grid-cols-2 small:grid-cols-4 gap-4 my-4">
-        {order.items?.slice(0, 3).map((i) => {
-          return (
-            <div
-              key={i.id}
-              className="flex flex-col gap-y-2"
-              data-testid="order-item"
-            >
-              <Thumbnail thumbnail={i.thumbnail} images={[]} size="full" />
-              <div className="flex items-center text-small-regular text-ui-fg-base">
-                <span
-                  className="text-ui-fg-base font-semibold"
-                  data-testid="item-title"
-                >
-                  {i.title}
-                </span>
-                <span className="ml-2">x</span>
-                <span data-testid="item-quantity">{i.quantity}</span>
-              </div>
+      <div className="rh-b-order-card-bottom">
+        <div className="rh-b-order-thumbs">
+          {order.items?.slice(0, 3).map((item) => (
+            <div key={item.id} data-testid="order-item">
+              <Thumbnail thumbnail={item.thumbnail} size="square" />
+              <span className="sr-only" data-testid="item-title">
+                {item.title}
+              </span>
             </div>
-          )
-        })}
-        {numberOfProducts > 4 && (
-          <div className="w-full h-full flex flex-col items-center justify-center">
-            <span className="text-small-regular text-ui-fg-base">
-              + {numberOfLines - 4}
-            </span>
-            <span className="text-small-regular text-ui-fg-base">more</span>
-          </div>
-        )}
-      </div>
-      <div className="flex justify-end">
-        <LocalizedClientLink href={`/account/orders/details/${order.id}`}>
-          <Button data-testid="order-details-link" variant="secondary">
-            See details
-          </Button>
+          ))}
+          <span>
+            {count} {count === 1 ? "piece" : "pieces"}
+          </span>
+        </div>
+        <div className="rh-b-order-total">
+          <small>Order total</small>
+          <strong data-testid="order-amount">
+            {convertToLocale({
+              amount: order.total,
+              currency_code: order.currency_code,
+            })}
+          </strong>
+        </div>
+        <LocalizedClientLink
+          href={`/account/orders/details/${order.id}`}
+          className="rh-b-order-link"
+          data-testid="order-details-link"
+        >
+          View order →
         </LocalizedClientLink>
       </div>
-    </div>
+    </article>
   )
 }
-
-export default OrderCard

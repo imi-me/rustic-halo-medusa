@@ -1,168 +1,110 @@
-import { Container } from "@modules/common/components/ui"
-
-import ChevronDown from "@modules/common/icons/chevron-down"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-
-type OverviewProps = {
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { customerOrderStatus } from "@lib/util/customer-order-status"
+import OrderCard from "../order-card"
+export default function Overview({
+  customer,
+  orders,
+}: {
   customer: HttpTypes.StoreCustomer | null
   orders: HttpTypes.StoreOrder[] | null
-}
-
-const Overview = ({ customer, orders }: OverviewProps) => {
+}) {
+  const address =
+    customer?.addresses?.find((a) => a.is_default_shipping) ||
+    customer?.addresses?.[0]
+  const active =
+    orders?.filter((order) => customerOrderStatus(order).group === "active")
+      .length || 0
   return (
     <div data-testid="overview-page-wrapper">
-      <div className="hidden small:block">
-        <div className="text-xl-semi flex justify-between items-center mb-4">
-          <span data-testid="welcome-message" data-value={customer?.first_name}>
-            Hello {customer?.first_name}
-          </span>
-          <span className="text-small-regular text-ui-fg-base">
-            Signed in as:{" "}
-            <span
-              className="font-semibold"
-              data-testid="customer-email"
-              data-value={customer?.email}
-            >
-              {customer?.email}
-            </span>
-          </span>
-        </div>
-        <div className="flex flex-col py-8 border-t border-gray-200">
-          <div className="flex flex-col gap-y-4 h-full col-span-1 row-span-2 flex-1">
-            <div className="flex items-start gap-x-16 mb-6">
-              <div className="flex flex-col gap-y-4">
-                <h3 className="text-large-semi">Profile</h3>
-                <div className="flex items-end gap-x-2">
-                  <span
-                    className="text-3xl-semi leading-none"
-                    data-testid="customer-profile-completion"
-                    data-value={getProfileCompletion(customer)}
-                  >
-                    {getProfileCompletion(customer)}%
-                  </span>
-                  <span className="uppercase text-base-regular text-ui-fg-subtle">
-                    Completed
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-y-4">
-                <h3 className="text-large-semi">Addresses</h3>
-                <div className="flex items-end gap-x-2">
-                  <span
-                    className="text-3xl-semi leading-none"
-                    data-testid="addresses-count"
-                    data-value={customer?.addresses?.length || 0}
-                  >
-                    {customer?.addresses?.length || 0}
-                  </span>
-                  <span className="uppercase text-base-regular text-ui-fg-subtle">
-                    Saved
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-y-4">
-              <div className="flex items-center gap-x-2">
-                <h3 className="text-large-semi">Recent orders</h3>
-              </div>
-              <ul
-                className="flex flex-col gap-y-4"
-                data-testid="orders-wrapper"
-              >
-                {orders && orders.length > 0 ? (
-                  orders.slice(0, 5).map((order) => {
-                    return (
-                      <li
-                        key={order.id}
-                        data-testid="order-wrapper"
-                        data-value={order.id}
-                      >
-                        <LocalizedClientLink
-                          href={`/account/orders/details/${order.id}`}
-                        >
-                          <Container className="bg-gray-50 flex justify-between items-center p-4">
-                            <div className="grid grid-cols-3 grid-rows-2 text-small-regular gap-x-4 flex-1">
-                              <span className="font-semibold">Date placed</span>
-                              <span className="font-semibold">
-                                Order number
-                              </span>
-                              <span className="font-semibold">
-                                Total amount
-                              </span>
-                              <span data-testid="order-created-date">
-                                {new Date(order.created_at).toDateString()}
-                              </span>
-                              <span
-                                data-testid="order-id"
-                                data-value={order.display_id}
-                              >
-                                #{order.display_id}
-                              </span>
-                              <span data-testid="order-amount">
-                                {convertToLocale({
-                                  amount: order.total,
-                                  currency_code: order.currency_code,
-                                })}
-                              </span>
-                            </div>
-                            <button
-                              className="flex items-center justify-between"
-                              data-testid="open-order-button"
-                            >
-                              <span className="sr-only">
-                                Go to order #{order.display_id}
-                              </span>
-                              <ChevronDown className="-rotate-90" />
-                            </button>
-                          </Container>
-                        </LocalizedClientLink>
-                      </li>
-                    )
-                  })
-                ) : (
-                  <span data-testid="no-orders-message">No recent orders</span>
-                )}
-              </ul>
-            </div>
+      <div className="rh-b-account-heading">
+        <h1 data-testid="welcome-message" data-value={customer?.first_name}>
+          Good to see you
+          {customer?.first_name ? `, ${customer.first_name}` : ""}.
+        </h1>
+        <p>
+          Your little favorites, recent orders, and the details that make it
+          yours.
+        </p>
+      </div>
+      <div className="rh-b-account-stats">
+        <LocalizedClientLink href="/account/orders">
+          <span>Order history</span>
+          <strong>
+            {orders?.length || 0} <small>recent orders</small>
+          </strong>
+        </LocalizedClientLink>
+        <LocalizedClientLink href="/account/orders">
+          <span>A little something on its way</span>
+          <strong>
+            {active} <small>in progress</small>
+          </strong>
+        </LocalizedClientLink>
+        <LocalizedClientLink href="/account/addresses">
+          <span>Delivery details</span>
+          <strong data-testid="addresses-count">
+            {customer?.addresses?.length || 0} <small>saved addresses</small>
+          </strong>
+        </LocalizedClientLink>
+      </div>
+      <div className="rh-b-account-dashboard">
+        <section>
+          <div className="rh-b-section-heading">
+            <h2>Your latest order</h2>
+            <LocalizedClientLink href="/account/orders" className="rh-b-link">
+              All orders ↗
+            </LocalizedClientLink>
           </div>
+          {orders?.length ? (
+            <OrderCard order={orders[0]} />
+          ) : (
+            <div className="rh-b-panel rh-b-empty">
+              <h3>Your first little find is waiting.</h3>
+              <p>Your orders will appear here once you place an order.</p>
+              <LocalizedClientLink href="/store" className="rh-b-button">
+                Explore the collection ↗
+              </LocalizedClientLink>
+            </div>
+          )}
+        </section>
+        <div className="rh-b-account-side">
+          <section className="rh-b-panel rh-b-profile-card">
+            <div className="rh-b-avatar">
+              {customer?.first_name?.[0]}
+              {customer?.last_name?.[0]}
+            </div>
+            <h2>
+              {customer?.first_name} {customer?.last_name}
+            </h2>
+            <p data-testid="customer-email">{customer?.email}</p>
+            <LocalizedClientLink href="/account/profile" className="rh-b-link">
+              Manage account details ↗
+            </LocalizedClientLink>
+          </section>
+          <section className="rh-b-panel">
+            <h2>Delivery address</h2>
+            {address ? (
+              <p className="rh-b-address">
+                {address.first_name} {address.last_name}
+                <br />
+                {address.address_1}
+                <br />
+                {address.city}, {address.province} {address.postal_code}
+                <br />
+                {address.country_code?.toUpperCase()}
+              </p>
+            ) : (
+              <p>Add an address for your next little find.</p>
+            )}
+            <LocalizedClientLink
+              href="/account/addresses"
+              className="rh-b-link"
+            >
+              Manage addresses ↗
+            </LocalizedClientLink>
+          </section>
         </div>
       </div>
     </div>
   )
 }
-
-const getProfileCompletion = (customer: HttpTypes.StoreCustomer | null) => {
-  let count = 0
-
-  if (!customer) {
-    return 0
-  }
-
-  if (customer.email) {
-    count++
-  }
-
-  if (customer.first_name && customer.last_name) {
-    count++
-  }
-
-  if (customer.phone) {
-    count++
-  }
-
-  const billingAddress = customer.addresses?.find(
-    (addr) => addr.is_default_billing
-  )
-
-  if (billingAddress) {
-    count++
-  }
-
-  return (count / 4) * 100
-}
-
-export default Overview
