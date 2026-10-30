@@ -8,7 +8,7 @@ export default async function orderConfirmationHandler({ event: { data }, contai
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const { data: orders } = await query.graph({
     entity: 'order',
-    fields: ['id', 'display_id', 'email', 'customer_id', 'currency_code', 'subtotal', 'shipping_subtotal', 'tax_total', 'discount_total', 'total', 'items.title', 'items.variant_title', 'items.quantity', 'items.subtotal', 'shipping_address.*', 'shipping_methods.name'],
+    fields: ['id', 'display_id', 'email', 'customer_id', 'currency_code', 'subtotal', 'shipping_subtotal', 'tax_total', 'discount_total', 'total', 'items.title', 'items.variant_title', 'items.metadata', 'items.quantity', 'items.subtotal', 'shipping_address.*', 'shipping_methods.name'],
     filters: { id: data.id },
   })
   const order = orders[0]
@@ -23,7 +23,7 @@ export default async function orderConfirmationHandler({ event: { data }, contai
     number: order.display_id ?? order.id,
     customerName: address?.first_name || 'there',
     currency: order.currency_code,
-    items: (order.items || []).map(item => ({ title: item!.title, variant: item!.variant_title || undefined, quantity: item!.quantity, total: amount(item!.subtotal) })),
+    items: (order.items || []).map(item => ({ title: item!.title, variant: [item!.variant_title && item!.variant_title !== 'Default Title' ? item!.variant_title : undefined, typeof item!.metadata?.hair_claw_color === 'string' ? `Color: ${item!.metadata.hair_claw_color}` : undefined].filter(Boolean).join(' · ') || undefined, quantity: item!.quantity, total: amount(item!.subtotal) })),
     subtotal: amount(order.subtotal), shipping: amount(order.shipping_subtotal), tax: amount(order.tax_total), discount: amount(order.discount_total), total: amount(order.total),
     addressLines: address ? [
       [address.first_name, address.last_name].filter(Boolean).join(' '), address.company, address.address_1, address.address_2,

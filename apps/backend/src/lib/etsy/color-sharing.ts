@@ -50,7 +50,51 @@ export function inventoryBody(inventory: any) {
     readiness_state_on_property: inventory.readiness_state_on_property ?? [],
   }
 }
+// Etsy keeps Color as a buyer choice, but it no longer changes SKU, price or allocation.
+function planOrderColorSharing(inventory: any, selection: Export) {
+  const body = inventoryBody(inventory)
+  if (!body.products.length || body.products.some((row: any) => row.offerings.length !== 1)) throw Error('Review existing Etsy inventory before simplifying colors.')
+  const schema = body.products[0].property_values
+  const colorProperty = schema.find((p: any) => canonical(p.property_name) === 'color')
+  if (!colorProperty) throw Error('Set up the existing Etsy Color choice before sharing.')
+  const combination = (values: any[], includeColor = true) => JSON.stringify(values.filter(p => includeColor || p.property_id !== colorProperty.property_id).map(p => [p.property_id, normalized(canonical(p.property_name), p.values[0])]).sort())
+  const changes: any[] = [], groups = new Map<string, any>()
+  for (const selected of selection.variants) {
+    if (selected.color_mode !== 'order' || selected.inventory_mode !== 'made_to_order_color_option') throw Error('Review mixed stock/color policies before sharing.')
+    const options = Object.fromEntries(Object.entries(selected.options).map(([name,value]) => [canonical(name), String(value)]))
+    const values = schema.map((property: any) => {
+      const desired = options[canonical(property.property_name)]
+      if (!desired) throw Error(`Map ${property.property_name} before sharing.`)
+      const saved = body.products.flatMap((row: any) => row.property_values).find((p: any) => p.property_id === property.property_id && normalized(canonical(p.property_name), p.values[0]) === normalized(canonical(p.property_name), desired))
+      return saved ?? { ...property, value_ids: [], values: [desired] }
+    })
+    const key = combination(values, false), group = groups.get(key)
+    if (group && (group.sku !== selected.sku || group.price !== selected.price || group.quantity !== selected.quantity)) throw Error('Colors of one size/finish must share the original SKU, price and Etsy allocation.')
+    groups.set(key, selected)
+    const match = body.products.find((row: any) => combination(row.property_values) === combination(values))
+    const next = { sku: selected.sku, property_values: values, offerings: [{ ...(match?.offerings[0] ?? body.products[0].offerings[0]), price: selected.price, quantity: selected.quantity, is_enabled: selected.quantity > 0 }] }
+    changes.push({ sku: selected.sku, medusa_sku: selected.sku, color: selected.color, before: match ? {sku: match.sku, ...match.offerings[0]} : null, after: next.offerings[0], image_url: selected.image_url })
+    if (match) body.products[body.products.indexOf(match)] = next
+    else body.products.push(next)
+  }
+  // Retain existing choices, quantities and prices. Fail rather than silently alter an unreviewed offer.
+  for (const row of body.products) {
+    const selected = groups.get(combination(row.property_values, false))
+    if (!selected) throw Error('Include every existing Etsy size/finish in the review before simplifying its SKUs.')
+    if (row.offerings[0].price !== selected.price || row.offerings[0].quantity !== selected.quantity || row.offerings[0].is_enabled !== (selected.quantity > 0)) throw Error('Existing Etsy colors have different prices or allocations. Review all colors together before simplifying.')
+    row.sku = selected.sku
+  }
+  const combinations = body.products.map((row: any) => combination(row.property_values))
+  if (new Set(combinations).size !== combinations.length) throw Error('Etsy has duplicate color combinations.')
+  const ids = schema.filter((p: any) => p.property_id !== colorProperty.property_id).map((p: any) => p.property_id)
+  body.sku_on_property = ids
+  body.price_on_property = ids
+  body.quantity_on_property = ids
+  if (body.products.length > 400) throw Error('Review this listing’s combination limit before sharing.')
+  return { body, changes, preserved: body.products.length - changes.length, note: 'Color is an order choice. Original design SKUs are shared across colors; only actual size/finish offers remain. No Copper Mill inventory is copied.' }
+}
 export function planColorSharing(inventory: any, selection: Export, existingFinish: string) {
+  if (selection.variants.length && selection.variants.every(row => row.color_mode === 'order')) return planOrderColorSharing(inventory, selection)
   const body = inventoryBody(inventory)
   if (!selection.variants.length) throw new Error('Select at least one saved sellable color.')
   if (selection.variants.some((row) => row.inventory_mode !== 'made_to_order_color_option'))
@@ -279,7 +323,7 @@ export async function applyColorSharing(
     throw new Error('Etsy color update could not be confirmed. Review Etsy before trying again.')
   const fresh = inventoryBody(await inventory(access, selection.listing_id!, request))
   for (const row of review.body.products) {
-    const confirmed = fresh.products.find((item: any) => item.sku === row.sku)
+    const confirmed = fresh.products.find((item: any) => item.sku === row.sku && item.property_values.length === row.property_values.length && item.property_values.every((p:any) => row.property_values.some((v:any) => v.property_id === p.property_id && normalized(canonical(v.property_name), v.values[0]) === normalized(canonical(p.property_name), p.values[0]))))
     if (
       !confirmed ||
       JSON.stringify(confirmed.property_values.map((property: any) => property.property_id).sort()) !== JSON.stringify(row.property_values.map((property: any) => property.property_id).sort()) ||
@@ -299,6 +343,7 @@ export async function applyColorSharing(
         'Etsy accepted the request but the color inventory did not read back as expected. Review Etsy before retrying.',
       )
   }
+  for (const key of ['sku_on_property','price_on_property','quantity_on_property'] as const) if (JSON.stringify([...fresh[key]].sort()) !== JSON.stringify([...review.body[key]].sort())) throw Error('Etsy variation rules did not read back as expected.')
   await ops.updateAdminOperations({ id: operation.id, status: 'complete' })
   return {
     changes: review.changes,

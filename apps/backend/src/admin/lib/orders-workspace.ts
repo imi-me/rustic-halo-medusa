@@ -14,7 +14,7 @@ export type WorkspaceOrder = Omit<OverviewOrder, "items"> & {
     postal_code?: string;
     country_code?: string;
   };
-  items: Array<OverviewOrder["items"][number] & { total?: number }>;
+  items: Array<OverviewOrder["items"][number] & { total?: number; metadata?: Record<string, unknown> | null; variant_title?: string }>;
 };
 export const needsFulfillment = (order: OverviewOrder) =>
   order.status !== "canceled" &&

@@ -85,7 +85,7 @@ const WebsiteOrdersWorkspace = () => {
     setDetailError("");
     if (selected)
       readOrders<{ order: WorkspaceOrder }>(
-        `/admin/orders/${encodeURIComponent(selected)}?fields=%2Bcurrency_code,%2Bemail,%2Bcustomer.first_name,%2Bcustomer.last_name`,
+        `/admin/orders/${encodeURIComponent(selected)}?fields=%2Bcurrency_code,%2Bemail,%2Bcustomer.first_name,%2Bcustomer.last_name,%2Bitems.metadata`,
         controller.signal,
       )
         .then((result) => {
@@ -376,6 +376,7 @@ const WebsiteOrdersWorkspace = () => {
                       <div>
                         <strong>{item.title}</strong>
                         <small>Quantity: {item.quantity}</small>
+                        {typeof item.metadata?.hair_claw_color === 'string' && <small>Color: {item.metadata.hair_claw_color}</small>}
                       </div>
                       {item.total != null && (
                         <span>

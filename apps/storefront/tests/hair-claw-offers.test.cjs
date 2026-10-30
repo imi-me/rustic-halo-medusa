@@ -37,3 +37,13 @@ test('finish-specific checkboxes hide only that finish and honor overrides of ol
  assert.equal(key,JSON.stringify(['4',[['finish','Natural'],['size','4 inch']]]));
  p.metadata.hair_claw_colors_v1.excluded_by_size['4']=[];p.metadata.hair_claw_colors_v1.excluded_by_group[key]=['Black','Rose'];const onlyPainted=applyHairClawTemplate(p);assert.equal(onlyPainted.variants.length,2);assert.equal(initialProductOptions(onlyPainted,'NaturalBlack').finish,'Painted');
 });
+
+test('order colors retain one original SKU and barcode, hide generated rows and expose only actual size/finish options',()=>{
+ const p={metadata:{hair_claw_template_v2:{version:2,color_mode:'order',variant_ids:['original'],option_ids:['size'],size_option_id:'size',color_option_id:'color',default_variant_id:'original',order_choices:{original:{size:'4',options:[{option_id:'size',value:'4 inch'}],aliases:['old-black','old-rose']}}}},options:[{id:'size',title:'Size',values:[{id:'s2',value:'2 inch'},{id:'s4',value:'4 inch'}]},{id:'color',title:'Color',values:[{id:'black',value:'Black'}]}],variants:[{id:'original',sku:'HC38737',barcode:'INV386710259',options:[],calculated_price:{calculated_amount:15}},{id:'old-black',sku:'EXTRA-BLACK',options:[]}]}
+ const out=applyHairClawTemplate(p)
+ assert.equal(out.variants.length,1);assert.equal(out.variants[0].sku,'HC38737');assert.equal(out.variants[0].barcode,'INV386710259');assert.equal(out.variants[0].calculated_price.calculated_amount,15)
+ assert.equal(out.options.length,1);assert.equal(out.options[0].values.length,1);assert.equal(out.options[0].values[0].value,'4 inch')
+ assert.equal(initialProductOptions(out,'old-black').size,'4 inch')
+ assert.ok(c.exports.orderClawColors(out,out.variants[0]).some(color=>color.name==='Rose'))
+ p.metadata.hair_claw_colors_v1={excluded:['Rose']};assert.ok(!c.exports.orderClawColors(applyHairClawTemplate(p),out.variants[0]).some(color=>color.name==='Rose'))
+})

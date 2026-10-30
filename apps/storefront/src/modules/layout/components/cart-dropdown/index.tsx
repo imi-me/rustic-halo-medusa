@@ -145,7 +145,7 @@ const CartDropdown = ({
                                   </LocalizedClientLink>
                                 </h3>
                                 <LineItemOptions
-                                  variant={item.variant}
+                                  variant={item.variant} metadata={item.metadata}
                                   data-testid="cart-item-variant"
                                   data-value={item.variant}
                                 />

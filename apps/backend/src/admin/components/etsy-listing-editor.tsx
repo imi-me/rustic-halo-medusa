@@ -325,8 +325,7 @@ export function EtsyListingEditor({
               </select>
             </label>
             <p>
-              Select saved sellable variants and allocate Etsy quantities explicitly. Preview
-              swatches do not create purchasable colors. Approved static photos can accompany the
+              Select the colors customers can order. Each size/finish keeps its existing SKU; use the same Etsy allocation for its colors. Approved static photos can accompany the
               export.
             </p>
             {!colorVariants.length && (
@@ -356,7 +355,7 @@ export function EtsyListingEditor({
                   </label>
                   {selected && (
                     <>
-                      <label className="rh-inline-field"><span>Existing Etsy SKU to link (optional)</span><input value={selected.etsy_sku ?? ''} placeholder="Leave blank for the Medusa SKU" onChange={event => change({ ...value, colors: value.colors.map(row => row.variant_id === variant.id ? { ...row, etsy_sku: event.target.value } : row) })}/><small>Link an existing matching Etsy option without changing its SKU.</small></label>
+                      {product.metadata?.hair_claw_template_v2?.color_mode !== 'order' && <label className="rh-inline-field"><span>Existing Etsy SKU to link (optional)</span><input value={selected.etsy_sku ?? ''} placeholder="Leave blank for the Medusa SKU" onChange={event => change({ ...value, colors: value.colors.map(row => row.variant_id === variant.id ? { ...row, etsy_sku: event.target.value } : row) })}/><small>Link an existing matching Etsy option without changing its SKU.</small></label>}
                       {addColorImage && (
                         <HairClawPreviewExport
                           product={product}

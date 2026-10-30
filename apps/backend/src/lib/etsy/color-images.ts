@@ -40,7 +40,7 @@ export async function reviewColorImages(
   let propertyId: number | null = null
   for (const row of selected) {
     const variant = inventory.products?.find(
-      (variant: any) => variant.sku === (row.etsy_sku || row.sku) && !variant.is_deleted,
+      (variant: any) => variant.sku === (row.etsy_sku || row.sku) && !variant.is_deleted && (row.color_mode !== 'order' || variant.property_values?.every((p:any) => { const key = Object.keys(row.options).find(name => /colou?r/i.test(p.property_name) ? /colou?r/i.test(name) : /size/i.test(p.property_name) ? /size/i.test(name) : /finish/i.test(p.property_name) ? /finish/i.test(name) : name.toLowerCase() === p.property_name.toLowerCase()); const wanted = key ? row.options[key] : undefined; return wanted && (/size/i.test(p.property_name) ? String(wanted).match(/\d+/)?.[0] === String(p.values[0]).match(/\d+/)?.[0] : String(wanted).toLowerCase() === String(p.values[0]).toLowerCase()) })),
     )
     const color = variant?.property_values?.find((property: any) =>
       /colou?r/i.test(property.property_name),

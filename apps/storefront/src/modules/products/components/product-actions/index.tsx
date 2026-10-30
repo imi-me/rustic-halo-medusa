@@ -31,6 +31,7 @@ import { isHairClaw } from "@lib/util/is-hair-claw"
 import {
   hairClawTemplate,
   initialProductOptions,
+  orderClawColors,
 } from "@lib/util/hair-claw-template"
 import ClawColorPicker from "@modules/products/components/claw-color-picker"
 import { productClawColors, clawSize } from "@lib/util/hair-claw-template"
@@ -63,6 +64,9 @@ export default function ProductActions({
     () => initialProductOptions(product, searchParams.get("v_id"))
   )
   const template = hairClawTemplate(product)
+  const orderColors = template?.color_mode === 'order'
+  const [orderColor, setOrderColor] = useState(searchParams.get('color') || '')
+  const [addError, setAddError] = useState('')
   const ownNavigations = useRef(new Set<string>())
   const lastRoute = useRef({
     productId: product.id,
@@ -89,7 +93,7 @@ export default function ProductActions({
     isHealingHeartsProof && previewColor.slug !== "black"
 
   useEffect(() => {
-    setProductSelection({ productId: product.id, options })
+    setProductSelection({ productId: product.id, options: orderColors ? { ...options, claw_order_color: orderColor } : options })
     const selectedSize = sizeOptionId ? options[sizeOptionId] : undefined
     setCanPreviewFourInch(
       product.handle === HAPPY_COW_HANDLE &&
@@ -99,6 +103,8 @@ export default function ProductActions({
     product.id,
     product.handle,
     options,
+    orderColors,
+    orderColor,
     setCanPreviewFourInch,
     setProductSelection,
     sizeOptionId,
@@ -148,6 +154,12 @@ export default function ProductActions({
       return isEqual(variantOptions, options)
     })
   }, [product.variants, options])
+
+  const availableOrderColors = orderColors ? orderClawColors(product, selectedVariant) : []
+  const selectedOrderColor = availableOrderColors.find(color => color.slug === orderColor)
+  useEffect(() => {
+    if (orderColors) setOrderColor(searchParams.get('color') || '')
+  }, [product.id, orderColors, searchParams])
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
@@ -232,17 +244,22 @@ export default function ProductActions({
 
   // add the selected variant to the cart
   const handleAddToCart = async () => {
-    if (!selectedVariant?.id) return null
+    if (!selectedVariant?.id || (orderColors && !selectedOrderColor)) return null
 
     setIsAdding(true)
 
-    await addToCart({
-      variantId: selectedVariant.id,
-      quantity,
-      countryCode,
-    })
+    setAddError('')
+    try {
+      await addToCart({
+        variantId: selectedVariant.id,
+        quantity,
+        countryCode,
+        ...(selectedOrderColor ? { hairClawColor: selectedOrderColor.name } : {}),
+      })
+    } catch (error) {
+      setAddError(error instanceof Error ? error.message : 'The item could not be added. Please try again.')
+    } finally { setIsAdding(false) }
 
-    setIsAdding(false)
   }
 
   if (template?.offer_mode && !product.variants?.length)
@@ -358,6 +375,17 @@ export default function ProductActions({
           )}
         </div>
 
+        {orderColors && <ClawColorPicker
+          colors={availableOrderColors} compact purchase productName={product.title || 'hair claw'}
+          value={selectedOrderColor?.slug || ''} disabled={!!disabled || isAdding}
+          onChange={(slug) => {
+            setOrderColor(slug)
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('color', slug)
+            router.replace(pathname + '?' + params.toString(), { scroll: false })
+          }}
+        />}
+        {addError && <p role="alert">{addError}</p>}
         <div
           className="rh-purchase-row"
           ref={isHairClaw(product) ? actionsRef : undefined}
@@ -390,6 +418,7 @@ export default function ProductActions({
           <Button
             onClick={handleAddToCart}
             disabled={
+              (orderColors && !selectedOrderColor) ||
               !inStock ||
               !selectedVariant ||
               !!disabled ||
@@ -402,7 +431,7 @@ export default function ProductActions({
             isLoading={isAdding}
             data-testid="add-product-button"
           >
-            {isPreviewOnlyColor
+            {orderColors && !selectedOrderColor ? 'Choose color' : isPreviewOnlyColor
               ? "Color preview only"
               : !selectedVariant
               ? "Select variant"
@@ -423,7 +452,7 @@ export default function ProductActions({
           options={options}
           optionsToDisplay={displayOptions}
           updateOptions={setOptionValue}
-          inStock={inStock}
+          inStock={inStock && (!orderColors || !!selectedOrderColor)}
           handleAddToCart={handleAddToCart}
           isAdding={isAdding}
           show={!inView}

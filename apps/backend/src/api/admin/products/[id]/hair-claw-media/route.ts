@@ -4,7 +4,7 @@ import { MedusaError, Modules } from '@medusajs/framework/utils'
 import { IProductModuleService, IFileModuleService } from '@medusajs/framework/types'
 import { HAIR_CLAW_KEY, saveSchema, templates } from '../../../../../lib/hair-claw-settings'
 import { randomUUID } from 'node:crypto'
-import { offerProduct, offerPrices, saveTypeOffer } from '../../../../../lib/hair-claw-offers'
+import { offerProduct, offerPrices, saveTypeOffer, availableClawOffers } from '../../../../../lib/hair-claw-offers'
 import { allowedOrigin } from '../../../assistant/route'
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
@@ -12,8 +12,10 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const product = await products.retrieveProduct(req.params.id, { relations: ['images'] })
   res.setHeader('Cache-Control', 'no-store')
   const offerMode = Boolean(product.metadata?.hair_claw_template_v2 && (product.metadata.hair_claw_template_v2 as any).offer_mode)
-  res.json({ settings: product.metadata?.[HAIR_CLAW_KEY] || { revision: null, recipes: {} }, templates,
-    offer_mode: offerMode, offer_prices: offerMode ? offerPrices(await offerProduct(req.scope, req.params.id)) : {},
+  const fullProduct = offerMode ? await offerProduct(req.scope, req.params.id) : product
+  const choiceConfig = product.metadata?.hair_claw_template_v2 as any
+  res.json({ available_offers: availableClawOffers(fullProduct), available_sizes: choiceConfig?.color_mode === 'order' ? [...new Set(Object.values(choiceConfig.order_choices).map((c:any)=>c.size))] : ['2','4'], order_colors: choiceConfig?.color_mode === 'order', settings: product.metadata?.[HAIR_CLAW_KEY] || { revision: null, recipes: {} }, templates,
+    offer_mode: offerMode, offer_prices: offerMode ? offerPrices(fullProduct) : {},
     images: (product.images || []).map(image => ({id:image.id, url:image.url})),
     preview_origin: process.env.HAIR_CLAW_PREVIEW_ORIGIN || process.env.STORE_CORS?.split(',')[0] || null })
 }

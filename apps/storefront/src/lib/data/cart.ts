@@ -118,10 +118,12 @@ export async function addToCart({
   variantId,
   quantity,
   countryCode,
+  hairClawColor,
 }: {
   variantId: string
   quantity: number
   countryCode: string
+  hairClawColor?: string
 }) {
   if (!variantId) {
     throw new Error("Missing variant ID when adding to cart")
@@ -143,6 +145,7 @@ export async function addToCart({
       {
         variant_id: variantId,
         quantity,
+        ...(hairClawColor ? {metadata: {hair_claw_color: hairClawColor}} : {}),
       },
       {},
       headers

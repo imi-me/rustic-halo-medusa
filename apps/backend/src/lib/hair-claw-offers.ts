@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { MedusaError, Modules } from '@medusajs/framework/utils'
-import { createProductOptionsWorkflow, createProductVariantsWorkflow, updateProductVariantsWorkflow } from '@medusajs/medusa/core-flows'
+import { updateProductVariantsWorkflow } from '@medusajs/medusa/core-flows'
 import { HAIR_CLAW_KEY } from './hair-claw-settings'
 import { colorSupportsSize, variantClawColor } from './hair-claw-colors'
 import { readClawPalette } from './hair-claw-color-store'
 import { ADMIN_OPERATIONS } from '../modules/admin-operations'
+import { usesClawOrderColors } from './hair-claw-order-choices'
 
 export const offerTypes = [
   { key:'2-natural', size:'2', finish:'natural', label:'2 inch · Natural' },
@@ -22,11 +23,22 @@ const baseUsd = (price:any) => !price.price_list_id && price.currency_code === '
 export function priceRevision(variants:any[]) {
   return createHash('sha256').update(JSON.stringify(variants.map(v=>({id:v.id,prices:(v.price_set?.prices || []).map((p:any)=>({id:p.id,updated_at:p.updated_at,amount:p.amount,currency:p.currency_code,min:p.min_quantity,max:p.max_quantity,rules:p.price_rules})).sort((a:any,b:any)=>a.id.localeCompare(b.id))})).sort((a,b)=>a.id.localeCompare(b.id)))).digest('hex')
 }
+function variantsForOffer(product:any,type:typeof offerTypes[number]) {
+  const config=product.metadata?.hair_claw_template_v2
+  const ids=new Set(product.metadata?.[HAIR_CLAW_KEY]?.offers?.[type.key]?.variant_ids || [])
+  return (product.variants || []).filter((v:any)=> {
+    if (!usesClawOrderColors(product)) return ids.has(v.id)
+    const choice=config.order_choices?.[v.id]
+    return config.variant_ids.includes(v.id) && choice?.size===type.size && (choice.finish ?? 'natural')===type.finish
+  })
+}
+export function availableClawOffers(product:any) {
+  return usesClawOrderColors(product) ? offerTypes.filter(type=>variantsForOffer(product,type).length).map(type=>[type.key,type.label]) : offerTypes.map(type=>[type.key,type.label])
+}
 export function offerPrices(product:any) {
   const settings = product.metadata?.[HAIR_CLAW_KEY] || {}
   return Object.fromEntries(offerTypes.map(type=>{
-    const ids = new Set(settings.offers?.[type.key]?.variant_ids || [])
-    const variants = (product.variants || []).filter((v:any)=>ids.has(v.id))
+    const variants = variantsForOffer(product,type)
     const amounts = variants.map((v:any)=>v.price_set?.prices?.filter(baseUsd)).filter(Boolean)
     const same = variants.length > 0 && amounts.every((a:any)=>a.length===1 && Number(a[0].amount)===Number(amounts[0]?.[0]?.amount))
     return [type.key,{amount:settings.draft_prices?.[type.key] ?? (same ? Number(amounts[0][0].amount) : null),currency:'usd',revision:priceRevision(variants),enabled:settings.recipes?.[type.key]?.enabled === true}]
@@ -35,6 +47,7 @@ export function offerPrices(product:any) {
 export function activeOfferVariantIds(metadata:any):Set<string> | null {
   const config = metadata?.hair_claw_template_v2
   if (!config) return null
+  if (config.color_mode === 'order') return new Set(config.variant_ids)
   if (!config.offer_mode) return Array.isArray(config.variant_ids) ? new Set(config.variant_ids) : null
   const media = metadata[HAIR_CLAW_KEY] || {}
   return new Set(offerTypes.flatMap(type=>media.recipes?.[type.key]?.enabled ? media.offers?.[type.key]?.variant_ids || [] : []))
@@ -52,7 +65,7 @@ export async function saveTypeOffer(scope:any,id:string,input:any) {
     const previous = product.metadata?.[HAIR_CLAW_KEY] || {revision:null,recipes:{}}
     if ((previous.revision || null)!==input.revision) throw new MedusaError(MedusaError.Types.CONFLICT,'Overlay settings changed in another editor. Reload before saving.')
     const recipes={...previous.recipes},drafts={...previous.drafts},draftPrices={...previous.draft_prices},offers={...previous.offers}
-    const ids=new Set(offers[type.key]?.variant_ids || []),existing=product.variants.filter((v:any)=>ids.has(v.id))
+    const existing=variantsForOffer(product,type)
     if (input.pricing_revision!==priceRevision(existing)) throw new MedusaError(MedusaError.Types.CONFLICT,'This option’s prices changed. Reload before saving; your draft is kept.')
     let recipe=input.recipe
     if (recipe) {
@@ -62,32 +75,15 @@ export async function saveTypeOffer(scope:any,id:string,input:any) {
       if (!['http:','https:'].includes(address.protocol)||address.username||address.password) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Choose a saved HTTP image.')
       recipe={...recipe,url:source.url,template:`${type.size}-inch-v1`,finish:type.finish}
     }
-    let nextConfig={...config}
+    const nextConfig={...config}
     if (recipe?.enabled) {
       const palette = await readClawPalette(scope.resolve(ADMIN_OPERATIONS))
       const colors = palette.colors.filter(c => c.active && colorSupportsSize(c, type.size)).map(c => c.name)
       if (!colors.length) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'Choose shared colors for this size before enabling its offer.')
-      if (colors.some(name => !config.palette.includes(name))) throw new MedusaError(MedusaError.Types.CONFLICT, 'Apply shared colors to this product before enabling its offer.')
-      if (!existing.length) {
-        const source=product.variants.find((v:any)=>config.variant_ids.includes(v.id) && v.metadata?.physical_size===type.size) || product.variants.find((v:any)=>v.id===config.default_variant_id)
-        if (!source) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Set up a source variant with shipping fields first.')
-        let finishOption=product.options.find((o:any)=>o.id===config.finish_option_id || o.title==='Claw finish')
-        if (!finishOption) {
-          const {result}=await createProductOptionsWorkflow(scope).run({input:{product_options:[{title:'Claw finish',values:['Natural','Colors by Cate'],is_exclusive:true}]}})
-          finishOption=result[0];await products.addProductOptionToProduct({product_id:id,product_option_id:finishOption.id})
-        }
-        const sizeTitle=product.options.find((o:any)=>o.id===config.size_option_id)?.title
-        const colorTitle=product.options.find((o:any)=>o.id===config.color_option_id)?.title
-        if (!sizeTitle || !colorTitle) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Size/color setup changed. Reload before saving.')
-        const sourceOptions=Object.fromEntries(source.options.map((o:any)=>[product.options.find((p:any)=>p.id===o.option_id)?.title || o.option?.title,o.value]))
-        const skus=colors.map((color:string)=>`RH-HC3-${id.slice(-10)}-${type.key}-${color.toUpperCase()}`)
-        const collision=await products.listProductVariants({sku:skus},{take:100})
-        if (collision.length) throw new MedusaError(MedusaError.Types.CONFLICT,'An earlier save created variants without confirming the fit. Check this option before retrying.')
-        const {result}=await createProductVariantsWorkflow(scope).run({input:{product_variants:colors.map((color:string,i:number)=>({product_id:id,title:`${type.label} / ${color}`,sku:skus[i],options:{...sourceOptions,[sizeTitle]:`${type.size} inch`,[colorTitle]:color,[finishOption.title]:type.finish==='cbc'?'Colors by Cate':'Natural'},prices:[{currency_code:'usd',amount:input.price}],manage_inventory:true,allow_backorder:true,requires_shipping:true,weight:source.weight,material:source.material,hs_code:source.hs_code,origin_country:source.origin_country,mid_code:source.mid_code,length:source.length,height:source.height,width:source.width,metadata:{hair_claw_template:'rustic_halo_hair_claw_v3',physical_size:type.size,claw_finish:type.finish,base_claw_color:color,inventory_mode:'made_to_order_color_option'}}))}})
-        offers[type.key]={variant_ids:result.map((v:any)=>v.id)}
-        nextConfig={...nextConfig,finish_option_id:finishOption.id,variant_ids:[...config.variant_ids,...result.map((v:any)=>v.id)],option_ids:[config.size_option_id,finishOption.id,config.color_option_id]}
-      } else {
-        if (colors.some(name => !existing.some((v:any) => variantClawColor(product, v) === name))) throw new MedusaError(MedusaError.Types.CONFLICT,'This option’s color variants are incomplete. Review before saving.')
+      if (!usesClawOrderColors(product) && colors.some(name => !config.palette.includes(name))) throw new MedusaError(MedusaError.Types.CONFLICT, 'Apply shared colors to this product before enabling its offer.')
+      if (!existing.length) throw new MedusaError(MedusaError.Types.INVALID_DATA, 'This size and finish is not in the existing catalog. Add only an actual sellable offer before enabling its artwork.')
+      {
+        if (!usesClawOrderColors(product) && colors.some(name => !existing.some((v:any) => variantClawColor(product, v) === name))) throw new MedusaError(MedusaError.Types.CONFLICT,'Simplify this design to order color choices before saving its offer.')
         const updates=existing.map((v:any)=>{
           const prices=(v.price_set?.prices || []).filter((p:any)=>!p.price_list_id)
           if (prices.filter(baseUsd).length!==1) throw new MedusaError(MedusaError.Types.INVALID_DATA,'Each color needs one base USD price. Review advanced prices first.')

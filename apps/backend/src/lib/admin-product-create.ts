@@ -1,3 +1,5 @@
+import { clawSize } from './hair-claw-colors'
+import { planClawOrderChoices } from './hair-claw-order-choices'
 import { PRODUCT_SEO_KEY } from './product-seo-values'
 import { productSeoSchema } from './product-seo'
 import { assignmentSchema, SHIPPING_KEY } from './shipping-packages'
@@ -112,6 +114,13 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
   return scope.resolve(Modules.LOCKING).execute(
     'rh-admin-product-identifiers',
     async () => {
+      const type = input.type_id ? await products.retrieveProductType(input.type_id) : null
+      const hairClaw = isHairClaw({ type })
+      if (hairClaw && input.options.some(option=>/^(?:(?:base|claw) )?colou?r$/i.test(option.title))) throw new Error('Color is recorded on orders. Create only actual size and finish variants for hair claws.')
+      if (hairClaw) {
+        const described=[...input.description.matchAll(/\b([24])(?:-|\s*)inch/gi)].map(match=>match[1])
+        for (const variant of input.variants) if (!clawSize(Object.entries(variant.options).find(([name])=>/size/i.test(name))?.[1]) && new Set(described).size!==1) throw new Error('Choose the actual physical size for each hair-claw offer before creating it.')
+      }
       const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex')
       const key = `product-create:${input.request_id}`
       let [operation] = await ops.listAdminOperations({ operation_key: key })
@@ -169,8 +178,6 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
       // Revalidate persisted allocations before a retry: another creation path
       // may have used an entered barcode while the first request was incomplete.
       await allocateBarcodes(products, operation.payload.barcodes.map((barcode: string) => ({ barcode })), await pendingBarcodes(scope, key))
-        const type = input.type_id ? await products.retrieveProductType(input.type_id) : null
-        const hairClaw = isHairClaw({ type })
         const { result } = await createProductsWorkflow(scope).run({
           input: {
             products: [
@@ -191,7 +198,7 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                 category_ids: input.categories,
                 tag_ids: input.tags,
                 sales_channels: input.sales_channels.map((id) => ({ id })),
-                metadata: { admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.seo ? { [PRODUCT_SEO_KEY]: input.seo } : {}), ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
+                metadata: { ...(hairClaw ? {color_mode:'order',source_product_type:'Hair Claw'} : {}), admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.seo ? { [PRODUCT_SEO_KEY]: input.seo } : {}), ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
                 variants: input.variants.map((variant, index) => ({
                   title: variant.title,
                   ...(variant.weight ? { weight: variant.weight } : {}),
@@ -203,18 +210,10 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                   allow_backorder: input.inventory_mode === 'made_to_order',
                   metadata: {
                     ...(variant.shipping ? { [SHIPPING_KEY]: variant.shipping } : {}),
-                    inventory_mode:
-                      input.inventory_mode === 'made_to_order' &&
-                      hairClaw &&
-                      Object.keys(variant.options).some((key) => /colou?r/i.test(key))
-                        ? 'made_to_order_color_option'
-                        : input.inventory_mode,
+                    inventory_mode: input.inventory_mode,
                     ...(hairClaw
                       ? {
-                          base_claw_color:
-                            Object.entries(variant.options).find(([key]) =>
-                              /colou?r/i.test(key),
-                            )?.[1] ?? null,
+                          color_mode: 'order',
                           physical_size:
                             String(
                               Object.entries(variant.options).find(([key]) =>
@@ -263,6 +262,11 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
               'Product created but stock changed. Open the product to review quantities.',
             )
         }
+      }
+      if (hairClaw) {
+        const fresh = await products.retrieveProduct(product.id,{relations:['options','options.values','variants','variants.options']})
+        const plan = planClawOrderChoices(fresh)
+        if (!plan.current) await products.updateProducts(product.id,{metadata:plan.metadata})
       }
       await ops.updateAdminOperations({
         id: operation.id,

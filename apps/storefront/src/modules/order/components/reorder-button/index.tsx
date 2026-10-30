@@ -24,6 +24,7 @@ export default function ReorderButton({
         items.map((item) => ({
           variantId: item.variant_id!,
           quantity: item.quantity,
+          ...(typeof item.metadata?.hair_claw_color === 'string' ? {hairClawColor: item.metadata.hair_claw_color} : {}),
         })),
         next,
         (line) => addToCart({ ...line, countryCode }),

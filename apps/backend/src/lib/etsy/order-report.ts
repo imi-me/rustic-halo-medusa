@@ -33,6 +33,7 @@ export function summarizeEtsyReceipt(value: unknown) {
       title: text(transaction.title),
       sku: text(transaction.sku, 100),
       quantity,
+      choices: (Array.isArray(transaction.variations) ? transaction.variations : []).map((row: any) => ({ name: text(row.formatted_name, 100), value: text(row.formatted_value, 300) })).filter((row: any) => row.value && /^(?:(?:primary|base|claw) )?colou?r$/i.test(row.name ?? '')),
       price: money(transaction.price),
     }
   }) : []

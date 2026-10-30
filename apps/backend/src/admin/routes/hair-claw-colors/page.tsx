@@ -27,13 +27,13 @@ const HairClawColorsPage = () => {
       } while (offset !== null)
       const review = all.filter(row => row.status === 'review').length
       setNotice(`Shared colors saved. ${all.length - review} products are up to date.${review ? ` ${review} need review below.` : ''}`)
-    } catch (failure) { setError((failure as Error).message); setNotice('Existing changes are kept. Use Apply to hair claws to resume safely without creating duplicates.') }
+    } catch (failure) { setError((failure as Error).message); setNotice('Existing changes are kept. Use Apply to hair claws to resume safely without changing product identifiers.') }
     finally { setBusy(false) }
   }
   const update = (slug: string, patch: Partial<ClawColor>) => setDraft(previous => previous.map(row => row.slug === slug ? { ...row, ...patch } : row))
   return <div className="rh-inline-shell rh-claw-palette-page">
     <div className="rh-inline-header"><div><h1>Hair-claw colors</h1><p>Shared base colors for every hair claw. Product-specific availability lives under Options.</p></div><div className="rh-inline-buttons"><button type="button" disabled={!dirty || busy} onClick={() => void apply(true)}>Save shared colors</button><button type="button" disabled={!dirty || busy} onClick={() => { setDraft(saved!.colors); setError('') }}>Discard changes</button></div></div>
-    <p>Base color is included in the product price. Choose which colors exist for 2-inch and 4-inch claws. Adding a color creates variants only for its selected sizes at each existing size-and-finish price, with no color surcharge. Retiring a color removes it from storefront purchase choices while preserving SKUs, inventory and past orders. Products with different color prices or missing color setup are listed for review.</p>
+    <p>Base color is included in the product price. Choose which colors exist for 2-inch and 4-inch claws. Color is recorded on online and Etsy orders. Adding a color keeps the design’s existing SKU and barcode and does not create variants or inventory items. Retiring a color removes it from storefront purchase choices while preserving SKUs, inventory and past orders. Only existing size and finish offers are retained. Unclear source mappings or different prices are listed for review.</p>
     {notice && <p role="status">{notice}</p>}{error && <p role="alert" className="rh-inline-error">{error}</p>}
     {!saved && <button type="button" onClick={() => void load()}>Load shared colors</button>}
     <fieldset disabled={busy || !saved}>

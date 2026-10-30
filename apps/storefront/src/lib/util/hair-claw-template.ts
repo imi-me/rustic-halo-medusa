@@ -33,10 +33,15 @@ export function clawGroupColorAvailable(product: HttpTypes.StoreProduct, variant
   return !excluded?.some(n => n.toLowerCase() === name.toLowerCase())
 }
 
-type Template = { version: number; variant_ids: string[]; option_ids: string[]; color_option_id: string; size_option_id: string; finish_option_id?: string; offer_mode?: boolean; default_variant_id: string; option_titles?: Record<string, string>; unlabelled_size?: string }
+type Template = { version: number; variant_ids: string[]; option_ids: string[]; color_option_id: string; size_option_id: string; finish_option_id?: string; offer_mode?: boolean; default_variant_id: string; option_titles?: Record<string, string>; unlabelled_size?: string; color_mode?: 'order'; order_choices?: Record<string, { size: ClawSize; finish?: string; options: {option_id:string;value:string}[]; aliases: string[] }> }
 export function hairClawTemplate(product: HttpTypes.StoreProduct) {
   const config = product.metadata?.hair_claw_template_v2 as Template | undefined
   return config?.version === 2 && Array.isArray(config.variant_ids) && Array.isArray(config.option_ids) ? config : undefined
+}
+
+export function orderClawColors(product: HttpTypes.StoreProduct, variant?: HttpTypes.StoreProductVariant) {
+  if (!variant) return []
+  return productClawColors(product, variantClawSize(product, variant)).filter(color => clawGroupColorAvailable(product, { ...variant, metadata: { ...variant.metadata, base_claw_color: color.name } }))
 }
 
 // The template exposes approved purchase combinations while preserving legacy
@@ -44,6 +49,18 @@ export function hairClawTemplate(product: HttpTypes.StoreProduct) {
 export function applyHairClawTemplate(product: HttpTypes.StoreProduct): HttpTypes.StoreProduct {
   const config = hairClawTemplate(product)
   if (!config) return product
+  if (config.color_mode === 'order') {
+    const ids = new Set(config.variant_ids)
+    const variants = (product.variants ?? []).filter(v => ids.has(v.id) && config.order_choices?.[v.id]).map(v => {
+      const choice = config.order_choices![v.id]
+      return { ...v, options: choice.options.map(o => ({ ...o, id: (product.options?.find(p => p.id === o.option_id)?.values?.find(v => v.value === o.value)?.id) || `${o.option_id}:${o.value}` })), metadata: { ...v.metadata, physical_size: choice.size, ...(choice.finish ? {claw_finish: choice.finish} : {}) } }
+    }).filter(v => orderClawColors(product, v).length > 0)
+    const options = (product.options ?? []).filter(o => config.option_ids.includes(o.id)).map(o => ({
+      ...o, title: o.id === config.size_option_id ? 'Size' : o.id === config.finish_option_id ? 'Finish' : config.option_titles?.[o.id] || o.title,
+      values: o.values?.filter(value => variants.some(v => v.options.some(vo => vo.option_id === o.id && vo.value === value.value))),
+    })).filter(o => Boolean(o.values?.length))
+    return { ...product, variants, options }
+  }
   const media = product.metadata?.hair_claw_overlays_v1 as {recipes?:Record<string,{enabled?:boolean}>;offers?:Record<string,{variant_ids?:string[]}>} | undefined
   const exposedIds = config.offer_mode ? Object.entries(media?.offers || {}).flatMap(([key,offer]) => media?.recipes?.[key]?.enabled ? offer.variant_ids || [] : []) : config.variant_ids
   const ids = new Set(exposedIds), optionIds = new Set(config.option_ids)
@@ -62,7 +79,8 @@ export function applyHairClawTemplate(product: HttpTypes.StoreProduct): HttpType
 
 export function initialProductOptions(product: HttpTypes.StoreProduct, requestedId: string | null) {
   const config = hairClawTemplate(product)
-  const variant = product.variants?.find(v => v.id === requestedId) ||
+  const originalId = config?.color_mode === 'order' ? Object.entries(config.order_choices ?? {}).find(([id, choice]) => id === requestedId || choice.aliases.includes(requestedId ?? ''))?.[0] : requestedId
+  const variant = product.variants?.find(v => v.id === originalId) ||
     (config ? product.variants?.find(v => v.id === config.default_variant_id) : undefined) ||
     (config ? product.variants?.find(v => v.options?.some(o=>o.option_id===config.color_option_id && o.value==='Taupe')) || product.variants?.[0] : undefined) ||
     (product.variants?.length === 1 ? product.variants[0] : undefined)

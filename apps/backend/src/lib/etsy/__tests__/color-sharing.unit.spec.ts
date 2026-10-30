@@ -100,3 +100,18 @@ it('links a new Medusa SKU to the existing Etsy option without renaming its hist
   expect(plan.body.products[0].sku).toBe('OLD-BLACK')
   expect(plan.changes[0].medusa_sku).toBe('NEW-ROSE')
 })
+it('shares colors under one original SKU with no color-dependent price, quantity or SKU',()=>{
+ const source=inventory()
+ source.products.push({...source.products[0],sku:'OLD-ROSE',property_values:[property(513,'Size','4”'),property(514,'Color','Rose')]})
+ const input=selection();input.variants=['Black','Rose'].map(color=>({...input.variants[0],sku:'HC38737',etsy_sku:'HC38737',color_mode:'order',color,options:{Size:'4 inch',Color:color},price:15,quantity:9}))
+ const result=planColorSharing(source,input,'')
+ expect(result.body.products.map(p=>p.sku)).toEqual(['HC38737','HC38737'])
+ expect(result.body.sku_on_property).toEqual([513]);expect(result.body.price_on_property).toEqual([513]);expect(result.body.quantity_on_property).toEqual([513])
+ input.variants[1].quantity=2
+ expect(()=>planColorSharing(source,input,'')).toThrow('share the original SKU, price and Etsy allocation')
+})
+it('requires review of conflicting unselected Etsy color stock instead of copying pooled inventory',()=>{
+ const source=inventory(); source.products.push({...source.products[0],sku:'OLD-ROSE',property_values:[property(513,'Size','4”'),property(514,'Color','Rose')]})
+ const input=selection(); input.variants[0]={...input.variants[0],color_mode:'order',sku:'HC38737',options:{Size:'4 inch',Color:'Black'}}
+ expect(()=>planColorSharing(source,input,'')).toThrow('different prices or allocations')
+})

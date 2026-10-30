@@ -1,4 +1,4 @@
-export type ReorderLine = { variantId: string; quantity: number }
+export type ReorderLine = { variantId: string; quantity: number; hairClawColor?: string }
 /** Resume after the last confirmed line if the cart rejects an unavailable item. */
 export async function reorderItems(
   lines: ReorderLine[],

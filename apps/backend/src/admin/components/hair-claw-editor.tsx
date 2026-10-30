@@ -40,6 +40,9 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
   const [slot,setSlot] = useState('4')
   const size=slot.split('-')[0]
   const [offerMode,setOfferMode]=useState(false)
+  const [actualOffers,setActualOffers]=useState(offers)
+  const [actualSizes,setActualSizes]=useState(['2','4'])
+  const [orderColors,setOrderColors]=useState(false)
   const [offerPrices,setOfferPrices]=useState<Record<string,OfferPrice>>({})
   const [price,setPrice]=useState('')
   const [recipe,setRecipe] = useState<Recipe|null>(null)
@@ -69,7 +72,10 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
     setBusy(true)
     api(`/admin/products/${productId}/hair-claw-media`).then(data=>{
       if (!active) return
-      const nextSlot=data.offer_mode ? offers.find(([key])=>data.settings.recipes?.[key]?.enabled)?.[0] || '4-natural' : '4'
+      const listed=data.available_offers ?? offers
+      const sizes=data.available_sizes ?? ['2','4']
+      const nextSlot=data.offer_mode ? listed.find(([key]:string[])=>data.settings.recipes?.[key]?.enabled)?.[0] || listed[0]?.[0] || '' : sizes.includes('4') ? '4' : sizes[0] || ''
+      setActualOffers(listed);setActualSizes(sizes);setOrderColors(!!data.order_colors)
       setOfferMode(!!data.offer_mode);setOfferPrices(data.offer_prices||{});setPrice(data.offer_prices?.[nextSlot]?.amount==null?'':String(data.offer_prices[nextSlot].amount))
       setSettings(data.settings);setImages(data.images || []);setRecipe(editable(savedFor(data.settings,nextSlot)));setSlot(nextSlot);setDirty(false)
       setOrigin(data.preview_origin || '');setNotice('Choose a current product photo or upload wood artwork, then adjust its fit and save.')
@@ -179,9 +185,9 @@ export default function HairClawEditor({productId,onStateChange,onRequestClose,h
   return <TooltipProvider><section className="rh-fit-studio" aria-label="Hair-claw image fitting">
     <header className={`rh-fit-header${offerMode?' rh-fit-offer-header':''}`}>
       <div className="rh-fit-heading"><span className="rh-fit-heading-mark"><FitIcon name="corners"/></span><h2>Image fitting</h2><FitHelp label="Image fitting">Choose a current product photo or upload artwork. Crop to the wood, place the corners, then save. Your original photos stay unchanged.</FitHelp></div>
-      <div className="rh-fit-header-actions"><label className="rh-fit-size"><span>{offerMode?"Option":"Size"}</span><select aria-label={offerMode?"Size and finish":"Physical size"} disabled={busy||dirty} value={slot} onChange={e=>{setSlot(e.target.value);setRecipe(editable(savedFor(settings,e.target.value)));setPrice(offerPrices[e.target.value]?.amount==null?"":String(offerPrices[e.target.value].amount));setErrorLabel(null)}}>{offerMode?offers.map(([key,label])=><option key={key} value={key}>{label}{settings.recipes[key]?.enabled?" · Available":" · Hidden"}</option>):<><option value="2">2 inch</option><option value="4">4 inch</option></>}</select><FitHelp label="Physical size">{dirty?'Save or discard your changes before switching size.':size==='2'?'2-inch fits can be saved as drafts. Color previews are pending the measured plastic template.':'Each size and finish has its own fit and price.'}</FitHelp></label>{headerAction}</div>
+      <div className="rh-fit-header-actions"><label className="rh-fit-size"><span>{offerMode?"Option":"Size"}</span><select aria-label={offerMode?"Size and finish":"Physical size"} disabled={busy||dirty} value={slot} onChange={e=>{setSlot(e.target.value);setRecipe(editable(savedFor(settings,e.target.value)));setPrice(offerPrices[e.target.value]?.amount==null?"":String(offerPrices[e.target.value].amount));setErrorLabel(null)}}>{offerMode?actualOffers.map(([key,label])=><option key={key} value={key}>{label}{settings.recipes[key]?.enabled?" · Preview saved":" · No preview"}</option>):<>{actualSizes.map(value=><option key={value} value={value}>{value} inch</option>)}</>}</select><FitHelp label="Physical size">{dirty?'Save or discard your changes before switching size.':size==='2'?'2-inch fits can be saved as drafts. Color previews are pending the measured plastic template.':'Each size and finish has its own fit and price.'}</FitHelp></label>{headerAction}</div>
     </header>
-    {offerMode&&<div className="rh-fit-canvas-bar"><label className="rh-fit-field">Price (USD)<input aria-label="Option price USD" type="number" min="0" step="0.01" disabled={busy} value={price} onChange={e=>{setPrice(e.target.value);setDirty(true);setErrorLabel(null)}}/></label><span>{settings.recipes[slot]?.enabled?"Available with its own overlay":"Hidden until an overlay is enabled"}</span><FitHelp label="Option price">This price applies to every claw color for this size and finish. Save publishes the fit and price together. Save draft keeps the current storefront fit and price.</FitHelp></div>}
+    {offerMode&&<div className="rh-fit-canvas-bar"><label className="rh-fit-field">Price (USD)<input aria-label="Option price USD" type="number" min="0" step="0.01" disabled={busy} value={price} onChange={e=>{setPrice(e.target.value);setDirty(true);setErrorLabel(null)}}/></label><span>{orderColors ? "Existing catalog offer · color recorded on order" : settings.recipes[slot]?.enabled?"Available with its own overlay":"Hidden until an overlay is enabled"}</span><FitHelp label="Option price">This price applies to every claw color for this size and finish. Save publishes the fit and price together. Save draft keeps the current storefront fit and price.</FitHelp></div>}
     <div className="rh-fit-workspace">
       <section className="rh-fit-canvas-panel" aria-label="Photo cropping and corner fitting">
         <div className="rh-fit-canvas-bar">

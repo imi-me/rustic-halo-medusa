@@ -1,8 +1,14 @@
+import { usesClawOrderColors, orderChoiceVariant } from './hair-claw-order-choices'
 import { clawVariantGroupKey, variantClawSize } from './hair-claw-colors'
 
-export function clawVariantGroups(product: any) {
+export function clawVariantGroups(product: any): {key:string;label:string;size?:'2'|'4';offered:boolean;variants:any[]}[] {
   const config = product.metadata?.hair_claw_template_v2
   if (!config) return []
+  if (usesClawOrderColors(product)) return (product.variants ?? []).filter((v:any)=>config.variant_ids.includes(v.id)).map((original:any)=>{
+    const variant=orderChoiceVariant(product,original),size=variantClawSize(product,variant)
+    const labels=variant.options.filter((o:any)=>o.option_id!==config.size_option_id).map((o:any)=>o.value)
+    return {key:clawVariantGroupKey(product,variant),label:`${size}-inch · ${labels.join(' · ') || 'Standard finish'}`,size,offered:true,variants:[variant]}
+  })
   const ids = new Set<string>(config.variant_ids ?? [])
   if (config.offer_mode) for (const offer of Object.values(product.metadata?.hair_claw_overlays_v1?.offers ?? {}) as any[]) for (const id of offer.variant_ids ?? []) ids.add(id)
   const media = product.metadata?.hair_claw_overlays_v1

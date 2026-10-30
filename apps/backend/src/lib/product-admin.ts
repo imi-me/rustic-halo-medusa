@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { clawColorAvailable, type ClawColor } from './hair-claw-colors'
+import { usesClawOrderColors, orderChoiceVariant, orderChoiceColors } from './hair-claw-order-choices'
+import { defaultClawColors, clawColorAvailable, type ClawColor } from './hair-claw-colors'
 
 export const ETSY_DRAFT_KEY = 'etsy_listing_draft_v1'
 export const etsyDraftSchema = z
@@ -104,14 +105,21 @@ export function searchReadiness(draft: EtsyDraft) {
 export function visibleProductVariants(product: any, palette?: ClawColor[]): any[] {
   const config = product?.metadata?.hair_claw_template_v2
   const media = product?.metadata?.hair_claw_overlays_v1
-  const ids = config?.offer_mode
+  const ids = config?.color_mode === 'order' ? config.variant_ids : config?.offer_mode
     ? Object.entries(media?.offers ?? {}).flatMap(([key, value]: [string, any]) =>
         media?.recipes?.[key]?.enabled ? (value.variant_ids ?? []) : [],
       )
     : config?.variant_ids
-  return (product?.variants ?? []).filter((variant: any) => (!ids || ids.includes(variant.id)) && clawColorAvailable(product, variant, palette ?? product.metadata?.hair_claw_palette_v1?.colors))
+  return (product?.variants ?? []).filter((variant: any) => (!ids || ids.includes(variant.id)) && (usesClawOrderColors(product) ? orderChoiceColors(product, variant, palette ?? product.metadata?.hair_claw_palette_v1?.colors ?? defaultClawColors).length > 0 : clawColorAvailable(product, variant, palette ?? product.metadata?.hair_claw_palette_v1?.colors)))
 }
 export function sellableColorVariants(product: any): any[] {
+  if (usesClawOrderColors(product)) return visibleProductVariants(product).flatMap(original => {
+    const variant = orderChoiceVariant(product, original)
+    return orderChoiceColors(product, variant, product.metadata?.hair_claw_palette_v1?.colors ?? defaultClawColors).map(color => ({
+      ...variant, id: `${variant.id}:${color.slug}`, title: `${variant.title} / ${color.name}`,
+      metadata: { ...variant.metadata, order_variant_id: original.id, base_claw_color: color.name, inventory_mode: 'made_to_order_color_option' },
+    }))
+  })
   return visibleProductVariants(product).filter(
     (variant: any) =>
       variant.metadata?.base_claw_color ||
@@ -139,6 +147,11 @@ export function colorExport(product: any, draft: EtsyDraft) {
         row.value,
       ]),
     )
+    if (usesClawOrderColors(product)) {
+      options.Color = variant.metadata.base_claw_color
+      if (!Object.keys(options).some(name => /size/i.test(name))) options.Size = `${variant.metadata.physical_size} inch`
+      if (variant.metadata.claw_finish && !Object.keys(options).some(name => /finish/i.test(name))) options.Finish = variant.metadata.claw_finish === 'cbc' ? 'Colors by Cate' : variant.metadata.claw_finish === 'natural' ? 'Natural' : variant.metadata.claw_finish
+    }
     const color =
       variant.metadata?.base_claw_color ??
       Object.entries(options).find(([key]) => /color|colour/i.test(key))?.[1]
@@ -162,9 +175,10 @@ export function colorExport(product: any, draft: EtsyDraft) {
     )
       throw new Error('Choose a saved approved product image for the color.')
     return {
-      variant_id: variant.id,
+      variant_id: variant.metadata?.order_variant_id ?? variant.id,
+      color_mode: usesClawOrderColors(product) ? 'order' : 'variant',
       sku: variant.sku,
-      etsy_sku: selected.etsy_sku || variant.sku,
+      etsy_sku: usesClawOrderColors(product) ? variant.sku : selected.etsy_sku || variant.sku,
       color,
       options,
       price: Number(price.amount),
@@ -174,7 +188,7 @@ export function colorExport(product: any, draft: EtsyDraft) {
       inventory_mode: variant.metadata?.inventory_mode ?? 'stocked',
     }
   })
-  if (new Set(variants.map((row) => row.etsy_sku)).size !== variants.length)
+  if (!usesClawOrderColors(product) && new Set(variants.map((row) => row.etsy_sku)).size !== variants.length)
     throw new Error('Color SKUs must be unique.')
   return {
     version: 1,

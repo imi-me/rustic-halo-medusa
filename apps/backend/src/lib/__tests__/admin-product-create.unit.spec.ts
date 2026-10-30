@@ -128,3 +128,13 @@ it('accepts optional search overrides without changing legacy creation payloads'
   expect(creationSchema.parse({ ...input(), seo: { title: 'Specific title', description: 'A useful summary.' } }).seo).toEqual({ title: 'Specific title', description: 'A useful summary.' })
   expect(creationSchema.safeParse({ ...input(), seo: { title: 'x'.repeat(101), description: '' } }).success).toBe(false)
 })
+it('requires hair-claw color to be an order choice before allocating identifiers or stock',async()=>{
+ const products={retrieveProductType:async()=>({value:'Hair Claw'})},ops={listAdminOperations:jest.fn()}
+ const scope={resolve:(name:string)=>name==='product'?products:name==='admin_operations'?ops:{execute:async(_key,fn)=>fn()}}
+ const data:any={...input(),type_id:'ptyp_claw',options:[{title:'Base color',values:['Black']}],variants:[{...input().variants[0],options:{'Base color':'Black'}}]}
+ await expect(createAdminProduct(scope,data)).rejects.toThrow('Color is recorded on orders')
+ expect(ops.listAdminOperations).not.toHaveBeenCalled()
+ data.options=[{title:'Finish',values:['Natural']}];data.variants[0].options={Finish:'Natural'}
+ await expect(createAdminProduct(scope,data)).rejects.toThrow('actual physical size')
+ expect(ops.listAdminOperations).not.toHaveBeenCalled()
+})

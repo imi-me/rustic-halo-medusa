@@ -26,21 +26,21 @@ export default function SharedClawGallery({product, children}: {product:HttpType
   const finishOption = product.options?.find(o => o.id === template?.finish_option_id)
   const localOptions = productSelection?.productId === product.id ? productSelection.options : undefined
   const selectedSize = sizeOption ? localOptions?.[sizeOption.id] || variant?.options?.find(o => o.option_id === sizeOption.id)?.value : undefined
-  const selectedColorName = colorOption ? localOptions?.[colorOption.id] || variant?.options?.find(o => o.option_id === colorOption.id)?.value : undefined
+  const selectedColorName = template?.color_mode === 'order' ? productClawColors(product).find(c => c.slug === localOptions?.claw_order_color)?.name : colorOption ? localOptions?.[colorOption.id] || variant?.options?.find(o => o.option_id === colorOption.id)?.value : undefined
   const settings = product.metadata?.hair_claw_overlays_v1 as {recipes?:Record<string,Recipe>} | undefined
   // Admin explicitly records the reviewed physical size for products without a Size option.
   const reviewedFour = settings?.recipes?.['4']
   // Show the reviewed 4-inch fit before shoppers complete their choices. An
   // explicit other/unknown size always wins and never borrows the 4-inch fit.
   const size = resolveHairClawSize({
-    selectedSize,
+    selectedSize: selectedSize || (template?.color_mode === 'order' ? variant?.metadata?.physical_size as string : undefined),
     sizeValues: sizeOption ? (sizeOption.values || []).map(v => v.value) : undefined,
     reviewedFour: reviewedFour?.editor_version === 2 && Boolean(reviewedFour.enabled),
   })
   const colors = template ? productClawColors(product, size) : healingHeartsColors
   const selectedColor = colors.find(c => c.name === selectedColorName)?.slug
   const selectedFinish = finishOption ? localOptions?.[finishOption.id] || variant?.options?.find(o => o.option_id === finishOption.id)?.value || finishOption.values?.[0]?.value : undefined
-  const finish = selectedFinish === 'Colors by Cate' ? 'cbc' : selectedFinish === 'Natural' ? 'natural' : undefined
+  const finish = (template?.color_mode === 'order' ? variant?.metadata?.claw_finish as string : undefined) || (selectedFinish === 'Colors by Cate' ? 'cbc' : selectedFinish === 'Natural' ? 'natural' : undefined)
   const recipe = size ? settings?.recipes?.[template?.offer_mode ? `${size}-${finish}` : size] : undefined
   const [previewColor,setPreviewColor] = useState('taupe')
   const [failed,setFailed] = useState(false)
