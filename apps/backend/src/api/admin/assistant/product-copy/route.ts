@@ -25,7 +25,7 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
       const value=parsed.data
       let options=draftSeoOptionFacts(value.title,value.draft_options)
       if(value.product_id){const [product]=await readSeoProducts(req.scope,[value.product_id]);if(!product)return res.status(404).json({message:'Product not found. Reload before generating search wording.'});const palette=await readClawPalette(req.scope.resolve(ADMIN_OPERATIONS));options=seoOptionFacts(product,palette.colors)}
-      const state=await readBulkSeo(req.scope),library=[...await savedSeoDescriptions(req.scope),...(state.run?.rows.filter(r=>r.suggestion&&r.status==='ready').map(r=>({id:r.id,description:r.suggestion!.description}))||[])]
+      const state=await readBulkSeo(req.scope),library=[...await savedSeoDescriptions(req.scope),...(state.run?.rows.filter(r=>r.suggestion&&r.status==='ready').map(r=>({id:r.id,title:r.source.title,description:r.suggestion!.description}))||[])]
       const [suggestion]=await generateSeoBatch([{id:value.product_id||'new_product',title:value.title,description:seoText(value.description),material:value.material,brief:value.facts,options}],fetch,library,25000)
       if(suggestion.error)throw Error(suggestion.error)
       return res.json({suggestion:{title:suggestion.title,description:suggestion.description,tags:[],explanation:options.source==='saved_variants'?'Based on current saved product options and checked against other product descriptions.':'Based on the new product draft; no stock or availability is promised.'},option_source:options.source})

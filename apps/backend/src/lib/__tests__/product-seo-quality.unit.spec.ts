@@ -561,7 +561,7 @@ it("rejects name-swapped boilerplate and retries only the repeated product", asy
         "Wild Turkey Coaster pairs natural wood with laser-engraved detail, adding a bourbon-inspired accent to a home bar.",
     };
   expect(seoQualityIssue(beta, repeated, [first])).toContain(
-    "changing only its name",
+    "only the product name",
   );
   expect(seoQualityIssue(beta, distinct, [first])).toBeNull();
   expect(seoQualityIssue(alpha, first, [first])).toBeNull();
@@ -599,6 +599,347 @@ it("allows distinct descriptions sharing a short material phrase", () => {
           description: "Sun earrings in natural wood with a round design.",
         },
       ],
+    ),
+  ).toBeNull();
+});
+
+it("rejects the awkward real coaster suggestions and repetitive sales wording", () => {
+  const p = {
+    id: "eagle",
+    title: "Eagle Rare Coaster",
+    description: "Laser-engraved natural wood coaster.",
+    material: "",
+  };
+  const bad = [
+    "Laser-engraved natural wood Eagle Rare Coaster for protecting tables. This Rustic Halo bar coaster adds a rustic touch to a home bar.",
+    "Eagle Rare Coaster in rustic wood adds rustic warmth to your room.",
+    "Rustic Halo gives this Eagle Rare Coaster a rustic accent for a home bar or entertaining space.",
+    "Eagle Rare Coaster has a simple design and is tied to the Eagle Rare name.",
+  ];
+  for (const description of bad)
+    expect(
+      seoQualityIssue(p, { title: p.title, description }, []),
+    ).not.toBeNull();
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Set down your glass on the Eagle Rare Coaster, laser engraved on natural wood.",
+      },
+      [],
+    ),
+  ).toBeNull();
+  // A design's proper name is not a repeated sales adjective.
+  expect(
+    seoQualityIssue(
+      { ...p, title: "Rustic Rose Coaster" },
+      {
+        title: "Rustic Rose Coaster",
+        description: "Rustic Rose Coaster has a rustic wood finish.",
+      },
+      [],
+    ),
+  ).toBeNull();
+});
+it("rejects lightly reworded material-led templates while allowing shared factual details", () => {
+  const p = {
+    id: "wild",
+    title: "Wild Turkey Coaster",
+    description: "Laser-engraved wood coaster.",
+    material: "",
+  };
+  const prior = {
+    id: "elijah",
+    description:
+      "Laser-engraved natural wood Elijah Craig Coaster for protecting tables and countertops. This bar coaster adds character to a home bar or entertaining space.",
+  };
+  const description =
+    "Laser-engraved natural wood Wild Turkey Coaster for tables and countertops. This coaster adds character to a home bar, kitchen, or entertaining space.";
+  expect(
+    seoQualityIssue(p, { title: p.title, description }, [prior]),
+  ).toContain("closely repeats");
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Wild Turkey Coaster brings a laser-engraved design to your table in natural wood.",
+      },
+      [prior],
+    ),
+  ).toBeNull();
+});
+it("supplies natural writing guidance and accepted sibling copy on retry", async () => {
+  const a = {
+      id: "alpha",
+      title: "Alpha Coaster",
+      description: "Laser-engraved natural wood coaster.",
+      material: "",
+    },
+    b = { ...a, id: "beta", title: "Beta Coaster" };
+  const accepted = {
+    id: a.id,
+    title: a.title,
+    description:
+      "Alpha Coaster pairs natural wood with laser-engraved detail for your table.",
+  };
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce(
+      response([
+        accepted,
+        {
+          id: b.id,
+          title: b.title,
+          description: "Rustic Halo gives Beta Coaster a rustic accent.",
+        },
+      ]),
+    )
+    .mockResolvedValueOnce(
+      response([
+        {
+          id: b.id,
+          title: b.title,
+          description:
+            "Rest your glass on the Beta Coaster, a natural wood piece with laser engraving.",
+        },
+      ]),
+    );
+  const result = await generateSeoBatch([a, b], request);
+  expect(result.every((p) => !p.error)).toBe(true);
+  expect(request).toHaveBeenCalledTimes(2);
+  const prompt = JSON.parse(request.mock.calls[0][1].body).instructions;
+  expect(prompt).toContain("shorter is fine when facts are sparse");
+  const retry = JSON.parse(
+    JSON.parse(request.mock.calls[1][1].body).input[0].content,
+  );
+  expect(retry.other_descriptions).toContainEqual({
+    id: a.id,
+    description: accepted.description,
+  });
+});
+
+it("rejects source attribution and uses a plain factual fallback without promotional padding", () => {
+  const p = {
+    id: "eagle",
+    title: "Eagle Rare Coaster",
+    description: "A laser-engraved natural wood coaster.",
+    material: "",
+  };
+  for (const description of [
+    "Eagle Rare Coaster is described as protecting tables.",
+    "A wood coaster with an Eagle Rare name.",
+    "Eagle Rare Coaster has a distinctive design.",
+  ])
+    expect(
+      seoQualityIssue(p, { title: p.title, description }, []),
+    ).not.toBeNull();
+  const copy = conservativeSeoCopy(p);
+  expect(copy.description).toBe(
+    "Eagle Rare Coaster, laser engraved on natural wood.",
+  );
+  expect(seoQualityIssue(p, copy, [])).toBeNull();
+});
+
+it("keeps old catalog copy out of the initial writing prompt while still rejecting its duplicates", async () => {
+  const p = {
+    id: "fern",
+    title: "Fern Bookmark",
+    description: "Laser-engraved wood bookmark.",
+    material: "",
+  };
+  const old = {
+    id: "old",
+    description:
+      "Fern Bookmark, laser engraved on wood to keep your place in a favorite book.",
+  };
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce(
+      response([{ id: p.id, title: p.title, description: old.description }]),
+    )
+    .mockResolvedValueOnce(
+      response([
+        {
+          id: p.id,
+          title: p.title,
+          description:
+            "Keep your place with the Fern Bookmark, a wood design with laser engraving.",
+        },
+      ]),
+    );
+  const [result] = await generateSeoBatch([p], request, [old]);
+  expect(result.error).toBeUndefined();
+  const initial = JSON.parse(
+    JSON.parse(request.mock.calls[0][1].body).input[0].content,
+  );
+  expect(initial.other_descriptions).toEqual([]);
+  const retry = JSON.parse(
+    JSON.parse(request.mock.calls[1][1].body).input[0].content,
+  );
+  expect(retry.products[0].revision_feedback).toContain(old.description);
+});
+
+it("catches short name-swapped sentences without requiring padded copy", async () => {
+  const a = {
+      id: "elijah",
+      title: "Elijah Craig Coaster",
+      description: "Laser-engraved natural wood coaster.",
+      material: "",
+    },
+    b = { ...a, id: "wild", title: "Wild Turkey Coaster" };
+  const first = {
+    id: a.id,
+    title: a.title,
+    description: "Elijah Craig Coaster, laser engraved on natural wood.",
+  };
+  const second = {
+    id: b.id,
+    title: b.title,
+    description: "Wild Turkey Coaster, laser engraved on natural wood.",
+  };
+  expect(seoQualityIssue(b, second, [first])).toContain(
+    "only the product name",
+  );
+  const distinct = {
+    ...second,
+    description:
+      "Set down your glass on the Wild Turkey Coaster, a laser-engraved wood design.",
+  };
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce(response([first, second]))
+    .mockResolvedValueOnce(response([distinct]));
+  const output = await generateSeoBatch([a, b], request);
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(output[1].description).toBe(distinct.description);
+});
+
+it("rejects abstract padding and a design theme misrepresented as a finish", () => {
+  const p = {
+    id: "wild",
+    title: "Wild Turkey Coaster",
+    description: "Laser-engraved natural wood coaster for protecting tables.",
+    material: "",
+  };
+  for (const description of [
+    "Laser engraving gives Wild Turkey Coaster a bourbon-inspired look on natural wood.",
+    "Natural wood and laser engraving define the Wild Turkey Coaster with a bourbon-themed finish.",
+  ])
+    expect(
+      seoQualityIssue(p, { title: p.title, description }, []),
+    ).not.toBeNull();
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Protect your table with the Wild Turkey Coaster, laser engraved on natural wood.",
+      },
+      [],
+    ),
+  ).toBeNull();
+});
+
+it("rejects a dangling protection claim and accepts a direct factual invitation", () => {
+  const p = {
+    id: "elijah",
+    title: "Elijah Craig Coaster",
+    description: "Laser-engraved natural wood coaster for protecting tables.",
+    material: "",
+  };
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Protects tables and countertops, laser engraved on natural wood in the Elijah Craig Coaster.",
+      },
+      [],
+    ),
+  ).toContain("clear subject");
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Protect your table with the Elijah Craig Coaster, laser engraved on natural wood.",
+      },
+      [],
+    ),
+  ).toBeNull();
+});
+
+it("catches short synonym swaps such as glass versus drink while allowing a different opening", () => {
+  const p = {
+    id: "eagle",
+    title: "Eagle Rare Coaster",
+    description: "Laser-engraved wood coaster.",
+    material: "",
+  };
+  const other = {
+    id: "wild",
+    title: "Wild Turkey Coaster",
+    description:
+      "Set your glass on the Wild Turkey Coaster, laser engraved on natural wood.",
+  };
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Set your drink on the Eagle Rare Coaster, laser engraved on natural wood.",
+      },
+      [other],
+    ),
+  ).toContain("a few words changed");
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "The Eagle Rare Coaster is laser engraved on natural wood.",
+      },
+      [other],
+    ),
+  ).toBeNull();
+});
+
+it("does not imply that laser engraving provides surface protection", () => {
+  const p = {
+    id: "wild",
+    title: "Wild Turkey Coaster",
+    description: "Laser-engraved natural wood coaster for protecting tables.",
+    material: "",
+  };
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Use the Wild Turkey Coaster to protect your table with laser engraving on natural wood.",
+      },
+      [],
+    ),
+  ).toContain("not its laser engraving");
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description:
+          "Set your glass on the Wild Turkey Coaster, made from natural wood with laser-engraved detail.",
+      },
+      [],
     ),
   ).toBeNull();
 });

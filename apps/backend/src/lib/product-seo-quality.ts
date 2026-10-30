@@ -7,7 +7,11 @@ import {
   type ProductSeo,
 } from "./product-seo-values";
 import type { SeoOptionFacts } from "./product-seo-options";
-export type SeoDescription = { id: string; description: string };
+export type SeoDescription = {
+  id: string;
+  description: string;
+  title?: string;
+};
 export type SeoCopyFacts = {
   id: string;
   title: string;
@@ -38,7 +42,42 @@ function repeatsDescriptionTemplate(left: string, right: string): boolean {
     b = phrases(right);
   if (!a.size || !b.size) return false;
   const shared = [...a].filter((phrase) => b.has(phrase)).length;
-  return shared >= 8 && shared / Math.max(a.size, b.size) >= 0.8;
+  if (shared >= 8 && shared / Math.max(a.size, b.size) >= 0.8) return true;
+  // A repeated material-led opening plus mostly shared phrasing can still sound
+  // templated after a few verbs or connecting words have been changed.
+  if (
+    left.split(" ").slice(0, 4).join(" ") !==
+    right.split(" ").slice(0, 4).join(" ")
+  )
+    return false;
+  const pairs = (value: string) => {
+    const words = value.split(" ");
+    return new Set(
+      words.slice(1).map((_, i) => words.slice(i, i + 2).join(" ")),
+    );
+  };
+  const x = pairs(left),
+    y = pairs(right),
+    common = [...x].filter((phrase) => y.has(phrase)).length;
+  return common >= 8 && common / Math.max(x.size, y.size) >= 0.6;
+}
+function onlySmallWordChanges(left: string, right: string): boolean {
+  const a = left.split(" "),
+    b = right.split(" ");
+  if (Math.min(a.length, b.length) < 6) return false;
+  const limit = Math.max(1, Math.floor(Math.max(a.length, b.length) * 0.2));
+  if (Math.abs(a.length - b.length) > limit) return false;
+  let row = b.map((_, i) => i + 1);
+  row.unshift(0);
+  for (let i = 0; i < a.length; i++) {
+    const next = [i + 1];
+    for (let j = 0; j < b.length; j++)
+      next.push(
+        Math.min(next[j] + 1, row[j + 1] + 1, row[j] + (a[i] === b[j] ? 0 : 1)),
+      );
+    row = next;
+  }
+  return row[b.length] <= limit;
 }
 const generic = new Set(
   "a an and the with for from by of in on at our your to is are rustic halo hair claw claws clip clips earrings earring dangle dangles stud studs coaster coasters wood wooden round sign signs door hanger hangers novelty collection decor simple design designs welcome hello hi".split(
@@ -62,6 +101,31 @@ export function seoQualityIssue(
 ): string | null {
   const text = `${copy.title}. ${copy.description}`,
     options = product.options;
+  if (/^protects\b[^.!?]*,\s*(?:laser[ -])?engraved\b/i.test(copy.description))
+    return "Give the sentence a clear subject. Start with the product name or a direct invitation such as Protect your table with [product], laser engraved on [confirmed material]. Do not write Protects tables, engraved ... in the product.";
+  if (
+    /\bprotect(?:s)?\b[^.!?]{0,65}\bwith (?:laser[ -])?engraving\b/i.test(
+      copy.description,
+    )
+  )
+    return "Separate the stated use from the decoration: the coaster protects the table, not its laser engraving. Describe the engraving as a product detail.";
+  const bodyWithoutName = descriptionFingerprint(copy.description)
+    .replaceAll(descriptionFingerprint(product.title), " ")
+    .replace(/\brustic halo\b/g, " ");
+  if ((bodyWithoutName.match(/\brustic\b/g) || []).length > 1)
+    return "Do not repeat rustic as a sales adjective. State the product's concrete details in plain language.";
+  if (
+    /\badds? (?:a |an |some )?rustic (?:accent|touch|charm)\b|\brustic halo (?:gives|adds|brings|makes it for)\b|\b(?:tied to|associated with) (?:the |its )?[^.!?]*\bname\b/i.test(
+      copy.description,
+    )
+  )
+    return "Remove the generic sales ending or awkward brand/name explanation. Write a direct sentence about this product; omit seller-brand padding.";
+  if (
+    /\b(?:gives?|define[sd]?)\b[^.!?]{0,100}\b(?:look|character|finish)\b|\b(?:themed|inspired)[ -]finish\b/i.test(
+      copy.description,
+    )
+  )
+    return "Use a concrete product detail or stated use, not an abstract look/character claim. A design theme is not a verified surface finish.";
   if (
     /base colou?r option|verified[_ ]options?|enabled[_ ]variants?|option_id|variant_id/i.test(
       copy.description,
@@ -86,7 +150,7 @@ export function seoQualityIssue(
     return "Do not enumerate an option palette. Focus on the specific design and at most a few useful details.";
   if (/<\/?[a-z][^>]*>/i.test(text)) return "Use plain text, not HTML.";
   if (
-    /\b(?:product description|noted in|details provided|not specified|placeholder|insert here)\b/i.test(
+    /\b(?:product description|noted in|details provided|not specified|placeholder|insert here|(?:is|as) described|with (?:an?|the) [^.!?]{1,60} name|distinctive design)\b/i.test(
       copy.description,
     )
   )
@@ -138,6 +202,22 @@ export function seoQualityIssue(
     }
   }
   const fingerprint = descriptionFingerprint(copy.description);
+  const withoutName = (description: string, title?: string) => {
+    const name = descriptionFingerprint(title || "");
+    return name
+      ? descriptionFingerprint(description).replaceAll(name, "[product]")
+      : descriptionFingerprint(description);
+  };
+  const masked = withoutName(copy.description, product.title);
+  const nameSwap = others.find(
+    (other) =>
+      other.id !== product.id &&
+      other.title &&
+      masked.includes("[product]") &&
+      onlySmallWordChanges(withoutName(other.description, other.title), masked),
+  );
+  if (nameSwap)
+    return `This is the same sentence with only the product name or a few words changed. Use a different natural sentence structure based on supported facts. Avoid this wording: ${nameSwap.description.slice(0, 320)}`;
   if (
     others.some(
       (other) =>
@@ -145,7 +225,7 @@ export function seoQualityIssue(
         descriptionFingerprint(other.description) === fingerprint,
     )
   )
-    return "The description repeats another product. Use this product’s specific name and distinguishing details.";
+    return `The description repeats another product. Use a different sentence based on this product’s supported details. Avoid this wording: ${others.find((other) => other.id !== product.id && descriptionFingerprint(other.description) === fingerprint)!.description.slice(0, 320)}`;
   const repeatedTemplate = others.find(
     (other) =>
       other.id !== product.id &&
@@ -197,14 +277,23 @@ export function conservativeSeoCopy(product: SeoCopyFacts): ProductSeo {
     )
   )
     facts.push("hand-painted accents");
-  const prefix =
-    options?.hairClaw && options.verified && options.sizes.length === 1
-      ? ` A ${options.sizes[0]}-inch design`
-      : " A distinctive design";
+  const size =
+    options?.hairClaw &&
+    options.verified &&
+    options.sizes.length === 1 &&
+    !dimensions(name).includes(options.sizes[0])
+      ? `${options.sizes[0]}-inch `
+      : "";
+  const detail =
+    facts.includes("laser-engraved detail") && /\bwood(?:en)?\b/i.test(source)
+      ? `laser engraved on ${/natural wood/i.test(source) ? "natural wood" : facts[0] === "wood detail" ? "wood" : facts[0]}`
+      : facts.length
+        ? `with ${facts.slice(0, 2).join(" and ")}`
+        : "";
   return {
     title: productSeoValues({ title: name }).title,
     description: shortSeoText(
-      `${/\bRustic Halo\b/i.test(name) ? name : name + " from Rustic Halo"}.${prefix}${facts.length ? " featuring " + facts.slice(0, 2).join(" and ") : options?.hairClaw ? " for everyday hair styling" : " for styling or display"}.`,
+      `${size}${name}${detail ? ", " + detail : ""}.`,
       320,
     ),
   };
@@ -219,11 +308,12 @@ export async function savedSeoDescriptions(
       .resolve(Modules.PRODUCT)
       .listAndCountProducts(
         {},
-        { select: ["id", "metadata"], take: 100, skip: offset },
+        { select: ["id", "title", "metadata"], take: 100, skip: offset },
       );
     for (const row of rows) {
       const description = readProductSeo(row.metadata).description;
-      if (description.trim()) result.push({ id: row.id, description });
+      if (description.trim())
+        result.push({ id: row.id, title: row.title, description });
     }
     offset += rows.length;
     if (offset >= count) return result;

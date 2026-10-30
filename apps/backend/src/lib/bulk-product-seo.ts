@@ -79,15 +79,15 @@ export async function processBulkSeo(scope:any,generate=generateSeoBatch,now=Dat
     const rows=pending.filter(row=>{const current=records.find((p:any)=>p.id===row.id);if(!current||hash(current)!==row.sourceHash){row.status='stale';row.error='Product changed before generation. Retry to use the current details.';return false}const options=seoOptionFacts(current,palette.colors);row.source.options=options;row.source.preservedTitle=row.before.title||undefined;row.source.preservedDescription=row.before.description||undefined;row.optionsRevision=seoOptionsRevision(options);row.updatedAt=timestamp(current);return true})
     if(!rows.length){await persist(scope,state);return null}
     const lease={token:randomUUID(),expires:now+300000,ids:rows.map(r=>r.id)};run.lease=lease;for(const row of rows)row.status='generating'
-    await persist(scope,state);return {runId:run.id,lease,products:rows.map(r=>r.source),descriptions:run.rows.filter(r=>r.suggestion&&r.status==='ready').map(r=>({id:r.id,description:r.suggestion!.description}))}
+    await persist(scope,state);return {runId:run.id,lease,products:rows.map(r=>r.source),descriptions:run.rows.filter(r=>r.suggestion&&r.status==='ready').map(r=>({id:r.id,title:r.source.title,description:r.suggestion!.description}))}
   })
   if(!claim)return false
   let suggestions:Awaited<ReturnType<typeof generateSeoBatch>>=[],failure=''
   try{suggestions=await generate(claim.products,fetch,[...await savedSeoDescriptions(scope),...claim.descriptions])}catch{failure='Rusty could not finish this batch. Your saved products are unchanged. Retry these suggestions.'}
   await locked(scope,async()=>{
     const state=await readBulkSeo(scope),run=state.run;if(!run||run.id!==claim.runId||run.lease?.token!==claim.lease.token)return
-    const library=[...await savedSeoDescriptions(scope),...run.rows.filter(r=>r.suggestion&&r.status==='ready').map(r=>({id:r.id,description:r.suggestion!.description}))]
-    for(const row of run.rows.filter(r=>claim.lease.ids.includes(r.id))){const value=suggestions.find(p=>p.id===row.id);if(failure||!value||value.error){row.status='failed';row.error=failure||value?.error||'No valid suggestion returned.'}else{let copy={title:row.before.title.trim()?row.before.title:value.title,description:row.before.description.trim()?row.before.description:value.description};const check=()=>seoQualityIssue(row.source,{title:row.before.title.trim()?'':copy.title,description:row.before.description.trim()?'':copy.description},library,!row.before.description.trim());if(check()){const safe=conservativeSeoCopy(row.source);copy={title:row.before.title.trim()?row.before.title:safe.title,description:row.before.description.trim()?row.before.description:safe.description}}const issue=check();if(issue){row.status='failed';row.error=issue;continue}row.suggestion=copy;row.status='ready';delete row.error;library.push({id:row.id,description:copy.description})}}
+    const library=[...await savedSeoDescriptions(scope),...run.rows.filter(r=>r.suggestion&&r.status==='ready').map(r=>({id:r.id,title:r.source.title,description:r.suggestion!.description}))]
+    for(const row of run.rows.filter(r=>claim.lease.ids.includes(r.id))){const value=suggestions.find(p=>p.id===row.id);if(failure||!value||value.error){row.status='failed';row.error=failure||value?.error||'No valid suggestion returned.'}else{let copy={title:row.before.title.trim()?row.before.title:value.title,description:row.before.description.trim()?row.before.description:value.description};const check=()=>seoQualityIssue(row.source,{title:row.before.title.trim()?'':copy.title,description:row.before.description.trim()?'':copy.description},library,!row.before.description.trim());if(check()){const safe=conservativeSeoCopy(row.source);copy={title:row.before.title.trim()?row.before.title:safe.title,description:row.before.description.trim()?row.before.description:safe.description}}const issue=check();if(issue){row.status='failed';row.error=issue;continue}row.suggestion=copy;row.status='ready';delete row.error;library.push({id:row.id,title:row.source.title,description:copy.description})}}
     run.lease=null;await persist(scope,state)
   })
   return true
@@ -111,7 +111,7 @@ export async function applyBulkSeo(scope:any,runId:string,values:Array<{id:strin
         const seo={title:row.before.title.trim()?row.before.title:value.title,description:row.before.description.trim()?row.before.description:value.description}
         if(!seo.title.trim()||!seo.description.trim())throw Error('Provide both search fields before saving.')
         await updateProductsWorkflow(scope).run({input:{selector:{id:row.id},update:{metadata:{[PRODUCT_SEO_KEY]:seo}}}})
-        row.suggestion=seo;row.status='saved';delete row.error;library.push({id:row.id,description:seo.description})
+        row.suggestion=seo;row.status='saved';delete row.error;library.push({id:row.id,title:row.source.title,description:seo.description})
       }))}catch{row.status='stale';row.error='Save could not be confirmed. Check this product before retrying.'}
       // Persist each result so a later failure never repeats already-confirmed saves.
       await persist(scope,state)
