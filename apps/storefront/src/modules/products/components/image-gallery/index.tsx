@@ -1,7 +1,7 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
-import Image from "next/image"
+import ProductPhoto from "../product-photo"
 import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
@@ -95,11 +95,10 @@ const ImageGallery = ({
         <div className="rh-proof-gallery-layout">
           <div className="rh-proof-gallery-main">
             <div className="rh-gallery-primary" data-orientation="square">
-              <Image
+              <ProductPhoto
                 src={selectedPreviewColor.image}
                 priority
                 alt={`Happy Cow 4-inch hair claw visual preview in ${selectedPreviewColor.name}`}
-                fill
                 sizes="(max-width: 760px) 100vw, 40vw"
                 className="rh-gallery-image"
               />
@@ -115,7 +114,7 @@ const ImageGallery = ({
                   onClick={() => setPreviewColorSlug(color.slug)}
                 >
                   <span className="rh-proof-gallery-thumbnail-image" data-orientation="square">
-                    <Image src={color.image} alt="" fill sizes="140px" />
+                    <ProductPhoto src={color.image} alt="" sizes="140px" />
                   </span>
                   <span>{color.name}</span>
                 </button>
@@ -178,7 +177,7 @@ const ImageGallery = ({
         <div className="rh-proof-gallery-layout">
           <div className="rh-proof-gallery-main">
             <div className="rh-gallery-primary" data-orientation={orientation}>
-              <Image
+              <ProductPhoto
                 src={mainImage.url}
                 priority
                 alt={
@@ -188,7 +187,6 @@ const ImageGallery = ({
                     ? "Healing Hearts hair claw in a healthcare-themed setting"
                     : `Healing Hearts hair claw in ${displayedColor.name}`
                 }
-                fill
                 sizes="(max-width: 760px) 100vw, 40vw"
                 className="rh-gallery-image"
                 style={{ transform: `scale(${activeImageScale})` }}
@@ -208,10 +206,9 @@ const ImageGallery = ({
                     className="rh-proof-gallery-thumbnail-image"
                     data-orientation={orientation}
                   >
-                    <Image
+                    <ProductPhoto
                       src={color.image}
                       alt=""
-                      fill
                       sizes="140px"
                       style={{ transform: `scale(${color.imageScale})` }}
                     />
@@ -233,7 +230,7 @@ const ImageGallery = ({
                     onClick={() => setActiveReferenceView(view.id)}
                   >
                     <span className="rh-proof-gallery-thumbnail-image" data-orientation={orientation}>
-                      <Image src={view.url} alt="" fill sizes="140px" />
+                      <ProductPhoto src={view.url} alt="" sizes="140px" />
                     </span>
                     <span>{view.label}</span>
                   </button>
@@ -292,9 +289,9 @@ const ImageGallery = ({
 
   return (
     <div className="rh-image-gallery" aria-label="Product images">
-      <div className="rh-gallery-primary" data-orientation={orientation}><Image src={activeImage.url} priority alt={`Product image ${displayedIndex + 1}`} fill sizes="(max-width: 760px) 100vw, 45vw" className="rh-gallery-image" /></div>
+      <div className="rh-gallery-primary" data-orientation={orientation}><ProductPhoto src={activeImage.url} priority alt={`Product image ${displayedIndex + 1}`} sizes="(max-width: 760px) 100vw, 45vw" className="rh-gallery-image" /></div>
       {usableImages.length > 1 && <div className="rh-gallery-thumbnails" aria-label="Choose a product image">
-        {usableImages.map((image, index) => <button key={image.id || image.url} type="button" className="rh-gallery-thumbnail" aria-label={`Show product image ${index + 1}`} aria-pressed={index === displayedIndex} onClick={() => chooseImage(index)}><Image src={image.url!} alt="" fill sizes="72px" className="rh-gallery-thumbnail-image" /></button>)}
+        {usableImages.map((image, index) => <button key={image.id || image.url} type="button" className="rh-gallery-thumbnail" aria-label={`Show product image ${index + 1}`} aria-pressed={index === displayedIndex} onClick={() => chooseImage(index)}><ProductPhoto src={image.url!} alt="" sizes="72px" className="rh-gallery-thumbnail-image" /></button>)}
       </div>}
     </div>
   )

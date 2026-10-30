@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import ProductPhoto from "../product-photo"
 import { useState } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { getProductPrice } from "@lib/util/get-product-price"
@@ -47,8 +47,8 @@ export default function ProductCard({ product }: { product: HttpTypes.StoreProdu
   return (
     <article className="rh-product-card">
       <LocalizedClientLink href={href} className="rh-product-card-media" aria-label={`View ${product.title}`}>
-        {primaryImage ? <Image src={primaryImage} alt={product.title || "Rustic Halo product"} fill sizes="(max-width: 640px) 46vw, 32vw" className="rh-product-card-image" /> : <span className="rh-product-card-fallback">Rustic Halo</span>}
-        {secondaryImage && <Image src={secondaryImage} alt="" aria-hidden fill sizes="(max-width: 640px) 46vw, 32vw" className="rh-product-card-image rh-product-card-image-secondary" />}
+        {primaryImage ? <ProductPhoto src={primaryImage} alt={product.title || "Rustic Halo product"} sizes="(max-width: 640px) 46vw, 32vw" className="rh-product-card-image" /> : <span className="rh-product-card-fallback">Rustic Halo</span>}
+        {secondaryImage && <ProductPhoto src={secondaryImage} alt="" aria-hidden sizes="(max-width: 640px) 46vw, 32vw" className="rh-product-card-image rh-product-card-image-secondary" />}
         {isProductSoldOut(product) && <span className="rh-stock-badge">Sold out</span>}
       </LocalizedClientLink>
       <div className="rh-product-card-body">

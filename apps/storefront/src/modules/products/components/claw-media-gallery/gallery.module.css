@@ -1,11 +1,11 @@
 .gallery { min-width:0; }
 .main { min-height:300px; }
 .thumbnails { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:14px 0 0; }
-.thumbnail { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex:0 0 64px; width:64px; height:64px; overflow:hidden; border:1px solid var(--rh-border,#dedcde); border-radius:8px; background:#fff; cursor:pointer; }
+.thumbnail { --rh-photo-inset:4px; --rh-photo-radius:8px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; flex:0 0 64px; width:64px; height:64px; overflow:hidden; border:1px solid var(--rh-border,#dedcde); border-radius:12px; background:#fff; cursor:pointer; }
 .thumbnail:hover { border-color:#527c96; }
 .thumbnail[aria-pressed="true"] { border-color:#527c96; box-shadow:0 0 0 2px #527c96; }
 .thumbnail:focus-visible { outline:2px solid #527c96; outline-offset:4px; }
-.thumbnailImage { object-fit:cover; }
+.thumbnailImage { object-fit:contain; }
 .color { width:28px; height:28px; border:1px solid rgba(68,67,68,.18); border-radius:50%; }
 .previewLabel { font-size:10px; line-height:1; color:#444344; }
 @media(max-width:760px) {

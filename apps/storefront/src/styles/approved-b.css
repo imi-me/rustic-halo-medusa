@@ -472,7 +472,25 @@ body.rh-approved-b {
 }
 .rh-approved-b .rh-product-card-image {
   object-fit: contain;
-  padding: 8px;
+  padding: 0;
+}
+.rh-approved-b .rh-photo-frame {
+  position: absolute;
+  inset: var(--rh-photo-inset, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: var(--rh-photo-radius, 12px);
+}
+.rh-approved-b .rh-photo-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--rh-photo-radius, 12px);
 }
 .rh-approved-b .rh-product-card-image-secondary {
   display: none;
@@ -657,10 +675,12 @@ body.rh-approved-b {
   overflow: hidden;
 }
 .rh-approved-b .rh-gallery-thumbnail {
+  --rh-photo-inset: 4px;
+  --rh-photo-radius: 8px;
   background: #fff;
   border: 1px solid #dfd7e9;
   border-radius: 12px;
-  padding: 4px;
+  padding: 0;
   overflow: hidden;
 }
 .rh-approved-b .rh-gallery-thumbnail[aria-pressed="true"] {
@@ -668,6 +688,11 @@ body.rh-approved-b {
 }
 .rh-approved-b .rh-gallery-image {
   object-fit: contain;
+}
+.rh-approved-b .rh-proof-gallery-thumbnail-image {
+  --rh-photo-inset: 4px;
+  --rh-photo-radius: 8px;
+  border-radius: 10px;
 }
 .rh-approved-b .rh-product-actions {
   padding: 23px;
@@ -1557,7 +1582,11 @@ body.rh-approved-b {
     font-size: 10px;
   }
   .rh-approved-b .rh-product-card-image {
-    padding: 4px;
+    padding: 0;
+  }
+  .rh-approved-b .rh-product-card-media,
+  .rh-approved-b .rh-gallery-primary {
+    --rh-photo-inset: 4px;
   }
   .rh-approved-b .rh-product-swatch {
     width: 13px;
@@ -1969,7 +1998,7 @@ body.rh-approved-b {
   max-width: none;
   width: 100%;
   height: auto;
-  aspect-ratio: 1.04;
+  aspect-ratio: 1;
   margin: 0;
 }
 .rh-approved-b .rh-product-compact .rh-shared-claw-gallery > iframe {
@@ -2028,7 +2057,7 @@ body.rh-approved-b {
   .rh-approved-b .rh-product-compact .rh-gallery-primary {
     width: 100%;
     max-width: none;
-    aspect-ratio: 1.13;
+    aspect-ratio: 1;
     height: auto;
   }
   .rh-approved-b .rh-product-compact .rh-shared-claw-gallery > iframe {

@@ -1,7 +1,7 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
-import Image from "next/image"
+import ProductPhoto from "../product-photo"
 import { ReactNode, useEffect, useState } from "react"
 import styles from "./gallery.module.css"
 
@@ -29,7 +29,7 @@ export default function ClawMediaGallery({
     <div className={styles.main}>
       <div style={{ display: photo ? "none" : undefined }} aria-hidden={Boolean(photo)}>{preview}</div>
       {photo && <div className="rh-gallery-primary" data-orientation="square">
-        <Image src={photo.url!} alt={`${product.title} — original photo ${photoIndex + 1}`} fill sizes="(max-width: 760px) 240px, 300px" className="rh-gallery-image" style={{ objectFit: "contain" }} />
+        <ProductPhoto src={photo.url!} alt={`${product.title} — original photo ${photoIndex + 1}`} sizes="(max-width: 760px) 100vw, 50vw" className="rh-gallery-image" />
       </div>}
     </div>
     <div className={styles.thumbnails} role="group" aria-label="Choose a product photo or color preview">
@@ -38,7 +38,7 @@ export default function ClawMediaGallery({
         <span className={styles.previewLabel}>Preview</span>
       </button>
       {photos.map((image, index) => <button key={image.id} type="button" className={styles.thumbnail} aria-label={`Show original photo ${index + 1}`} aria-pressed={photo?.id === image.id} onClick={() => setPhotoId(image.id)}>
-        <Image src={image.url!} alt="" fill sizes="64px" className={styles.thumbnailImage} />
+        <ProductPhoto src={image.url!} alt="" sizes="64px" className={styles.thumbnailImage} />
       </button>)}
     </div>
   </div>
