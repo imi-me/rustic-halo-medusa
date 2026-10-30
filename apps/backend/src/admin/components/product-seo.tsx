@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { Link } from 'react-router-dom'
 import { ProductSection } from './product-section'
 import { ProductCopyHelper } from './product-copy-helper'
 import { PRODUCT_SEO_KEY, emptyProductSeo, hasProductSeo, productSeoValues, seoText, type ProductSeo } from '../../lib/product-seo-values'
@@ -12,6 +13,7 @@ export const ProductSeoEditor = ({ value, change, title, description, material =
     <button type="button" disabled={!hasProductSeo(current)} onClick={() => change(emptyProductSeo())}>Use automatic wording</button>
     <div className="rh-product-search-preview" aria-label="Product search result preview"><small>rustichalo.com/us/products/{handle || 'product-name'}</small><strong>{preview.title}</strong><p>{preview.description}</p></div>
     <small>Preview only. Search engines may display different wording. Changes save with the product.</small>
+    <p><Link to="/product-seo">Let Rusty help with your whole catalog ↗</Link></p>
     <ProductCopyHelper label="Ask Rusty · Help with search wording" actions={['product-seo']} title={title} description={seoText(description)} material={material} contextRevision={JSON.stringify({ title, description, material, seo: current })} apply={(_, suggestion) => change({ title: suggestion.title, description: suggestion.description })}/>
   </ProductSection>
 }

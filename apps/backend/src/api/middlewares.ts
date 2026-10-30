@@ -56,6 +56,10 @@ export default defineMiddlewares({
     matcher: '/admin/assistant/product-copy', method: ['POST'],
     bodyParser: { sizeLimit: '5mb' }, middlewares: [],
   }, {
+    matcher: '/admin/product-seo', method: ['GET'], policies: [{ resource: 'product', operation: PolicyOperation.read }], middlewares: [],
+  }, {
+    matcher: '/admin/product-seo', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.read }, { resource: 'product', operation: PolicyOperation.update }], bodyParser: { sizeLimit: '64kb' }, middlewares: [],
+  }, {
 
     matcher: '/admin/product-workspace', method: ['POST'],
     policies: [{ resource: 'product', operation: PolicyOperation.create }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }, { resource: 'inventory_level', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }], middlewares: [],
