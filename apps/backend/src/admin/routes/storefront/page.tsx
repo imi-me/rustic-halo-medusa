@@ -709,10 +709,6 @@ const StorefrontPage = () => {
                     <strong>{draft.seo.title}</strong>
                     <p>{draft.seo.description}</p>
                   </div>
-                  <p className="hp-footnote">
-                    Image descriptions are beside each upload. Keyword meta tags
-                    are omitted because Google does not use them for ranking.
-                  </p>
                 </section>
               </fieldset>
             </form>
