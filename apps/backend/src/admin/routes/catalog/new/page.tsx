@@ -1,10 +1,11 @@
+import { NewClawChannels, ChannelDraftReview } from '../../../components/new-claw-channels'
 import { ProductSeoEditor } from '../../../components/product-seo'
 import { emptyProductSeo, hasProductSeo } from '../../../../lib/product-seo-values'
 import { ProductPackaging } from '../../../components/product-packaging'
 import { emptyAssignment, type PackageAssignment } from '../../../../lib/shipping-packages'
 import { ProductSection, revealInvalidField } from '../../../components/product-section'
 import { useEffect, useRef, useState } from 'react'
-import { useBlocker, useNavigate } from 'react-router-dom'
+import { useBlocker, useNavigate, useSearchParams } from 'react-router-dom'
 import { adminRequest, type Entity, type ProductDraft } from '../../../lib/inline-edit'
 import { newClawOffers, newProductIsHairClaw, validateNewClawOffers } from '../../../../lib/new-hair-claw'
 import { emptyEtsyDraft } from '../../../../lib/product-admin'
@@ -55,10 +56,15 @@ const slug = (value: string) =>
     .replace(/^-|-$/g, '')
 const NewProductPage = () => {
   const navigate = useNavigate()
+  const [searchParams,setSearchParams] = useSearchParams()
+  const jobId=searchParams.get('draft_request')
+  const [preparation,setPreparation]=useState<any>(null)
+  const [prepareEtsy,setPrepareEtsy]=useState(true)
+  const [channelSetup,setChannelSetup]=useState<any>(null)
   const [draft, setDraft] = useState(blank)
   const photos = useCopyPhotos(draft.images, draft.thumbnail, 'new')
   const [choices, setChoices] = useState<Record<string, Entity[]>>({})
-  const [requestId] = useState(() => crypto.randomUUID())
+  const [requestId] = useState(() => jobId || crypto.randomUUID())
   const [inventoryMode, setInventoryMode] = useState('stocked')
   const [options, setOptions] = useState<Array<{ title: string; values: string }>>([])
   const [variants, setVariants] = useState<Variant[]>([
@@ -87,7 +93,8 @@ const NewProductPage = () => {
     draft.fields.description ||
     variants.some((row) => row.price || row.barcode),
   )
-  const blocker = useBlocker(() => !created && (dirty || saving))
+  const blocker = useBlocker(() => !created && !preparation && (dirty || saving))
+  useEffect(()=>{if(!jobId)return;let live=true;let timer:ReturnType<typeof setTimeout>;const read=async()=>{try{const response=await adminRequest(`/admin/product-workspace/${jobId}`);if(!live)return;setPreparation(response.preparation);setError('');if(!['complete','failed'].includes(response.preparation.status))timer=setTimeout(read,3000)}catch(failure){if(live)setError((failure as Error).message)}};void read();return()=>{live=false;clearTimeout(timer)}},[jobId,preparation?.status==='failed',preparation?.status==='complete'])
   useEffect(() => {
     const lists = [
       ['type_id', 'product-types', 'product_types'],
@@ -127,14 +134,14 @@ const NewProductPage = () => {
     }
   }, [])
   useEffect(() => {
-    if (!dirty && !saving) return
+    if (preparation || !dirty && !saving) return
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault()
       event.returnValue = ''
     }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [dirty, saving])
+  }, [dirty, saving, preparation])
   useEffect(() => {
     if (created) navigate(`/products/${created}`, { replace: true })
   }, [created, navigate])
@@ -148,6 +155,7 @@ const NewProductPage = () => {
       },
     }))
   const hairClaw = newProductIsHairClaw(choices.type_id?.find(row => row.id === draft.fields.type_id), String(draft.fields.title))
+  useEffect(()=>{if(hairClaw&&prepareEtsy)setInventoryMode('made_to_order')},[hairClaw,prepareEtsy])
   const selectedClawOffers = newClawOffers.filter(offer => variants.some(row => row.options.Size === offer.size && row.options.Finish === offer.finish))
   const chooseClawOffer = (key: string, enabled: boolean) => {
     const selected = newClawOffers.filter(offer => offer.key === key ? enabled : selectedClawOffers.some(row => row.key === offer.key))
@@ -242,6 +250,7 @@ const NewProductPage = () => {
         if (hairClaw) {
           if (!selectedClawOffers.length) throw Error('Choose at least one size and finish you sell.')
           validateNewClawOffers({ options, variants })
+          if(prepareEtsy&&(!channelSetup?.ready||!channelSetup?.value))throw Error('Wait for the shared colors and Etsy settings, or reload them before preparing both drafts.')
         }
         if (!draft.fields.shipping_profile_id) throw new Error('Choose a shipping profile.')
         if (
@@ -315,12 +324,14 @@ const NewProductPage = () => {
             })),
           })),
           etsy: draft.etsy,
+          ...(hairClaw&&prepareEtsy?{channel_drafts:channelSetup.value}:{}),
           ...(hasProductSeo(draft.seo) ? {seo:draft.seo} : {}),
         }
         setFrozen(input)
       }
       const response = await adminRequest('/admin/product-workspace', input)
-      setCreated(response.product.id)
+      if(response.preparation){setPreparation(response.preparation);setSearchParams({draft_request:response.preparation.request_id},{replace:true})}
+      else setCreated(response.product.id)
     } catch (failure) {
       if ((failure as any).code === 'creation_preflight') setFrozen(null)
       setError((failure as Error).message)
@@ -361,6 +372,7 @@ const NewProductPage = () => {
       </select>
     </label>
   )
+  if(jobId||preparation)return <ChannelDraftReview preparation={preparation??{status:'loading'}} error={error} retry={async()=>{try{setError('');const response=await adminRequest(`/admin/product-workspace/${jobId||preparation?.request_id}`,{},'POST');setPreparation(response.preparation)}catch(failure){setError((failure as Error).message)}}}/>
   return (
     <div className="rh-inline-editor rh-product-editor">
       <form onInvalid={revealInvalidField}
@@ -383,9 +395,9 @@ const NewProductPage = () => {
             <button
               className="primary"
               type="submit"
-              disabled={loading || saving || Boolean(created) || !choices.shipping_profile_id}
+              disabled={loading || saving || Boolean(created) || !choices.shipping_profile_id || hairClaw&&prepareEtsy&&!channelSetup?.ready}
             >
-              {saving ? 'Creating…' : frozen ? 'Retry unchanged request' : 'Save product'}
+              {saving ? 'Saving your draft request…' : frozen ? 'Retry unchanged request' : hairClaw&&prepareEtsy ? 'Prepare website & Etsy drafts' : 'Save product'}
             </button>
           </div>
         </div>
@@ -452,6 +464,7 @@ const NewProductPage = () => {
                 <span>Inventory policy</span>
                 <select
                   aria-label="Inventory policy"
+                  disabled={hairClaw&&prepareEtsy}
                   value={inventoryMode}
                   onChange={(event) => setInventoryMode(event.target.value)}
                 >
@@ -464,7 +477,7 @@ const NewProductPage = () => {
               </p>
               {hairClaw ? <div>
                 <p>Choose only the sizes and finishes you sell. Color does not create another SKU.</p>
-                {newClawOffers.map(offer => <label className="rh-inline-field" key={offer.key}><span><input type="checkbox" checked={selectedClawOffers.some(row => row.key === offer.key)} onChange={event => chooseClawOffer(offer.key, event.target.checked)}/> {offer.size} · {offer.finish}</span></label>)}
+                {newClawOffers.map(offer => <label className="rh-inline-check" key={offer.key}><input type="checkbox" checked={selectedClawOffers.some(row => row.key === offer.key)} onChange={event => chooseClawOffer(offer.key, event.target.checked)}/> {offer.size} · {offer.finish}</label>)}
               </div> : <details>
                 <summary>Add options such as Size, Color or Finish</summary>
                 {options.map((option, index) => (
@@ -514,6 +527,7 @@ const NewProductPage = () => {
                   Generate variants
                 </button>
               </details>}
+              {hairClaw&&<NewClawChannels enabled={prepareEtsy} setEnabled={setPrepareEtsy} sizes={[...new Set(selectedClawOffers.map(offer=>offer.size.startsWith('2')?'2' as const:'4' as const))]} change={setChannelSetup}/>}
               {variants.filter(row => !hairClaw || selectedClawOffers.some(offer => row.options.Size === offer.size && row.options.Finish === offer.finish)).map((row) => (
                 <div className="rh-new-variant" key={row.key}>
                   <h3>{row.title}</h3><details><summary>Shipping override</summary><ProductPackaging variant label={` — ${row.title}`} value={row.shipping} change={shipping => setVariants(previous => previous.map(item => item.key === row.key ? { ...item, shipping } : item))} weight={row.weight ?? ''} setWeight={weight => setVariants(previous => previous.map(item => item.key === row.key ? { ...item, weight } : item))}/></details>
@@ -625,7 +639,7 @@ const NewProductPage = () => {
               ))}
             </ProductSection>
             <ProductSeoEditor draftOptions={variants.map(row=>row.options)} value={draft.seo} change={seo=>setDraft(previous=>({...previous,seo}))} title={String(draft.fields.title)} description={String(draft.fields.description)} material={String(draft.fields.material)} handle={String(draft.fields.handle)} />
-            <EtsyListingEditor
+            {!(hairClaw&&prepareEtsy)&&<EtsyListingEditor
               photos={photos}
               value={draft.etsy}
               change={(etsy) => setDraft((previous) => ({ ...previous, etsy }))}
@@ -638,6 +652,7 @@ const NewProductPage = () => {
               description={String(draft.fields.description)}
               material={String(draft.fields.material)}
             />
+            }
             {hairClaw && (
               <ProductSection title="Hair-claw images" className="">
                 <p>

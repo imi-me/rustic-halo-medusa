@@ -62,6 +62,12 @@ export default defineMiddlewares({
     matcher: '/admin/product-seo', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.read }, { resource: 'product', operation: PolicyOperation.update }], bodyParser: { sizeLimit: '64kb' }, middlewares: [],
   }, {
 
+    matcher: '/admin/product-workspace/etsy-settings', method: ['GET'], policies: [{ resource: 'product', operation: PolicyOperation.create }], middlewares: [],
+  }, {
+    matcher: '/admin/product-workspace/:requestId', method: ['POST'], policies: [{ resource: 'product', operation: PolicyOperation.create }], middlewares: [],
+  }, {
+    matcher: '/admin/product-workspace/:requestId', method: ['GET'], policies: [{ resource: 'product', operation: PolicyOperation.read }], middlewares: [],
+  }, {
     matcher: '/admin/product-workspace', method: ['POST'],
     policies: [{ resource: 'product', operation: PolicyOperation.create }, { resource: 'product_variant', operation: PolicyOperation.create }, { resource: 'inventory_item', operation: PolicyOperation.create }, { resource: 'inventory_level', operation: PolicyOperation.create }, { resource: 'price', operation: PolicyOperation.create }], middlewares: [],
   }, {

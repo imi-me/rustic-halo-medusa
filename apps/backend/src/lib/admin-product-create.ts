@@ -1,5 +1,7 @@
 import { clawSize } from './hair-claw-colors'
 import { newProductIsHairClaw, validateNewClawOffers } from './new-hair-claw'
+import { channelDraftSchema, channelColorMetadata } from './claw-channel-plan'
+import { CLAW_COLORS_KEY } from './hair-claw-colors'
 import { planClawOrderChoices } from './hair-claw-order-choices'
 import { PRODUCT_SEO_KEY } from './product-seo-values'
 import { productSeoSchema } from './product-seo'
@@ -71,6 +73,7 @@ export const creationSchema = z
       .min(1)
       .max(100),
     etsy: etsyDraftSchema,
+    channel_drafts: channelDraftSchema.optional(),
     seo: productSeoSchema.optional(),
   })
   .strict()
@@ -117,6 +120,7 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
     async () => {
       const type = input.type_id ? await products.retrieveProductType(input.type_id) : null
       const hairClaw = newProductIsHairClaw(type, input.title)
+      if (input.channel_drafts && !hairClaw) throw Error('Combined channel drafts are available for hair claws only.')
       if (hairClaw) validateNewClawOffers(input)
       const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex')
       const key = `product-create:${input.request_id}`
@@ -195,7 +199,7 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                 category_ids: input.categories,
                 tag_ids: input.tags,
                 sales_channels: input.sales_channels.map((id) => ({ id })),
-                metadata: { ...(hairClaw ? {color_mode:'order',source_product_type:'Hair Claw'} : {}), admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.seo ? { [PRODUCT_SEO_KEY]: input.seo } : {}), ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
+                metadata: { ...(hairClaw ? {color_mode:'order',source_product_type:'Hair Claw'} : {}), ...(input.channel_drafts ? {[CLAW_COLORS_KEY]:channelColorMetadata(input.channel_drafts)} : {}), admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.seo ? { [PRODUCT_SEO_KEY]: input.seo } : {}), ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
                 variants: input.variants.map((variant, index) => ({
                   title: variant.title,
                   ...(variant.weight ? { weight: variant.weight } : {}),

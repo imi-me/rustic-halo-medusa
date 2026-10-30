@@ -1,5 +1,6 @@
 import type { AuthenticatedMedusaRequest, MedusaResponse } from '@medusajs/framework/http'
 import { creationSchema, createAdminProduct } from '../../../lib/admin-product-create'
+import { queueChannelDrafts } from '../../../lib/product-channel-drafts'
 import { ADMIN_OPERATIONS } from '../../../modules/admin-operations'
 import { allowedOrigin } from '../assistant/route'
 export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResponse) {
@@ -18,6 +19,7 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
           .join('; '),
       })
   try {
+    if (parsed.data.channel_drafts) return res.status(202).json({ preparation: await queueChannelDrafts(req.scope, parsed.data) })
     return res.json({ product: await createAdminProduct(req.scope, parsed.data) })
   } catch (error) {
     let submitted = true
@@ -25,7 +27,7 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
       submitted = Boolean(
         (
           await (req.scope.resolve(ADMIN_OPERATIONS) as any).listAdminOperations({
-            operation_key: `product-create:${parsed.data.request_id}`,
+            operation_key: parsed.data.channel_drafts ? `product-channel-drafts:${parsed.data.request_id}` : `product-create:${parsed.data.request_id}`,
           })
         )[0],
       )
