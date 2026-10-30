@@ -1,0 +1,5 @@
+import { clawCatalogFingerprint as hash } from '../hair-claw-catalog-fingerprint'
+const product = () => ({id:'p',metadata:{corners:[{id:'b',x:1},{id:'a',x:2}]},variants:[{id:'two',sku:'HC-2',barcode:'0002',updated_at:new Date('2026-10-29'),price_set:{prices:[{id:'eur',amount:9},{id:'usd',amount:10}]}},{id:'one',sku:'HC-1',barcode:'0001'}]})
+it('treats relation-record ordering as equivalent in bulk and filtered queries',()=>{const a=product(),b=product();b.variants.reverse();b.variants[1].price_set!.prices.reverse();expect(hash(a)).toBe(hash(b))})
+it('detects changed prices, SKUs, barcodes and timestamps',()=>{for(const change of [(p:any)=>p.variants[0].price_set.prices[0].amount++,(p:any)=>p.variants[0].sku='changed',(p:any)=>p.variants[0].barcode='different',(p:any)=>p.variants[0].updated_at=new Date('2026-10-30')]){const a=product(),b=product();change(b);expect(hash(a)).not.toBe(hash(b))}})
+it('preserves the meaning and order of metadata arrays even when their entries have IDs',()=>{const a=product(),b=product();b.metadata.corners.reverse();expect(hash(a)).not.toBe(hash(b))})

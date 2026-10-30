@@ -1,9 +1,7 @@
 import fs from 'node:fs/promises'
-import { createHash } from 'node:crypto'
+import { clawCatalogFingerprint as fingerprint } from '../lib/hair-claw-catalog-fingerprint'
 import { planClawOrderChoices } from '../lib/hair-claw-order-choices'
 import { isHairClaw } from '../lib/product-admin'
-const canonical = (value:any):any => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])) : value
-const fingerprint = (product: any) => createHash('sha256').update(JSON.stringify(canonical(product))).digest('hex')
 const fields = ['id','title','description','metadata','type.*','options.*','options.values.*','variants.*','variants.options.*','variants.price_set.prices.*','variants.price_set.prices.price_rules.*']
 /** Default is a read-only report. Apply requires the reviewed report and unchanged records. */
 export default async function simplifyHairClaws({ container }: any) {
