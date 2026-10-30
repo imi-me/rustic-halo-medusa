@@ -100,9 +100,12 @@ export async function prepareChannelDrafts(scope:any,id:string,request:typeof fe
         else{
           const listings=[...drafts,...await client.listings('active'),...await client.listings('inactive'),...await client.listings('expired'),...await client.listings('sold_out')],skus=new Set(plan.summary.map(o=>o.sku.toLowerCase()))
           if(listings.some(l=>(l.skus??[]).some((sku:string)=>skus.has(sku.toLowerCase()))))throw Error('An Etsy listing already uses one of these SKUs. Link that existing listing instead of creating a duplicate.')
+          // Older saved requests can safely acquire the newly required shared shipping fields.
+          const measurements=['item_weight','item_weight_unit','item_length','item_width','item_height','item_dimensions_unit']
+          if(measurements.some(name=>p.settings[name]==null)){const current=await readEtsyDraftSettings(scope);p.settings={...p.settings,...Object.fromEntries(measurements.map(name=>[name,current.settings[name]]))};await save()}
           const body=new URLSearchParams({quantity:String(input.channel_drafts!.quantity),title:p.marker,description:input.etsy.description,price:String(Math.min(...plan.selection.variants.map(v=>v.price))),who_made:p.settings.who_made,when_made:p.settings.when_made,taxonomy_id:String(p.settings.taxonomy_id),is_supply:String(p.settings.is_supply),should_auto_renew:'false',type:'physical'})
           for(const name of ['shipping_profile_id','return_policy_id','shop_section_id','readiness_state_id'])if(p.settings[name])body.set(name,String(p.settings[name]))
-          if(input.weight) {body.set('item_weight',String(input.weight));body.set('item_weight_unit','g')}
+          for(const name of measurements)body.set(name,String(p.settings[name]))
           if(input.etsy.tags.length)body.set('tags',input.etsy.tags.join(','));if(input.etsy.materials.length)body.set('materials',input.etsy.materials.join(','))
           p.create_state='creating';await save()
           let created:any
