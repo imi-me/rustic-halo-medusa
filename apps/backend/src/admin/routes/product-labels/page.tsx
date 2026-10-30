@@ -1,3 +1,4 @@
+import { labelVariants, retailBarcode } from '../../../lib/hair-claw-label-identities'
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Button, Container, Heading, Text } from "@medusajs/ui"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -23,12 +24,14 @@ type Variant = {
   ean?: string | null
   upc?: string | null
   prices?: VariantPrice[]
+  metadata?: Record<string, unknown> | null
 }
 type Product = {
   id: string
   title: string
   status?: string | null
   variants?: Variant[]
+  metadata?: { hair_claw_template_v2?: { color_mode?: string; variant_ids?: string[] } } | null
 }
 type ProductResponse = { products: Product[]; count: number; limit: number; offset: number }
 
@@ -74,14 +77,14 @@ const labelTitle = (product: Product, variant: Variant) => {
 }
 
 const flattenProducts = (products: Product[]): CatalogLabel[] => products.flatMap((product) =>
-  (product.variants ?? []).map((variant) => ({
+  labelVariants(product).map((variant) => ({
     id: variant.id,
     productTitle: product.title,
     variantTitle: labelTitle(product, variant),
     status: product.status || "unknown",
     sku: variant.sku?.trim() || "",
-    barcode: variant.barcode?.trim() || variant.upc?.trim() || variant.ean?.trim() || "",
-    value: variant.barcode?.trim() || variant.upc?.trim() || variant.ean?.trim() || variant.sku?.trim() || "",
+    barcode: retailBarcode(variant, product.metadata?.hair_claw_template_v2?.color_mode === "order"),
+    value: retailBarcode(variant, product.metadata?.hair_claw_template_v2?.color_mode === "order") || variant.sku?.trim() || "",
     price: firstPrice(variant),
   })))
 
@@ -113,7 +116,7 @@ const ProductLabelsPage = () => {
         const params = new URLSearchParams({
           limit: "100",
           offset: String(offset),
-          fields: "id,title,status,*variants,*variants.prices",
+          fields: "id,title,status,metadata,*variants,*variants.prices",
         })
         const response = await fetch(`/admin/products?${params}`, {
           credentials: "include",
