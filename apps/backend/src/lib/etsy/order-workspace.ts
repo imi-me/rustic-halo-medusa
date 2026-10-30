@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { itemMatch, type ItemMatches } from './order-item-matches'
 import { summarizeEtsyReceipt } from './order-report'
 import { historicalItemMatch, type HistoricalOrderMatch } from './historical-order-matches'
+import { etsyOrderSkus } from './order-skus'
 
 const text = (value: unknown, max = 500) => typeof value === 'string' ? value.slice(0, max) : ''
 const time = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 946684800 && Number(value) < 253402300800 ? new Date(Number(value) * 1000).toISOString() : null
@@ -11,7 +12,8 @@ export function summarizeWorkspaceReceipt(raw: any, variants: VariantIdentity[],
   const summary = summarizeEtsyReceipt(raw)
   const transactions = summary.transactions.map((item, i) => {
     const source = raw.transactions[i]
-    const matches = item.sku ? variants.filter(v => v.sku?.trim().toLowerCase() === item.sku!.trim().toLowerCase()) : []
+    const exact = item.sku ? variants.filter(v => v.sku?.trim().toLowerCase() === item.sku!.trim().toLowerCase()) : []
+    const matches = exact.length || !item.sku ? exact : variants.filter(v => etsyOrderSkus(v, source.listing_id).some(sku => sku.toLowerCase() === item.sku!.trim().toLowerCase()))
     const digital = source.is_digital === true
     const manual = !digital ? itemMatch(summary.receiptId,source,variants,manualMatches) : null
     const historical = manual ?? (!digital ? historicalItemMatch(summary.receiptId, source, variants, historicalMatches) : null)

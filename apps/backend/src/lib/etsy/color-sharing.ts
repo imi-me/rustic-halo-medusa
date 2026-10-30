@@ -68,12 +68,13 @@ function planOrderColorSharing(inventory: any, selection: Export) {
       const saved = body.products.flatMap((row: any) => row.property_values).find((p: any) => p.property_id === property.property_id && normalized(canonical(p.property_name), p.values[0]) === normalized(canonical(p.property_name), desired))
       return saved ?? { ...property, value_ids: [], values: [desired] }
     })
+    const targetSku = selected.etsy_sku || selected.sku
     const key = combination(values, false), group = groups.get(key)
-    if (group && (group.sku !== selected.sku || group.price !== selected.price || group.quantity !== selected.quantity)) throw Error('Colors of one size/finish must share the original SKU, price and Etsy allocation.')
+    if (group && ((group.etsy_sku || group.sku) !== targetSku || group.price !== selected.price || group.quantity !== selected.quantity)) throw Error('Colors of one size/finish must share the original SKU, price and Etsy allocation.')
     groups.set(key, selected)
     const match = body.products.find((row: any) => combination(row.property_values) === combination(values))
-    const next = { sku: selected.sku, property_values: values, offerings: [{ ...(match?.offerings[0] ?? body.products[0].offerings[0]), price: selected.price, quantity: selected.quantity, is_enabled: selected.quantity > 0 }] }
-    changes.push({ sku: selected.sku, medusa_sku: selected.sku, color: selected.color, before: match ? {sku: match.sku, ...match.offerings[0]} : null, after: next.offerings[0], image_url: selected.image_url })
+    const next = { sku: targetSku, property_values: values, offerings: [{ ...(match?.offerings[0] ?? body.products[0].offerings[0]), price: selected.price, quantity: selected.quantity, is_enabled: selected.quantity > 0 }] }
+    changes.push({ sku: targetSku, medusa_sku: selected.sku, color: selected.color, before: match ? {sku: match.sku, ...match.offerings[0]} : null, after: next.offerings[0], image_url: selected.image_url })
     if (match) body.products[body.products.indexOf(match)] = next
     else body.products.push(next)
   }
@@ -82,7 +83,7 @@ function planOrderColorSharing(inventory: any, selection: Export) {
     const selected = groups.get(combination(row.property_values, false))
     if (!selected) throw Error('Include every existing Etsy size/finish in the review before simplifying its SKUs.')
     if (row.offerings[0].price !== selected.price || row.offerings[0].quantity !== selected.quantity || row.offerings[0].is_enabled !== (selected.quantity > 0)) throw Error('Existing Etsy colors have different prices or allocations. Review all colors together before simplifying.')
-    row.sku = selected.sku
+    row.sku = selected.etsy_sku || selected.sku
   }
   const combinations = body.products.map((row: any) => combination(row.property_values))
   if (new Set(combinations).size !== combinations.length) throw Error('Etsy has duplicate color combinations.')

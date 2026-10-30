@@ -115,3 +115,10 @@ it('requires review of conflicting unselected Etsy color stock instead of copyin
  const input=selection(); input.variants[0]={...input.variants[0],color_mode:'order',sku:'HC38737',options:{Size:'4 inch',Color:'Black'}}
  expect(()=>planColorSharing(source,input,'')).toThrow('different prices or allocations')
 })
+it('keeps the reviewed original Etsy size SKU when the imported Medusa identity differs', () => {
+ const input = selection()
+ input.variants[0] = { ...input.variants[0], color_mode: 'order', sku: 'ORIGINAL-CREAM', etsy_sku: 'ORIGINAL', color: 'Black', options: { Size: '4 inch', Color: 'Black' }, price: 15, quantity: 9 }
+ const result = planColorSharing(inventory(), input, '')
+ expect(result.body.products[0].sku).toBe('ORIGINAL')
+ expect(result.changes[0].medusa_sku).toBe('ORIGINAL-CREAM')
+})

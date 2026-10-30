@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { etsyOrderSku } from './etsy/order-skus'
 import { usesClawOrderColors, orderChoiceVariant, orderChoiceColors } from './hair-claw-order-choices'
 import { defaultClawColors, clawColorAvailable, type ClawColor } from './hair-claw-colors'
 
@@ -178,7 +179,7 @@ export function colorExport(product: any, draft: EtsyDraft) {
       variant_id: variant.metadata?.order_variant_id ?? variant.id,
       color_mode: usesClawOrderColors(product) ? 'order' : 'variant',
       sku: variant.sku,
-      etsy_sku: usesClawOrderColors(product) ? variant.sku : selected.etsy_sku || variant.sku,
+      etsy_sku: usesClawOrderColors(product) ? etsyOrderSku(variant, draft.listing_id) || variant.sku : selected.etsy_sku || variant.sku,
       color,
       options,
       price: Number(price.amount),
