@@ -1,3 +1,5 @@
+import { PRODUCT_SEO_KEY } from '../../../../../lib/product-seo-values'
+import { parseProductSeoUpdate } from '../../../../../lib/product-seo'
 import { CLAW_COLORS_KEY, clawColorSettingsSchema } from '../../../../../lib/hair-claw-colors'
 import { clawVariantGroups } from '../../../../../lib/claw-variant-groups'
 import { workspacePriceRevision } from '../../../../../lib/workspace-price-revision'
@@ -45,11 +47,15 @@ export async function POST(req: AuthenticatedMedusaRequest<any>, res: MedusaResp
       if (update.variants && JSON.stringify(update.variants.map((variant: any) => variant.id).sort()) !== JSON.stringify((product.variants ?? []).map(row => row.id).sort())) throw new Error('Variant membership changed. Reload the product.')
       const changed = (update.variants ?? []).filter(row => row.barcode)
       if (changed.length) await allocateBarcodes(products, changed.map(row => ({ id: row.id, barcode: row.barcode! })), await pendingBarcodes(req.scope))
+      const clearSeo = update.metadata && Object.prototype.hasOwnProperty.call(update.metadata, PRODUCT_SEO_KEY) && update.metadata[PRODUCT_SEO_KEY] === null
       if (update.metadata) update.metadata = { ...product.metadata,
+        ...(Object.prototype.hasOwnProperty.call(update.metadata, PRODUCT_SEO_KEY) ? { [PRODUCT_SEO_KEY]: parseProductSeoUpdate(update.metadata[PRODUCT_SEO_KEY]) } : {}),
         ...(clawColors ? { [CLAW_COLORS_KEY]: clawColors } : {}),
         ...(Object.prototype.hasOwnProperty.call(update.metadata, ETSY_DRAFT_KEY) ? { [ETSY_DRAFT_KEY]: etsyDraftSchema.parse(update.metadata[ETSY_DRAFT_KEY]) } : {}),
         ...(Object.prototype.hasOwnProperty.call(update.metadata, SHIPPING_KEY) ? { [SHIPPING_KEY]: assignmentSchema.parse(update.metadata[SHIPPING_KEY]) } : {}),
       }
+      // Medusa removes a metadata key when its update value is an empty string.
+      if (clearSeo) update.metadata[PRODUCT_SEO_KEY] = ''
       for (const patch of update.variants ?? []) if (patch.metadata) {
         const original = product.variants?.find(row => row.id === patch.id)
         patch.metadata = { ...original?.metadata, [SHIPPING_KEY]: assignmentSchema.parse(patch.metadata[SHIPPING_KEY] ?? original?.metadata?.[SHIPPING_KEY] ?? {}) }

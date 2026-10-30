@@ -1,3 +1,5 @@
+import { PRODUCT_SEO_KEY, emptyProductSeo, hasProductSeo, readProductSeo, type ProductSeo } from '../../lib/product-seo-values'
+import { productSeoSchema } from '../../lib/product-seo'
 import { CLAW_COLORS_KEY, clawColorSettingsSchema } from '../../lib/hair-claw-colors'
 import { workspacePriceRevision } from '../../lib/workspace-price-revision'
 import { emptyAssignment, assignmentSchema, SHIPPING_KEY, type PackageAssignment } from '../../lib/shipping-packages'
@@ -10,6 +12,7 @@ export type ProductDraft = {
   clawColors?: ReturnType<typeof clawColorSettingsSchema.parse>
   shipping?: PackageAssignment
   etsy: EtsyDraft
+  seo?: ProductSeo
   images: Array<{ key: string; id?: string; url: string }>
   thumbnail: string
   fields: Record<string, string | boolean>
@@ -27,6 +30,7 @@ export const isBasePrice = (price: Price) => !Object.keys(price.rules ?? {}).len
 
 export function productDraft(product: Entity): ProductDraft {
   return {
+    seo: readProductSeo(product.metadata),
     ...(product.metadata?.hair_claw_template_v2 ? { clawColors: clawColorSettingsSchema.parse(product.metadata?.[CLAW_COLORS_KEY] ?? {}) } : {}),
     shipping: assignmentSchema.parse(product.metadata?.[SHIPPING_KEY] ?? {}),
     etsy: product.metadata?.[ETSY_DRAFT_KEY] ? etsyDraftSchema.parse(product.metadata[ETSY_DRAFT_KEY]) : emptyEtsyDraft(),
@@ -48,6 +52,7 @@ export function productUpdate(product: Entity, draft: ProductDraft): Entity {
   const update: Entity = {}
   if (!equal(initial.etsy, draft.etsy)) update.metadata = { ...product.metadata, [ETSY_DRAFT_KEY]: etsyDraftSchema.parse(draft.etsy) }
   if (!equal(initial.shipping, draft.shipping ?? emptyAssignment())) update.metadata = { ...product.metadata, ...update.metadata, [SHIPPING_KEY]: assignmentSchema.parse(draft.shipping ?? {}) }
+  if (!equal(initial.seo, draft.seo ?? emptyProductSeo())) update.metadata = { ...update.metadata, [PRODUCT_SEO_KEY]: hasProductSeo(draft.seo) ? productSeoSchema.parse(draft.seo) : null }
   if (!equal(initial.images, draft.images)) {
     if (draft.images.some(image => !/^https?:\/\//.test(image.url))) throw new Error('Image upload is incomplete. Your draft is kept.')
     update.images = draft.images.map(({ id, url }) => ({ ...(id ? { id } : {}), url }))

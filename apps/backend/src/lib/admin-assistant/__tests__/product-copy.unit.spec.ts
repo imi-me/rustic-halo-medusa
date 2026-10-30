@@ -107,3 +107,13 @@ it('rejects unknown providers and incomplete output before any draft is returned
   request.mockResolvedValue({ ok: true, json: async () => ({ status: 'incomplete', output: [] }) })
   await expect(generateProductCopy(input(), request)).rejects.toThrow('incomplete')
 })
+
+it('drafts bounded product search wording without tags or write tools', async () => {
+  const request = jest.fn(async () => response({ title: 'Rose Hair Claw | Rustic Halo', description: 'Discover the rose hair claw, with wood details.', tags: [], explanation: 'Uses the supplied product facts.' }))
+  const value = await generateProductCopy({ ...input(), action: 'product-seo', locked_tags: [] }, request as any)
+  expect(value.title).toContain('Rustic Halo')
+  const body = JSON.parse((request.mock.calls[0] as any)[1].body)
+  expect(body.store).toBe(false); expect(body.tools).toBeUndefined(); expect(body.text.format.schema.properties.title.maxLength).toBe(100); expect(body.text.format.schema.properties.description.maxLength).toBe(320)
+  expect(copyInputSchema.safeParse({ ...input(), action: 'product-seo', title: '' }).success).toBe(false)
+  await expect(generateProductCopy({ ...input(), action: 'product-seo', locked_tags: [] }, jest.fn(async () => response({ title:'x'.repeat(101), description:'Summary', tags:[], explanation:'' })) as any)).rejects.toThrow()
+})

@@ -1,3 +1,4 @@
+import { productSeoValues } from "@lib/util/product-seo-values"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
@@ -91,12 +92,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     notFound()
   }
 
+  const seo = productSeoValues(product)
   return {
-    title: `${product.title} | Rustic Halo`,
-    description: `${product.title}`,
+    title: { absolute: seo.title },
+    description: seo.description,
     openGraph: {
-      title: `${product.title} | Rustic Halo`,
-      description: `${product.title}`,
+      title: seo.title,
+      description: seo.description,
       images: product.thumbnail ? [product.thumbnail] : [],
     },
   }

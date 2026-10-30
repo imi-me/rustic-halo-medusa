@@ -1,3 +1,5 @@
+import { ProductSeoEditor } from '../../../components/product-seo'
+import { emptyProductSeo, hasProductSeo } from '../../../../lib/product-seo-values'
 import { ProductPackaging } from '../../../components/product-packaging'
 import { emptyAssignment, type PackageAssignment } from '../../../../lib/shipping-packages'
 import { ProductSection, revealInvalidField } from '../../../components/product-section'
@@ -40,6 +42,7 @@ const blank = (): ProductDraft => ({
   thumbnail: '',
   variants: [],
   etsy: emptyEtsyDraft(),
+  seo: emptyProductSeo(),
   shipping: emptyAssignment(),
 })
 const slug = (value: string) =>
@@ -296,6 +299,7 @@ const NewProductPage = () => {
             })),
           })),
           etsy: draft.etsy,
+          ...(hasProductSeo(draft.seo) ? {seo:draft.seo} : {}),
         }
         setFrozen(input)
       }
@@ -602,6 +606,7 @@ const NewProductPage = () => {
                 </details>
               ))}
             </ProductSection>
+            <ProductSeoEditor value={draft.seo} change={seo=>setDraft(previous=>({...previous,seo}))} title={String(draft.fields.title)} description={String(draft.fields.description)} material={String(draft.fields.material)} handle={String(draft.fields.handle)} />
             <EtsyListingEditor
               photos={photos}
               value={draft.etsy}

@@ -121,3 +121,10 @@ it('retries partial stock initialization without recreating a product or adding 
 it('reserves entered barcodes from unconfirmed creations', async () => {
   await expect(allocateBarcodes({ listProductVariants: async () => [] }, [{ barcode: '00123' }], ['00123'])).rejects.toThrow('already assigned')
 })
+
+it('accepts optional search overrides without changing legacy creation payloads', () => {
+  const legacy = creationSchema.parse(input())
+  expect(Object.prototype.hasOwnProperty.call(legacy, 'seo')).toBe(false)
+  expect(creationSchema.parse({ ...input(), seo: { title: 'Specific title', description: 'A useful summary.' } }).seo).toEqual({ title: 'Specific title', description: 'A useful summary.' })
+  expect(creationSchema.safeParse({ ...input(), seo: { title: 'x'.repeat(101), description: '' } }).success).toBe(false)
+})

@@ -1,3 +1,5 @@
+import { PRODUCT_SEO_KEY } from './product-seo-values'
+import { productSeoSchema } from './product-seo'
 import { assignmentSchema, SHIPPING_KEY } from './shipping-packages'
 import { readPackageConfig } from './shipping-package-store'
 import { validateAssignments } from './shipping-assignment'
@@ -66,6 +68,7 @@ export const creationSchema = z
       .min(1)
       .max(100),
     etsy: etsyDraftSchema,
+    seo: productSeoSchema.optional(),
   })
   .strict()
 export async function pendingBarcodes(scope: any, excludeKey?: string): Promise<string[]> {
@@ -188,7 +191,7 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                 category_ids: input.categories,
                 tag_ids: input.tags,
                 sales_channels: input.sales_channels.map((id) => ({ id })),
-                metadata: { admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
+                metadata: { admin_creation_key: key, [ETSY_DRAFT_KEY]: input.etsy, ...(input.seo ? { [PRODUCT_SEO_KEY]: input.seo } : {}), ...(input.shipping ? { [SHIPPING_KEY]: input.shipping } : {}) },
                 variants: input.variants.map((variant, index) => ({
                   title: variant.title,
                   ...(variant.weight ? { weight: variant.weight } : {}),
