@@ -17,7 +17,7 @@ const priceShape = (variant: any) => JSON.stringify((variant.price_set?.prices ?
 export function planClawOrderChoices(product: any) {
   if (usesClawOrderColors(product)) return { metadata: product.metadata, retained: product.metadata.hair_claw_template_v2.variant_ids, retired: [], current: true }
   const config = product.metadata?.hair_claw_template_v2
-  const variants: any[] = product.variants ?? [], options: any[] = product.options ?? []
+  const variants: any[] = [...(product.variants ?? [])].sort((a,b)=>a.id.localeCompare(b.id)), options: any[] = [...(product.options ?? [])].sort((a,b)=>a.id.localeCompare(b.id))
   const sourceIds = new Set(variants.map(v => v.metadata?.source_variant_id).filter(Boolean))
   const originals = variants.filter(v => !generated(v) && (v.metadata?.inventory_mode !== 'made_to_order_color_option' || sourceIds.has(v.id)))
   if (!originals.length) throw Error('The original catalog SKU could not be confirmed. Review its source mapping; no identifiers were changed.')
@@ -52,7 +52,7 @@ export function planClawOrderChoices(product: any) {
     if (group.some(v => priceShape(v) !== priceShape(source))) throw Error('Original and color prices differ. Review the intended size/finish price before simplifying.')
     const size = variantClawSize(product, sample)
     if (!size) throw Error('Confirm the actual physical size before simplifying this design.')
-    const shown = (sample.options ?? []).filter((o: any) => config.option_ids.includes(o.option_id) && o.option_id !== colorId).map((o: any) => ({ option_id: o.option_id, value: o.value }))
+    const shown = (sample.options ?? []).filter((o: any) => config.option_ids.includes(o.option_id) && o.option_id !== colorId).map((o: any) => ({ option_id: o.option_id, value: o.value })).sort((a:any,b:any)=>a.option_id.localeCompare(b.option_id))
     const finishValue = shown.find((o:any) => /finish/i.test(config.option_titles?.[o.option_id] ?? options.find(p => p.id === o.option_id)?.title ?? ''))?.value
     const finish = sample.metadata?.claw_finish ?? (finishValue === 'Colors by Cate' ? 'cbc' : finishValue === 'Natural' ? 'natural' : finishValue)
     const choice = { size, ...(finish ? { finish } : {}), options: shown, aliases: group.map(v => v.id) }
@@ -66,7 +66,7 @@ export function planClawOrderChoices(product: any) {
     const descriptionSizes = [...String(product.description ?? '').matchAll(/\b([24])(?:-|\s*)inch/gi)].map(m => m[1])
     const size = clawSize(source.metadata?.physical_size) ?? clawSize(sizeOption?.value) ?? (new Set(descriptionSizes).size === 1 ? descriptionSizes[0] as '2' | '4' : undefined)
     if (!size) throw Error('Confirm the actual physical size before simplifying this design.')
-    choices[source.id] = { size, ...(source.metadata?.claw_finish ? {finish:source.metadata.claw_finish} : {}), options: (source.options ?? []).filter((o: any) => o.option_id !== colorId).map((o: any) => ({ option_id: o.option_id, value: o.value })), aliases: [] }
+    choices[source.id] = { size, ...(source.metadata?.claw_finish ? {finish:source.metadata.claw_finish} : {}), options: (source.options ?? []).filter((o: any) => o.option_id !== colorId).map((o: any) => ({ option_id: o.option_id, value: o.value })).sort((a:any,b:any)=>a.option_id.localeCompare(b.option_id)), aliases: [] }
   }
   if (!Object.keys(choices).length) throw Error('No confirmed existing size/finish offers were found.')
   const retained = Object.keys(choices), retired = variants.filter(v => !retained.includes(v.id)).map(v => v.id)

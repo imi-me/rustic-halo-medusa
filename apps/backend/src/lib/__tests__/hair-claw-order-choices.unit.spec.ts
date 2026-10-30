@@ -85,3 +85,7 @@ it('recovers a sole original imported variant only when its one physical size is
  x.product.description='Available in 2-inch and 4-inch sizes.'
  expect(()=>planClawOrderChoices(x.product)).toThrow('no unique original')
 })
+it('produces the same reviewed metadata regardless of bulk/single relation ordering',()=>{
+ const a=fixture(),b=fixture();b.product.variants.reverse();b.product.options.reverse();for(const v of b.product.variants)v.options.reverse()
+ expect(planClawOrderChoices(a.product).metadata).toEqual(planClawOrderChoices(b.product).metadata)
+})
