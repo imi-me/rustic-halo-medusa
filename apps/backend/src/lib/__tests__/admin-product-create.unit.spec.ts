@@ -149,7 +149,7 @@ it('creates only the chosen size/finish identities and carries order colors into
  create.mockClear()
  create.mockImplementation(async ({input}) => {
   const row = input.products[0]
-  const options = row.options.map((o,index) => ({ ...o, id: 'option_'+index, values: o.values.map(value => ({value})) }))
+  const options = row.options.map((o,index) => ({ ...o, id: o.title === 'Size' ? 'z_size' : 'a_finish', values: o.values.map(value => ({value})) }))
   product = { ...row, id:'prod_new', options, variants: row.variants.map((v,index) => ({...v,id:'variant_'+index,options:options.map(o=>({option_id:o.id,value:v.options[o.title]}))})) }
   return {result:[product]}
  })

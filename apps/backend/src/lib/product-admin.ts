@@ -202,7 +202,7 @@ export function colorExport(product: any, draft: EtsyDraft) {
     variants,
     ...(usesClawOrderColors(product) ? { order_options: {
       offer_name: 'Size / Finish',
-      offers: [...new Map(variants.map(row => [row.variant_id, { variant_id: row.variant_id, sku: row.etsy_sku, value: Object.entries(row.options).filter(([name]) => /size|finish/i.test(name)).map(([,value]) => value).join(' / ') }])).values()],
+      offers: [...new Map(variants.map(row => [row.variant_id, { variant_id: row.variant_id, sku: row.etsy_sku, value: Object.entries(row.options).filter(([name]) => /size|finish/i.test(name)).sort(([a],[b]) => Number(/finish/i.test(a)) - Number(/finish/i.test(b))).map(([,value]) => value).join(' / ') }])).values()],
       color_name: 'Color', colors: [...new Set(variants.map(row => row.color))],
       color_changes_sku: false,
     } } : {}),
