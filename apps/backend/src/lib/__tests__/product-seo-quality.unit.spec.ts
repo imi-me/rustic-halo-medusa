@@ -506,3 +506,35 @@ it("loads saved option facts for the inline helper and never writes a product wh
     global.fetch = prior;
   }
 });
+
+it("rejects copied option palettes and retries with natural product copy", async () => {
+  const p = source();
+  p.options.options.push({
+    name: "Color",
+    values: ["Black", "Espresso", "Ivory", "Rose", "Purple"],
+  });
+  const copy = {
+    id: p.id,
+    title: p.title,
+    description:
+      "A 4-inch Coffee Cup Hair Claw in Black, Espresso, Ivory, Rose and Purple.",
+  };
+  expect(seoQualityIssue(p, copy, [])).toContain("palette");
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce(response([copy]))
+    .mockResolvedValueOnce(
+      response([
+        {
+          id: p.id,
+          title: p.title,
+          description:
+            "A 4-inch Coffee Cup Hair Claw with a playful engraved wood design for coffee lovers.",
+        },
+      ]),
+    );
+  const [result] = await generateSeoBatch([p], request);
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(result.description).not.toContain("Espresso");
+  expect(result.error).toBeUndefined();
+});

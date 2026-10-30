@@ -47,6 +47,28 @@ export function seoQualityIssue(
 ): string | null {
   const text = `${copy.title}. ${copy.description}`,
     options = product.options;
+  if (
+    /base colou?r option|verified[_ ]options?|enabled[_ ]variants?|option_id|variant_id/i.test(
+      copy.description,
+    )
+  )
+    return "Use natural product copy, not internal option labels.";
+  if (
+    options?.options.some(
+      (option) =>
+        option.values.length >= 4 &&
+        option.values.filter((value) => {
+          const phrase = descriptionFingerprint(value);
+          return (
+            phrase &&
+            ` ${descriptionFingerprint(copy.description)} `.includes(
+              ` ${phrase} `,
+            )
+          );
+        }).length >= 4,
+    )
+  )
+    return "Do not enumerate an option palette. Focus on the specific design and at most a few useful details.";
   if (/<\/?[a-z][^>]*>/i.test(text)) return "Use plain text, not HTML.";
   if (
     /\b(?:product description|noted in|details provided|not specified|placeholder|insert here)\b/i.test(
@@ -157,7 +179,7 @@ export function conservativeSeoCopy(product: SeoCopyFacts): ProductSeo {
   return {
     title: productSeoValues({ title: name }).title,
     description: shortSeoText(
-      `${name} from Rustic Halo.${prefix}${facts.length ? " featuring " + facts.slice(0, 2).join(" and ") : " for everyday styling or display"}.`,
+      `${/\bRustic Halo\b/i.test(name) ? name : name + " from Rustic Halo"}.${prefix}${facts.length ? " featuring " + facts.slice(0, 2).join(" and ") : options?.hairClaw ? " for everyday hair styling" : " for styling or display"}.`,
       320,
     ),
   };
