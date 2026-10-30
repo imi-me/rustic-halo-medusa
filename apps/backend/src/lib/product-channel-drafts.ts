@@ -87,7 +87,7 @@ export async function prepareChannelDrafts(scope:any,id:string,request:typeof fe
       const plan=buildClawChannelPlan(product,p.palette,input.channel_drafts!.quantity,input.etsy,p.settings.readiness_state_id)
       const imageSignature=(value:any)=>value.images.map((image:any)=>[image.url,image.rank??null]).sort((a:any,b:any)=>a[0].localeCompare(b[0]))
       if(!same(product.images.map((i:any)=>i.url).sort(),input.images.map(i=>i.url).sort()))throw Error('The website draft photos changed. Review both drafts before continuing.')
-      const planHash=hash({inventory:plan.inventory,images:imageSignature(product),title:input.etsy.title,description:input.etsy.description})
+      const planHash=hash({inventory:channelInventoryShape(plan.inventory),images:imageSignature(product),title:input.etsy.title,description:input.etsy.description})
       if(p.plan_hash&&p.plan_hash!==planHash)throw Error('The saved product changed. Review both drafts before continuing.')
       p.plan_hash=planHash;p.summary=plan.summary;p.message='Preparing the Etsy draft.';await save()
       const access=await etsyWorkspaceAccess(scope);if(!access.scopes.includes('listings_w'))throw Error('Reconnect Etsy with listing-write permission.')
@@ -150,7 +150,7 @@ export async function prepareChannelDrafts(scope:any,id:string,request:typeof fe
       const latest=await scope.resolve(Modules.PRODUCT).retrieveProduct(website.id)
       if(latest.status!=='draft')throw Error('The website draft was published during preparation. Review both channels.')
       const current=await offerProduct(scope,website.id),currentPlan=buildClawChannelPlan(current,p.palette,input.channel_drafts!.quantity,input.etsy,p.settings.readiness_state_id)
-      if(!same(currentPlan.inventory,plan.inventory)||!same(imageSignature(current),imageSignature(product)))throw Error('Website offers changed during preparation. Review both drafts before publishing.')
+      if(!same(channelInventoryShape(currentPlan.inventory),desired)||!same(imageSignature(current),imageSignature(product)))throw Error('Website offers changed during preparation. Review both drafts before publishing.')
       await scope.resolve(Modules.PRODUCT).updateProducts(website.id,{metadata:{...latest.metadata,[ETSY_DRAFT_KEY]:{...plan.draft,listing_id:String(p.listing_id)},etsy_draft_preparation_v1:{request_id:id,listing_id:p.listing_id,state:'draft',prepared_at:new Date().toISOString()}}})
       p.message='Both drafts are ready. Review each before publishing.';p.completed_at=new Date().toISOString();await save('complete');return result(row)
     }catch(error){p.message=(error instanceof Error&&/^(Etsy|The |An |A |Choose |Use |Save |Shared |This |Reconnect |Website)/.test(error.message))?error.message:'Draft preparation stopped. Your website draft and saved Etsy progress are kept; retry the same request.';await save('failed');throw error}

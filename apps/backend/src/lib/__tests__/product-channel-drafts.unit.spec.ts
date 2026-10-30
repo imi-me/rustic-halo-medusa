@@ -80,3 +80,7 @@ test('ambiguous recovery markers never select a listing or create another one',a
  const f=fixture();await queueChannelDrafts(f.scope,f.input);const request=f.request;const wrapped=async(url:any,options:any)=>String(url).includes('state=draft')?new Response(JSON.stringify({count:2,results:[1,2].map(id=>({listing_id:id,title:'Rustic Halo draft '+f.input.request_id}))}),{headers:{'content-type':'application/json'}}):request(url,options)
  await expect(prepareChannelDrafts(f.scope,f.input.request_id,wrapped as any)).rejects.toThrow('More than one');expect(f.counts.createCount).toBe(0)
 })
+
+test('retry comparisons ignore the relation ordering of the actual saved offers',async()=>{
+ const f=fixture();await queueChannelDrafts(f.scope,f.input);f.loseInventory();await expect(prepareChannelDrafts(f.scope,f.input.request_id,f.request)).rejects.toThrow();f.product.variants.reverse();await prepareChannelDrafts(f.scope,f.input.request_id,f.request);expect(f.counts.createCount).toBe(1);expect(f.counts.inventoryWrites).toBe(1);expect(f.rows[0].status).toBe('complete')
+})
