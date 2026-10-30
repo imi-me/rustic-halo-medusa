@@ -1,16 +1,20 @@
+"use client"
+
 import ItemsTemplate from "./items"
 import Summary from "./summary"
 import EmptyCartMessage from "../components/empty-cart-message"
 import SignInPrompt from "../components/sign-in-prompt"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
+import { useCartSnapshot } from "@modules/cart/components/cart-state"
 export default function CartTemplate({
-  cart,
+  cart: serverCart,
   customer,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
 }) {
+  const cart = useCartSnapshot(serverCart)
   const count = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
   return (
     <div

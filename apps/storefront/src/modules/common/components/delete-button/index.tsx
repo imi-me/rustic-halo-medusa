@@ -2,6 +2,7 @@ import { deleteLineItem } from "@lib/data/cart"
 import { Spinner, Trash } from "@medusajs/icons"
 import { clx } from "@modules/common/components/ui"
 import { useState } from "react"
+import { useCartMutation } from "@modules/cart/components/cart-state"
 
 const DeleteButton = ({
   id,
@@ -14,6 +15,7 @@ const DeleteButton = ({
   className?: string
   ariaLabel?: string
 }) => {
+  const mutateCart = useCartMutation()
   const [isDeleting, setIsDeleting] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +24,7 @@ const DeleteButton = ({
     setIsDeleting(true)
     setError(null)
     try {
-      await deleteLineItem(id)
+      await mutateCart(() => deleteLineItem(id))
     } catch {
       setError("Could not remove this item. Please try again.")
     } finally {

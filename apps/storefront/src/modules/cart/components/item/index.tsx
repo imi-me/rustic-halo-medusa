@@ -12,6 +12,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Spinner from "@modules/common/icons/spinner"
 import Thumbnail from "@modules/products/components/thumbnail"
 import { useState } from "react"
+import { useCartMutation } from "@modules/cart/components/cart-state"
 
 type ItemProps = {
   item: HttpTypes.StoreCartLineItem
@@ -20,6 +21,7 @@ type ItemProps = {
 }
 
 const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
+  const mutateCart = useCartMutation()
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,10 +29,10 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
     setError(null)
     setUpdating(true)
 
-    await updateLineItem({
+    await mutateCart(() => updateLineItem({
       lineId: item.id,
       quantity,
-    })
+    }))
       .catch((err) => {
         setError(err.message)
       })

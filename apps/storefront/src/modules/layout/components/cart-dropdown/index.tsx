@@ -16,12 +16,14 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import { usePathname } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
 import BagIcon from "../bag-icon"
+import { useCartSnapshot } from "@modules/cart/components/cart-state"
 
 const CartDropdown = ({
-  cart: cartState,
+  cart: serverCart,
 }: {
   cart?: HttpTypes.StoreCart | null
 }) => {
+  const cartState = useCartSnapshot(serverCart ?? null)
   const [activeTimer, setActiveTimer] = useState<ReturnType<typeof setTimeout> | undefined>(
     undefined
   )
@@ -70,8 +72,9 @@ const CartDropdown = ({
     if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
       timedOpen()
     }
+    itemRef.current = totalItems
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalItems, itemRef.current])
+  }, [totalItems, pathname])
 
   return (
     <div

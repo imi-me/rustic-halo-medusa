@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { addToCart } from "@lib/data/cart"
 import { reorderItems } from "@lib/util/reorder-items"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useCartMutation } from "@modules/cart/components/cart-state"
 export default function ReorderButton({
   items,
 }: {
@@ -12,6 +13,7 @@ export default function ReorderButton({
 }) {
   const { countryCode } = useParams<{ countryCode: string }>()
   const router = useRouter()
+  const mutateCart = useCartMutation()
   const [pending, setPending] = useState(false)
   const [next, setNext] = useState(0)
   const [error, setError] = useState("")
@@ -27,7 +29,7 @@ export default function ReorderButton({
           ...(typeof item.metadata?.hair_claw_color === 'string' ? {hairClawColor: item.metadata.hair_claw_color} : {}),
         })),
         next,
-        (line) => addToCart({ ...line, countryCode }),
+        async (line) => { await mutateCart(() => addToCart({ ...line, countryCode })) },
         setNext
       )
       router.push(`/${countryCode}/cart`)

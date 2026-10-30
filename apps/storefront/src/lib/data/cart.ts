@@ -16,6 +16,8 @@ import {
 import { getRegion } from "./regions"
 import { getLocale } from "./locale-actions"
 
+const CART_FIELDS = "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
  * @param cartId - optional - The ID of the cart to retrieve.
@@ -23,8 +25,7 @@ import { getLocale } from "./locale-actions"
  */
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
-  fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+  fields ??= CART_FIELDS
 
   if (!id) {
     return null
@@ -34,10 +35,6 @@ export async function retrieveCart(cartId?: string, fields?: string) {
     ...(await getAuthHeaders()),
   }
 
-  const next = {
-    ...(await getCacheOptions("carts")),
-  }
-
   return await sdk.client
     .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
       method: "GET",
@@ -45,8 +42,9 @@ export async function retrieveCart(cartId?: string, fields?: string) {
         fields,
       },
       headers,
-      next,
-      cache: "force-cache",
+      // Cart quantities and totals must reflect the last confirmed mutation.
+      // A shared-layout refresh must never reuse an earlier cart snapshot.
+      cache: "no-store",
     })
     .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
     .catch(() => null)
@@ -139,7 +137,7 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
+  return sdk.store.cart
     .createLineItem(
       cart.id,
       {
@@ -147,15 +145,16 @@ export async function addToCart({
         quantity,
         ...(hairClawColor ? {metadata: {hair_claw_color: hairClawColor}} : {}),
       },
-      {},
+      { fields: CART_FIELDS },
       headers
     )
-    .then(async () => {
+    .then(async ({ cart }) => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+      return cart
     })
     .catch(medusaError)
 }
@@ -181,14 +180,15 @@ export async function updateLineItem({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .updateLineItem(cartId, lineId, { quantity }, {}, headers)
-    .then(async () => {
+  return sdk.store.cart
+    .updateLineItem(cartId, lineId, { quantity }, { fields: CART_FIELDS }, headers)
+    .then(async ({ cart }) => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+      return cart
     })
     .catch(medusaError)
 }
@@ -208,14 +208,17 @@ export async function deleteLineItem(lineId: string) {
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .deleteLineItem(cartId, lineId, {}, headers)
-    .then(async () => {
+  return sdk.store.cart
+    .deleteLineItem(cartId, lineId, { fields: CART_FIELDS }, headers)
+    .then(async ({ parent: cart }) => {
+      const confirmed = cart ?? await retrieveCart(cartId)
+      if (!confirmed) throw new Error("Unable to confirm the updated cart")
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+      return confirmed
     })
     .catch(medusaError)
 }

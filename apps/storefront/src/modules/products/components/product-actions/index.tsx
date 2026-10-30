@@ -35,6 +35,7 @@ import {
 } from "@lib/util/hair-claw-template"
 import ClawColorPicker from "@modules/products/components/claw-color-picker"
 import { productClawColors, clawSize } from "@lib/util/hair-claw-template"
+import { useCartMutation } from "@modules/cart/components/cart-state"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -56,6 +57,7 @@ export default function ProductActions({
   disabled,
 }: ProductActionsProps) {
   const router = useRouter()
+  const mutateCart = useCartMutation()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { setCanPreviewFourInch, setProductSelection } = useHappyCowPreview()
@@ -250,12 +252,12 @@ export default function ProductActions({
 
     setAddError('')
     try {
-      await addToCart({
+      await mutateCart(() => addToCart({
         variantId: selectedVariant.id,
         quantity,
         countryCode,
         ...(selectedOrderColor ? { hairClawColor: selectedOrderColor.name } : {}),
-      })
+      }))
     } catch (error) {
       setAddError(error instanceof Error ? error.message : 'The item could not be added. Please try again.')
     } finally { setIsAdding(false) }
