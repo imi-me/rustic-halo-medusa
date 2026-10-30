@@ -715,3 +715,86 @@
     margin-left: 0;
   }
 }
+/* Plain-language choices and writing help stay inside their own field areas. */
+.hp-link-picker > label,
+.hp-link-search > label,
+.hp-custom-link > span {
+  font-size: 11px;
+  color: #897495;
+}
+.hp-link-search,
+.hp-custom-link {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+.hp-link-search {
+  padding: 13px;
+  background: #f3eff8;
+  border: 1px solid #e3d9ed;
+  border-radius: 12px;
+}
+.hp-link-picker a {
+  color: #0071d7;
+}
+.hp-link-picker small button {
+  font-size: 10px;
+  padding: 3px 7px;
+  min-height: 25px;
+}
+.hp-required {
+  font-size: 9px;
+  font-style: normal;
+  margin-left: 8px;
+  color: #897495;
+}
+.hp-character-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.hp-rusty-helper {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border: 1px solid #dcd4ec;
+  border-radius: 14px;
+  background: #f7f3fc;
+  min-width: 0;
+}
+.hp-rusty-helper > summary {
+  cursor: pointer;
+  color: #655284;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+.hp-rusty-helper .hp-footnote {
+  margin: 12px 0 0;
+}
+.hp-rusty-proposal {
+  padding: 16px;
+  margin-top: 16px;
+  border: 1px solid #ddd3e9;
+  border-radius: 12px;
+  background: #fff;
+}
+.hp-rusty-proposal h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.hp-rusty-proposal > p,
+.hp-rusty-proposal > small {
+  font-size: 11px;
+  line-height: 1.7;
+}
+.hp-rusty-proposal .hp-field {
+  margin-top: 8px;
+}
+.hp-rusty-proposal .hp-header-actions {
+  margin: 14px 0;
+}
+.hp-link-picker select {
+  white-space: normal;
+  max-width: 100%;
+}

@@ -5,6 +5,8 @@ import { adminRequest } from "../../lib/inline-edit";
 import type { HomepageContent } from "../../../lib/storefront-content/schema";
 import type { HomepageState } from "../../../lib/storefront-content/store";
 import "./storefront.css";
+import { LinkPickerProvider, StorefrontLinkPicker } from "./link-picker";
+import { RustyHelper } from "./rusty-helper";
 type State = HomepageState & { storefront_url: string };
 type Hero = HomepageContent["hero"];
 type Card = HomepageContent["explore"]["items"][number];
@@ -32,7 +34,10 @@ function TextField({
   const helpId = useId();
   return (
     <label className="hp-field">
-      <span>{label}</span>
+      <span>
+        {label}
+        {required && <em className="hp-required">Required</em>}
+      </span>
       {multiline ? (
         <textarea
           aria-label={label}
@@ -54,6 +59,9 @@ function TextField({
         />
       )}{" "}
       {help && <small id={helpId}>{help}</small>}
+      <small className="hp-character-count">
+        {value.length} / {max} characters
+      </small>
     </label>
   );
 }
@@ -94,13 +102,15 @@ function Fit({
 }) {
   return (
     <label className="hp-field">
-      <span>Image display</span>
+      <span>How should the image fit?</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as "cover" | "contain")}
       >
-        <option value="cover">Fill the image area (may crop)</option>
-        <option value="contain">Show the whole image</option>
+        <option value="cover">Fill the frame (edges may be cropped)</option>
+        <option value="contain">
+          Show the whole picture (may leave space)
+        </option>
       </select>
     </label>
   );
@@ -157,8 +167,28 @@ function CopyFields({
 }) {
   return (
     <>
+      <RustyHelper
+        kind="section"
+        context={{
+          title: value.title,
+          description: value.description,
+          eyebrow: value.eyebrow,
+          action: value.action,
+          destination: value.href,
+        }}
+        apply={(patch) =>
+          change({
+            ...(patch.title !== undefined ? { title: patch.title } : {}),
+            ...(patch.description !== undefined
+              ? { description: patch.description }
+              : {}),
+            ...(patch.eyebrow !== undefined ? { eyebrow: patch.eyebrow } : {}),
+            ...(patch.action !== undefined ? { action: patch.action } : {}),
+          })
+        }
+      />
       <TextField
-        label="Eyebrow / small label"
+        label="Small label above the heading"
         value={value.eyebrow}
         onChange={(eyebrow) => change({ eyebrow })}
         max={100}
@@ -179,21 +209,17 @@ function CopyFields({
         multiline
       />
       <div className="hp-fields-two">
-        <TextField
-          label="Storefront link"
+        <StorefrontLinkPicker
           value={value.href}
           onChange={(href) => change({ href })}
-          max={500}
-          required
-          help="For example: /collections/fall or /categories/earrings"
         />
         <TextField
-          label="Button / image link label"
+          label="Button text"
           value={value.action}
           onChange={(action) => change({ action })}
           max={80}
           required
-          help="Also describes the link when the image has no visible text."
+          help="For example: Shop earrings. Also names the clickable image when website text is off."
         />
       </div>
     </>
@@ -393,387 +419,436 @@ const StorefrontPage = () => {
     }
   }
   return (
-    <div className="hp-editor">
-      <header className="hp-header">
-        <div>
-          <span className="hp-kicker">STOREFRONT</span>
-          <h1>Homepage editor</h1>
-          <p>Fresh images and a few words. Your storefront, in your hands.</p>
-        </div>
-        <div className="hp-header-actions">
-          <button
-            type="button"
-            disabled={busy || !dirty}
-            onClick={() => {
-              if (saved) {
-                setDraft(clone(saved.draft));
-                setError("");
-                setNotice("Unsaved changes discarded.");
-              }
-            }}
-          >
-            Discard changes
-          </button>
-          <button
-            type="button"
-            disabled={busy || !draft || !dirty}
-            onClick={() => void save("draft")}
-          >
-            Save draft
-          </button>
-          <button
-            className="hp-primary"
-            type="button"
-            disabled={busy || !draft}
-            onClick={() => void save("publish")}
-          >
-            {busy ? "Working…" : "Publish to storefront"}
-          </button>
-        </div>
-      </header>
-      <div className="hp-status">
-        <span className={dirty ? "is-dirty" : ""}>
-          {dirty
-            ? "Unsaved changes"
-            : unpublished
-            ? "Saved draft · not published"
-            : "Published design"}
-        </span>
-        {saved?.published_at && (
-          <span>
-            Last published {new Date(saved.published_at).toLocaleString()}
+    <LinkPickerProvider origin={saved?.storefront_url || ""}>
+      <div className="hp-editor">
+        <header className="hp-header">
+          <div>
+            <span className="hp-kicker">STOREFRONT</span>
+            <h1>Homepage editor</h1>
+            <p>Fresh images and a few words. Your storefront, in your hands.</p>
+          </div>
+          <div className="hp-header-actions">
+            <button
+              type="button"
+              disabled={busy || !dirty}
+              onClick={() => {
+                if (saved) {
+                  setDraft(clone(saved.draft));
+                  setError("");
+                  setNotice("Unsaved changes discarded.");
+                }
+              }}
+            >
+              Discard changes
+            </button>
+            <button
+              type="button"
+              disabled={busy || !draft || !dirty}
+              onClick={() => void save("draft")}
+            >
+              Save draft
+            </button>
+            <button
+              className="hp-primary"
+              type="button"
+              disabled={busy || !draft}
+              onClick={() => void save("publish")}
+            >
+              {busy ? "Working…" : "Publish to storefront"}
+            </button>
+          </div>
+        </header>
+        <div className="hp-status">
+          <span className={dirty ? "is-dirty" : ""}>
+            {dirty
+              ? "Unsaved changes"
+              : unpublished
+              ? "Saved draft · not published"
+              : "Published design"}
           </span>
+          {saved?.published_at && (
+            <span>
+              Last published {new Date(saved.published_at).toLocaleString()}
+            </span>
+          )}
+          {saved && (
+            <a
+              href={saved.storefront_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open storefront ↗
+            </a>
+          )}
+        </div>
+        {notice && (
+          <p className="hp-notice" role="status">
+            {notice}
+          </p>
         )}
-        {saved && (
-          <a
-            href={saved.storefront_url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open storefront ↗
-          </a>
+        {error && (
+          <div className="hp-error" role="alert">
+            <p>{error}</p>
+            <button type="button" disabled={busy} onClick={() => void load()}>
+              Reload saved version
+            </button>
+          </div>
+        )}
+        {!saved && !busy && (
+          <button type="button" onClick={() => void load()}>
+            Load homepage
+          </button>
+        )}
+        {draft && saved && (
+          <div className="hp-editor-grid">
+            <div>
+              <nav className="hp-editor-tabs" aria-label="Homepage sections">
+                {(["hero", "explore", "seo"] as const).map((t) => (
+                  <button
+                    type="button"
+                    key={t}
+                    aria-pressed={tab === t}
+                    onClick={() => setTab(t)}
+                  >
+                    {t === "hero"
+                      ? "Hero"
+                      : t === "explore"
+                      ? "Explore collections"
+                      : "Search settings"}
+                  </button>
+                ))}
+              </nav>
+              <form ref={form} onSubmit={(e) => e.preventDefault()}>
+                <fieldset disabled={busy}>
+                  <section
+                    className="hp-panel"
+                    data-editor-tab="hero"
+                    hidden={tab !== "hero"}
+                  >
+                    <h2>Hero</h2>
+                    <p>
+                      Your first impression. Use separate desktop and phone
+                      crops.
+                    </p>
+                    <Toggle
+                      label="Show hero section"
+                      checked={draft.hero.enabled}
+                      onChange={(enabled) => hero({ enabled })}
+                    />
+                    <Toggle
+                      label="Show website text and button"
+                      checked={draft.hero.showText}
+                      onChange={(showText) => hero({ showText })}
+                      help="Switch off for a full clickable image. Your saved text stays available."
+                    />
+                    <ImageField
+                      label="Desktop hero image"
+                      url={draft.hero.desktopImage}
+                      origin={saved.storefront_url}
+                      hint="2400 × 800 px recommended. Leave the left 40% quiet when text is on."
+                      onUpload={(file) =>
+                        void upload(file, (url) => hero({ desktopImage: url }))
+                      }
+                    />
+                    <ImageField
+                      label="Phone hero image"
+                      url={draft.hero.mobileImage}
+                      origin={saved.storefront_url}
+                      hint="1200 × 800 px recommended. Center the products; text sits below the image."
+                      onUpload={(file) =>
+                        void upload(file, (url) => hero({ mobileImage: url }))
+                      }
+                    />
+                    <TextField
+                      label="Hero image description (alt text)"
+                      value={draft.hero.imageAlt}
+                      onChange={(imageAlt) => hero({ imageAlt })}
+                      max={300}
+                      required
+                      help="Describe what the photo shows. Include meaningful words printed in the artwork; avoid a list of keywords."
+                    />
+                    <RustyHelper
+                      kind="alt"
+                      context={{
+                        title: draft.hero.title,
+                        description: draft.hero.description,
+                        alt: draft.hero.imageAlt,
+                        photo: draft.hero.desktopImage,
+                      }}
+                      apply={(patch) => {
+                        if (patch.alt !== undefined)
+                          hero({ imageAlt: patch.alt });
+                      }}
+                    />
+                    <Fit
+                      value={draft.hero.imageFit}
+                      onChange={(imageFit) => hero({ imageFit })}
+                    />
+                    <details
+                      className="hp-copy-fields"
+                      open={draft.hero.showText}
+                    >
+                      <summary>
+                        {draft.hero.showText
+                          ? "Hero text and link"
+                          : "Saved text and image link"}
+                      </summary>
+                      <CopyFields value={draft.hero} change={hero} />
+                    </details>
+                  </section>
+                  <section
+                    className="hp-panel"
+                    data-editor-tab="explore"
+                    hidden={tab !== "explore"}
+                  >
+                    <h2>Explore the collections</h2>
+                    <p>
+                      Update the two collection stories independently. Text can
+                      be hidden without losing it.
+                    </p>
+                    <Toggle
+                      label="Show Explore collections section"
+                      checked={draft.explore.enabled}
+                      onChange={(enabled) =>
+                        setDraft({
+                          ...draft,
+                          explore: { ...draft.explore, enabled },
+                        })
+                      }
+                    />
+                    <Toggle
+                      label="Show section heading"
+                      checked={draft.explore.showHeading}
+                      onChange={(showHeading) =>
+                        setDraft({
+                          ...draft,
+                          explore: { ...draft.explore, showHeading },
+                        })
+                      }
+                    />
+                    <TextField
+                      label="Section heading"
+                      value={draft.explore.heading}
+                      onChange={(heading) =>
+                        setDraft({
+                          ...draft,
+                          explore: { ...draft.explore, heading },
+                        })
+                      }
+                      max={100}
+                      required
+                    />
+                    {draft.explore.items.map((c, i) => (
+                      <section
+                        className="hp-collection-editor"
+                        key={c.id}
+                        aria-label={`Collection ${i + 1} editor`}
+                      >
+                        <h3>
+                          Collection {i + 1} · {c.title}
+                        </h3>
+                        <Toggle
+                          label={`Show collection ${i + 1}`}
+                          checked={c.enabled}
+                          onChange={(enabled) => card(i, { enabled })}
+                        />
+                        <Toggle
+                          label={`Show collection ${i + 1} text and button`}
+                          checked={c.showText}
+                          onChange={(showText) => card(i, { showText })}
+                          help="When off, the image uses the full row and remains clickable."
+                        />
+                        <ImageField
+                          label={`Collection ${i + 1} image`}
+                          url={c.image}
+                          origin={saved.storefront_url}
+                          hint="Product photo: 1200 × 1000 px or larger. For a full-image row, use a wide 2400 × 800 px banner."
+                          onUpload={(file) =>
+                            void upload(file, (url) => card(i, { image: url }))
+                          }
+                        />
+                        <ImageField
+                          label={`Collection ${i + 1} phone image`}
+                          url={c.mobileImage}
+                          origin={saved.storefront_url}
+                          hint="Optional separate phone crop. Leave empty to use the main image."
+                          onUpload={(file) =>
+                            void upload(file, (url) =>
+                              card(i, { mobileImage: url })
+                            )
+                          }
+                        />
+                        {c.mobileImage && (
+                          <button
+                            className="hp-text-button"
+                            type="button"
+                            onClick={() => card(i, { mobileImage: "" })}
+                          >
+                            Use main image on phones
+                          </button>
+                        )}
+                        <TextField
+                          label={`Collection ${
+                            i + 1
+                          } image description (alt text)`}
+                          value={c.alt}
+                          onChange={(alt) => card(i, { alt })}
+                          max={300}
+                          required
+                        />
+                        <RustyHelper
+                          kind="alt"
+                          context={{
+                            title: c.title,
+                            description: c.description,
+                            alt: c.alt,
+                            photo: c.image,
+                          }}
+                          apply={(patch) => {
+                            if (patch.alt !== undefined)
+                              card(i, { alt: patch.alt });
+                          }}
+                        />
+                        <Fit
+                          value={c.imageFit}
+                          onChange={(imageFit) => card(i, { imageFit })}
+                        />
+                        <details className="hp-copy-fields" open={c.showText}>
+                          <summary>
+                            {c.showText
+                              ? "Collection text and link"
+                              : "Saved text and image link"}
+                          </summary>
+                          <CopyFields
+                            value={c}
+                            change={(patch) => card(i, patch)}
+                          />
+                        </details>
+                      </section>
+                    ))}
+                  </section>
+                  <section
+                    className="hp-panel"
+                    data-editor-tab="seo"
+                    hidden={tab !== "seo"}
+                  >
+                    <h2>Search settings</h2>
+                    <p>
+                      Useful page information, even when your artwork contains
+                      the visible headline.
+                    </p>
+                    <RustyHelper
+                      kind="search"
+                      context={{
+                        title: draft.seo.title,
+                        description: draft.seo.description,
+                      }}
+                      apply={(patch) =>
+                        setDraft({
+                          ...draft,
+                          seo: {
+                            title: patch.seoTitle ?? draft.seo.title,
+                            description:
+                              patch.seoDescription ?? draft.seo.description,
+                          },
+                        })
+                      }
+                    />
+                    <TextField
+                      label="Homepage search title"
+                      value={draft.seo.title}
+                      onChange={(title) =>
+                        setDraft({ ...draft, seo: { ...draft.seo, title } })
+                      }
+                      max={100}
+                      required
+                      help="A clear name for the page. Around 50–60 characters is a useful starting point."
+                    />
+                    <TextField
+                      label="Homepage search description"
+                      value={draft.seo.description}
+                      onChange={(description) =>
+                        setDraft({
+                          ...draft,
+                          seo: { ...draft.seo, description },
+                        })
+                      }
+                      max={320}
+                      multiline
+                      required
+                      help="One or two natural sentences about Rustic Halo. Search engines may choose a different snippet."
+                    />
+                    <div className="hp-search-preview">
+                      <small>rustichalo.com</small>
+                      <strong>{draft.seo.title}</strong>
+                      <p>{draft.seo.description}</p>
+                    </div>
+                  </section>
+                </fieldset>
+              </form>
+            </div>
+            <aside className="hp-preview-panel">
+              <div className="hp-preview-heading">
+                <div>
+                  <h2>Draft preview</h2>
+                  <p>Editable homepage sections</p>
+                </div>
+                <div role="group" aria-label="Preview size">
+                  <button
+                    type="button"
+                    aria-pressed={!phone}
+                    onClick={() => setPhone(false)}
+                  >
+                    Desktop
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={phone}
+                    onClick={() => setPhone(true)}
+                  >
+                    Phone
+                  </button>
+                </div>
+              </div>
+              <Preview
+                content={draft}
+                origin={saved.storefront_url}
+                phone={phone}
+              />
+              <p className="hp-footnote">
+                {dirty
+                  ? "Your unsaved edits appear here."
+                  : "Showing the saved draft."}{" "}
+                Publish when you are ready to update the storefront.
+              </p>
+            </aside>
+          </div>
+        )}
+        {blocker.state === "blocked" && (
+          <div className="hp-leave-backdrop">
+            <section
+              className="hp-leave-dialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-label="Unsaved homepage changes"
+            >
+              <h2>Keep your homepage changes?</h2>
+              <p>
+                You have unsaved edits. Save a draft or discard them before
+                leaving.
+              </p>
+              <button type="button" onClick={() => blocker.reset()}>
+                Keep editing
+              </button>
+              <button type="button" onClick={() => blocker.proceed()}>
+                Discard and leave
+              </button>
+            </section>
+          </div>
         )}
       </div>
-      {notice && (
-        <p className="hp-notice" role="status">
-          {notice}
-        </p>
-      )}
-      {error && (
-        <div className="hp-error" role="alert">
-          <p>{error}</p>
-          <button type="button" disabled={busy} onClick={() => void load()}>
-            Reload saved version
-          </button>
-        </div>
-      )}
-      {!saved && !busy && (
-        <button type="button" onClick={() => void load()}>
-          Load homepage
-        </button>
-      )}
-      {draft && saved && (
-        <div className="hp-editor-grid">
-          <div>
-            <nav className="hp-editor-tabs" aria-label="Homepage sections">
-              {(["hero", "explore", "seo"] as const).map((t) => (
-                <button
-                  type="button"
-                  key={t}
-                  aria-pressed={tab === t}
-                  onClick={() => setTab(t)}
-                >
-                  {t === "hero"
-                    ? "Hero"
-                    : t === "explore"
-                    ? "Explore collections"
-                    : "Search settings"}
-                </button>
-              ))}
-            </nav>
-            <form ref={form} onSubmit={(e) => e.preventDefault()}>
-              <fieldset disabled={busy}>
-                <section
-                  className="hp-panel"
-                  data-editor-tab="hero"
-                  hidden={tab !== "hero"}
-                >
-                  <h2>Hero</h2>
-                  <p>
-                    Your first impression. Use separate desktop and phone crops.
-                  </p>
-                  <Toggle
-                    label="Show hero section"
-                    checked={draft.hero.enabled}
-                    onChange={(enabled) => hero({ enabled })}
-                  />
-                  <Toggle
-                    label="Show website text and button"
-                    checked={draft.hero.showText}
-                    onChange={(showText) => hero({ showText })}
-                    help="Switch off for a full clickable image. Your saved text stays available."
-                  />
-                  <ImageField
-                    label="Desktop hero image"
-                    url={draft.hero.desktopImage}
-                    origin={saved.storefront_url}
-                    hint="2400 × 800 px recommended. Leave the left 40% quiet when text is on."
-                    onUpload={(file) =>
-                      void upload(file, (url) => hero({ desktopImage: url }))
-                    }
-                  />
-                  <ImageField
-                    label="Phone hero image"
-                    url={draft.hero.mobileImage}
-                    origin={saved.storefront_url}
-                    hint="1200 × 800 px recommended. Center the products; text sits below the image."
-                    onUpload={(file) =>
-                      void upload(file, (url) => hero({ mobileImage: url }))
-                    }
-                  />
-                  <TextField
-                    label="Hero image description (alt text)"
-                    value={draft.hero.imageAlt}
-                    onChange={(imageAlt) => hero({ imageAlt })}
-                    max={300}
-                    required
-                    help="Describe what the photo shows. Include meaningful words printed in the artwork; avoid a list of keywords."
-                  />
-                  <Fit
-                    value={draft.hero.imageFit}
-                    onChange={(imageFit) => hero({ imageFit })}
-                  />
-                  <details
-                    className="hp-copy-fields"
-                    open={draft.hero.showText}
-                  >
-                    <summary>
-                      {draft.hero.showText
-                        ? "Hero text and link"
-                        : "Saved text and image link"}
-                    </summary>
-                    <CopyFields value={draft.hero} change={hero} />
-                  </details>
-                </section>
-                <section
-                  className="hp-panel"
-                  data-editor-tab="explore"
-                  hidden={tab !== "explore"}
-                >
-                  <h2>Explore the collections</h2>
-                  <p>
-                    Update the two collection stories independently. Text can be
-                    hidden without losing it.
-                  </p>
-                  <Toggle
-                    label="Show Explore collections section"
-                    checked={draft.explore.enabled}
-                    onChange={(enabled) =>
-                      setDraft({
-                        ...draft,
-                        explore: { ...draft.explore, enabled },
-                      })
-                    }
-                  />
-                  <Toggle
-                    label="Show section heading"
-                    checked={draft.explore.showHeading}
-                    onChange={(showHeading) =>
-                      setDraft({
-                        ...draft,
-                        explore: { ...draft.explore, showHeading },
-                      })
-                    }
-                  />
-                  <TextField
-                    label="Section heading"
-                    value={draft.explore.heading}
-                    onChange={(heading) =>
-                      setDraft({
-                        ...draft,
-                        explore: { ...draft.explore, heading },
-                      })
-                    }
-                    max={100}
-                    required
-                  />
-                  {draft.explore.items.map((c, i) => (
-                    <section
-                      className="hp-collection-editor"
-                      key={c.id}
-                      aria-label={`Collection ${i + 1} editor`}
-                    >
-                      <h3>
-                        Collection {i + 1} · {c.title}
-                      </h3>
-                      <Toggle
-                        label={`Show collection ${i + 1}`}
-                        checked={c.enabled}
-                        onChange={(enabled) => card(i, { enabled })}
-                      />
-                      <Toggle
-                        label={`Show collection ${i + 1} text and button`}
-                        checked={c.showText}
-                        onChange={(showText) => card(i, { showText })}
-                        help="When off, the image uses the full row and remains clickable."
-                      />
-                      <ImageField
-                        label={`Collection ${i + 1} image`}
-                        url={c.image}
-                        origin={saved.storefront_url}
-                    hint="Product photo: 1200 × 1000 px or larger. For a full-image row, use a wide 2400 × 800 px banner."
-                        onUpload={(file) =>
-                          void upload(file, (url) => card(i, { image: url }))
-                        }
-                      />
-                      <ImageField
-                        label={`Collection ${i + 1} phone image`}
-                        url={c.mobileImage}
-                        origin={saved.storefront_url}
-                        hint="Optional separate phone crop. Leave empty to use the main image."
-                        onUpload={(file) =>
-                          void upload(file, (url) =>
-                            card(i, { mobileImage: url })
-                          )
-                        }
-                      />
-                      {c.mobileImage && (
-                        <button
-                          className="hp-text-button"
-                          type="button"
-                          onClick={() => card(i, { mobileImage: "" })}
-                        >
-                          Use main image on phones
-                        </button>
-                      )}
-                      <TextField
-                        label={`Collection ${
-                          i + 1
-                        } image description (alt text)`}
-                        value={c.alt}
-                        onChange={(alt) => card(i, { alt })}
-                        max={300}
-                        required
-                      />
-                      <Fit
-                        value={c.imageFit}
-                        onChange={(imageFit) => card(i, { imageFit })}
-                      />
-                      <details className="hp-copy-fields" open={c.showText}>
-                        <summary>
-                          {c.showText
-                            ? "Collection text and link"
-                            : "Saved text and image link"}
-                        </summary>
-                        <CopyFields
-                          value={c}
-                          change={(patch) => card(i, patch)}
-                        />
-                      </details>
-                    </section>
-                  ))}
-                </section>
-                <section
-                  className="hp-panel"
-                  data-editor-tab="seo"
-                  hidden={tab !== "seo"}
-                >
-                  <h2>Search settings</h2>
-                  <p>
-                    Useful page information, even when your artwork contains the
-                    visible headline.
-                  </p>
-                  <TextField
-                    label="Homepage search title"
-                    value={draft.seo.title}
-                    onChange={(title) =>
-                      setDraft({ ...draft, seo: { ...draft.seo, title } })
-                    }
-                    max={100}
-                    required
-                    help="A clear name for the page. Around 50–60 characters is a useful starting point."
-                  />
-                  <TextField
-                    label="Homepage search description"
-                    value={draft.seo.description}
-                    onChange={(description) =>
-                      setDraft({ ...draft, seo: { ...draft.seo, description } })
-                    }
-                    max={320}
-                    multiline
-                    required
-                    help="One or two natural sentences about Rustic Halo. Search engines may choose a different snippet."
-                  />
-                  <div className="hp-search-preview">
-                    <small>rustichalo.com</small>
-                    <strong>{draft.seo.title}</strong>
-                    <p>{draft.seo.description}</p>
-                  </div>
-                </section>
-              </fieldset>
-            </form>
-          </div>
-          <aside className="hp-preview-panel">
-            <div className="hp-preview-heading">
-              <div>
-                <h2>Draft preview</h2>
-                <p>Editable homepage sections</p>
-              </div>
-              <div role="group" aria-label="Preview size">
-                <button
-                  type="button"
-                  aria-pressed={!phone}
-                  onClick={() => setPhone(false)}
-                >
-                  Desktop
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={phone}
-                  onClick={() => setPhone(true)}
-                >
-                  Phone
-                </button>
-              </div>
-            </div>
-            <Preview
-              content={draft}
-              origin={saved.storefront_url}
-              phone={phone}
-            />
-            <p className="hp-footnote">
-              {dirty
-                ? "Your unsaved edits appear here."
-                : "Showing the saved draft."}{" "}
-              Publish when you are ready to update the storefront.
-            </p>
-          </aside>
-        </div>
-      )}
-      {blocker.state === "blocked" && (
-        <div className="hp-leave-backdrop">
-          <section
-            className="hp-leave-dialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-label="Unsaved homepage changes"
-          >
-            <h2>Keep your homepage changes?</h2>
-            <p>
-              You have unsaved edits. Save a draft or discard them before
-              leaving.
-            </p>
-            <button type="button" onClick={() => blocker.reset()}>
-              Keep editing
-            </button>
-            <button type="button" onClick={() => blocker.proceed()}>
-              Discard and leave
-            </button>
-          </section>
-        </div>
-      )}
-    </div>
+    </LinkPickerProvider>
   );
-}
+};
 export const config = defineRouteConfig({ label: "Storefront", rank: 7 });
 export default StorefrontPage;

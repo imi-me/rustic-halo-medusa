@@ -10,6 +10,8 @@ import { guardHairClawOffer, guardCartClawColors } from '../lib/guard-hair-claw-
 
 export default defineMiddlewares({
   routes: [{
+    matcher: '/admin/storefront-content/suggest', method: ['POST'], policies: [{ resource: 'store', operation: PolicyOperation.update }], bodyParser: { sizeLimit: '16kb' }, middlewares: [],
+  }, {
     matcher: '/admin/storefront-content', method: ['GET'], policies: [{ resource: 'store', operation: PolicyOperation.read }], middlewares: [],
   }, {
     matcher: '/admin/storefront-content', method: ['POST'], policies: [{ resource: 'store', operation: PolicyOperation.update }], bodyParser: { sizeLimit: '64kb' }, middlewares: [],
