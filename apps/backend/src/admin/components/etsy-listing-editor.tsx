@@ -55,6 +55,7 @@ export function EtsyListingEditor({
     })
   }
   const colorVariants = isHairClaw(product) ? sellableColorVariants(product) : []
+  const sameColorOffer = (left: string, right: string) => left === right || product.metadata?.hair_claw_template_v2?.color_mode === 'order' && colorVariants.find(v => v.id === left)?.metadata?.order_variant_id === colorVariants.find(v => v.id === right)?.metadata?.order_variant_id
   const request = async (
     action:
       | 'preview'
@@ -326,10 +327,10 @@ export function EtsyListingEditor({
             </label>
             <p>
               Select the colors customers can order. Each size/finish keeps its existing SKU; use the same Etsy allocation for its colors. Approved static photos can accompany the
-              export.
+              export. For a new Etsy listing, use Size / Finish for the actual offer pairs and Color for the buyer's choice.
             </p>
             {!colorVariants.length && (
-              <p>Save purchasable color variants first. Preview-only colors cannot be exported.</p>
+              <p>Save the hair claw with its actual size and finish offers first. Available order colors will then appear here.</p>
             )}
             {colorVariants.map((variant: Entity) => {
               const selected = value.colors.find((row) => row.variant_id === variant.id)
@@ -345,7 +346,7 @@ export function EtsyListingEditor({
                           colors: event.target.checked
                             ? [
                                 ...value.colors,
-                                { variant_id: variant.id, quantity: 0, image_url: '' },
+                                { variant_id: variant.id, quantity: value.colors.find(row => sameColorOffer(row.variant_id, variant.id))?.quantity ?? 0, image_url: '' },
                               ]
                             : value.colors.filter((row) => row.variant_id !== variant.id),
                         })
@@ -375,7 +376,7 @@ export function EtsyListingEditor({
                             change({
                               ...value,
                               colors: value.colors.map((row) =>
-                                row.variant_id === variant.id
+                                sameColorOffer(row.variant_id, variant.id)
                                   ? { ...row, quantity: Number(event.target.value) }
                                   : row,
                               ),

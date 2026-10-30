@@ -12,6 +12,7 @@
 - At milestone completion, leave a short handoff in the relevant existing documentation: completed and verified, remaining work, blockers, exact files/reports. A new phase should use a fresh task in this same project, with that handoff instead of copied chat history. Create a task only when the user explicitly requests one.
 
 ## Scope and safety
+- Hair claws use one SKU and barcode per actual design/size/finish offer. Color is saved on website and Etsy order lines and never generates another SKU, barcode, or stock item. New-product forms, imports, shared palettes and Etsy exports must follow this rule. Preserve existing identifiers and historical records; do not invent unavailable size/finish combinations or publish new Etsy listings automatically.
 - Preserve existing project work and the live Shopify store. Keep staging and production actions distinct.
 - Never weaken permissions or password requirements to reduce interaction overhead. Prepare one short, reviewable command for the user when administrator authentication is required.
 - Never treat an issued command as a completed deployment. Verify the result, and distinguish local checks from deployed behavior.

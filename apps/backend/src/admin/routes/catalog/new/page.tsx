@@ -6,7 +6,8 @@ import { ProductSection, revealInvalidField } from '../../../components/product-
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate } from 'react-router-dom'
 import { adminRequest, type Entity, type ProductDraft } from '../../../lib/inline-edit'
-import { emptyEtsyDraft, isHairClaw } from '../../../../lib/product-admin'
+import { newClawOffers, newProductIsHairClaw, validateNewClawOffers } from '../../../../lib/new-hair-claw'
+import { emptyEtsyDraft } from '../../../../lib/product-admin'
 import { ProductTypeField } from '../../../components/product-type-field'
 import { ProductImages, uploadProductImage } from '../../../components/product-images'
 import { DescriptionEditor } from '../../../components/description-editor'
@@ -146,6 +147,17 @@ const NewProductPage = () => {
         ...(key === 'title' && !handleEdited ? { handle: slug(value) } : {}),
       },
     }))
+  const hairClaw = newProductIsHairClaw(choices.type_id?.find(row => row.id === draft.fields.type_id), String(draft.fields.title))
+  const selectedClawOffers = newClawOffers.filter(offer => variants.some(row => row.options.Size === offer.size && row.options.Finish === offer.finish))
+  const chooseClawOffer = (key: string, enabled: boolean) => {
+    const selected = newClawOffers.filter(offer => offer.key === key ? enabled : selectedClawOffers.some(row => row.key === offer.key))
+    setOptions([{ title: 'Size', values: [...new Set(selected.map(offer => offer.size))].join(', ') }, { title: 'Finish', values: [...new Set(selected.map(offer => offer.finish))].join(', ') }])
+    setVariants(selected.map(offer => variants.find(row => row.options.Size === offer.size && row.options.Finish === offer.finish) ?? {
+      ...(selected.length === 1 && variants.length === 1 && variants[0].options.Style === 'Standard' ? variants[0] : { sku: '', barcode: '', price: variants[0]?.price || '', stock: {} }),
+      key: offer.key, title: `${offer.size} / ${offer.finish}`, options: { Size: offer.size, Finish: offer.finish },
+    }))
+    setError('')
+  }
   const generateVariants = () => {
     const actual = options.length
       ? options.map((option) => ({
@@ -227,6 +239,10 @@ const NewProductPage = () => {
     try {
       let input = frozen
       if (!input) {
+        if (hairClaw) {
+          if (!selectedClawOffers.length) throw Error('Choose at least one size and finish you sell.')
+          validateNewClawOffers({ options, variants })
+        }
         if (!draft.fields.shipping_profile_id) throw new Error('Choose a shipping profile.')
         if (
           variants.some(
@@ -444,10 +460,12 @@ const NewProductPage = () => {
                 </select>
               </label>
               <p>
-                Stocked quantities require location inventory. Made-to-order color variants can be
-                allocated to Etsy separately.
+                {hairClaw ? 'Each size and finish keeps one SKU and barcode. Available colors are captured on website and Etsy orders and share that SKU.' : 'Stocked quantities require location inventory. Etsy availability is allocated separately.'}
               </p>
-              <details>
+              {hairClaw ? <div>
+                <p>Choose only the sizes and finishes you sell. Color does not create another SKU.</p>
+                {newClawOffers.map(offer => <label className="rh-inline-field" key={offer.key}><span><input type="checkbox" checked={selectedClawOffers.some(row => row.key === offer.key)} onChange={event => chooseClawOffer(offer.key, event.target.checked)}/> {offer.size} · {offer.finish}</span></label>)}
+              </div> : <details>
                 <summary>Add options such as Size, Color or Finish</summary>
                 {options.map((option, index) => (
                   <div className="rh-inline-grid" key={index}>
@@ -495,8 +513,8 @@ const NewProductPage = () => {
                 <button type="button" onClick={generateVariants}>
                   Generate variants
                 </button>
-              </details>
-              {variants.map((row) => (
+              </details>}
+              {variants.filter(row => !hairClaw || selectedClawOffers.some(offer => row.options.Size === offer.size && row.options.Finish === offer.finish)).map((row) => (
                 <div className="rh-new-variant" key={row.key}>
                   <h3>{row.title}</h3><details><summary>Shipping override</summary><ProductPackaging variant label={` — ${row.title}`} value={row.shipping} change={shipping => setVariants(previous => previous.map(item => item.key === row.key ? { ...item, shipping } : item))} weight={row.weight ?? ''} setWeight={weight => setVariants(previous => previous.map(item => item.key === row.key ? { ...item, weight } : item))}/></details>
                   <div className="rh-inline-grid">
@@ -620,13 +638,10 @@ const NewProductPage = () => {
               description={String(draft.fields.description)}
               material={String(draft.fields.material)}
             />
-            {isHairClaw({
-              type: choices.type_id?.find((row) => row.id === draft.fields.type_id),
-            }) && (
+            {hairClaw && (
               <ProductSection title="Hair-claw images" className="">
                 <p>
-                  Save the product first to fit approved artwork and share saved color variants with
-                  Etsy.
+                  Save the product to manage its available order colors and fit approved artwork. Etsy color choices use the same size/finish SKUs.
                 </p>
               </ProductSection>
             )}

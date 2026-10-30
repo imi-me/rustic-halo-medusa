@@ -200,6 +200,12 @@ export function colorExport(product: any, draft: EtsyDraft) {
     tags: draft.tags,
     materials: draft.materials,
     variants,
+    ...(usesClawOrderColors(product) ? { order_options: {
+      offer_name: 'Size / Finish',
+      offers: [...new Map(variants.map(row => [row.variant_id, { variant_id: row.variant_id, sku: row.etsy_sku, value: Object.entries(row.options).filter(([name]) => /size|finish/i.test(name)).map(([,value]) => value).join(' / ') }])).values()],
+      color_name: 'Color', colors: [...new Set(variants.map(row => row.color))],
+      color_changes_sku: false,
+    } } : {}),
     note: 'Explicit Etsy allocations only. Does not copy or multiply pooled location stock. Images are approved static product images; preview-only swatches are excluded.',
   }
 }

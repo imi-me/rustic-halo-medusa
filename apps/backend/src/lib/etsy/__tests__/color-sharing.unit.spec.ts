@@ -122,3 +122,24 @@ it('keeps the reviewed original Etsy size SKU when the imported Medusa identity 
  expect(result.body.products[0].sku).toBe('ORIGINAL')
  expect(result.changes[0].medusa_sku).toBe('ORIGINAL-CREAM')
 })
+it('prepares a color choice for a new Etsy listing without new SKUs or changing other identities', () => {
+ const source=inventory();source.products[0].sku='ORIGINAL';source.products[0].property_values=source.products[0].property_values.filter(p=>p.property_name!=='Color');source.sku_on_property=[513]
+ const input=selection();input.variants=['Black','Rose'].map(color=>({...input.variants[0],sku:'ORIGINAL',etsy_sku:'ORIGINAL',color_mode:'order',color,options:{Size:'4 inch',Color:color},price:15,quantity:9}))
+ const before=JSON.stringify(source),plan=planColorSharing(source,input,'')
+ expect(JSON.stringify(source)).toBe(before)
+ expect(plan.body.products.map(p=>p.sku)).toEqual(['ORIGINAL','ORIGINAL'])
+ expect(plan.body.sku_on_property).toEqual([513])
+ expect(plan.body.products[0].property_values.find(p=>p.property_name==='Color').property_id).toBe(514)
+ input.variants[0].sku='DIFFERENT';input.variants[0].etsy_sku='DIFFERENT';input.variants[1].sku='DIFFERENT';input.variants[1].etsy_sku='DIFFERENT'
+ expect(()=>planColorSharing(source,input,'')).toThrow('Map every original')
+})
+it('uses the documented third custom slot with one dependency and blocks two-property SKU dependencies', () => {
+ const source=inventory();source.products[0].property_values=[property(513,'Size','4 inch'),property(514,'Finish','Natural')]
+ const input=selection();input.variants[0]={...input.variants[0],sku:'OLD-BLACK',color_mode:'order',color:'Rose',price:15,quantity:9,options:{Size:'4 inch',Finish:'Natural',Color:'Rose'}}
+ const plan=planColorSharing(source,input,'')
+ expect(plan.body.products[0].property_values.find(p=>p.property_name==='Color').property_id).toBe(516)
+ expect(plan.body.sku_on_property.length).toBeLessThanOrEqual(1)
+ const full:any={products:[],sku_on_property:[513,514],price_on_property:[513,514],quantity_on_property:[513,514]};input.variants=[]
+ for(const size of ['2 inch','4 inch'])for(const finish of ['Natural','Colors by Cate']){const sku=size+finish;full.products.push({...source.products[0],sku,property_values:[property(513,'Size',size),property(514,'Finish',finish)]});for(const color of ['Black','Rose'])input.variants.push({...selection().variants[0],sku,color_mode:'order',color,price:15,quantity:9,options:{Size:size,Finish:finish,Color:color}})}
+ expect(()=>planColorSharing(full,input,'')).toThrow('Size / Finish')
+})

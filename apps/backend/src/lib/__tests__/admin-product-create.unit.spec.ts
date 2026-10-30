@@ -138,3 +138,39 @@ it('requires hair-claw color to be an order choice before allocating identifiers
  await expect(createAdminProduct(scope,data)).rejects.toThrow('actual physical size')
  expect(ops.listAdminOperations).not.toHaveBeenCalled()
 })
+
+it('creates only the chosen size/finish identities and carries order colors into Etsy preparation', async () => {
+ const { sellableColorVariants, colorExport } = require('../product-admin')
+ const { planColorSharing } = require('../etsy/color-sharing')
+ let operation: any, product: any
+ const ops = { listAdminOperations: async (filter: any) => operation && Object.entries(filter).every(([key,value]) => operation[key] === value) ? [operation] : [], createAdminOperations: async data => operation = { ...data, id: 'op_new' }, updateAdminOperations: async data => Object.assign(operation,data) }
+ const products = { retrieveProductType: async () => ({ value: 'Hair Claw' }), listProducts: async () => product ? [product] : [], listProductVariants: async () => [], retrieveProduct: async () => product, updateProducts: async (_id,data) => { product.metadata = data.metadata } }
+ const scope = { resolve: key => key === 'product' ? products : key === 'inventory' ? { listInventoryItems: async () => [{id:'item'}] } : key === 'admin_operations' ? ops : { execute: async (_key,fn) => fn() } }
+ create.mockClear()
+ create.mockImplementation(async ({input}) => {
+  const row = input.products[0]
+  const options = row.options.map((o,index) => ({ ...o, id: 'option_'+index, values: o.values.map(value => ({value})) }))
+  product = { ...row, id:'prod_new', options, variants: row.variants.map((v,index) => ({...v,id:'variant_'+index,options:options.map(o=>({option_id:o.id,value:v.options[o.title]}))})) }
+  return {result:[product]}
+ })
+ const data = {...input(), type_id:'ptyp_claw',title:'New Hair Claw', inventory_mode:'made_to_order' as const, options:[{title:'Size',values:['2 inch','4 inch']},{title:'Finish',values:['Natural','Colors by Cate']}], variants:[
+  {...input().variants[0],sku:'CLAW-2',barcode:'000123',options:{Size:'2 inch',Finish:'Natural'},price:8,stock:[]},
+  {...input().variants[0],sku:'CLAW-4-CATE',barcode:'000124',options:{Size:'4 inch',Finish:'Colors by Cate'},price:16,stock:[]},
+ ]}
+ await createAdminProduct(scope,data)
+ expect(product.variants.map(v=>[v.sku,v.barcode])).toEqual([['CLAW-2','000123'],['CLAW-4-CATE','000124']])
+ expect(product.metadata.hair_claw_template_v2).toMatchObject({color_mode:'order',variant_ids:['variant_0','variant_1']})
+ const choices = sellableColorVariants(product).filter(v=>['Black','Rose'].includes(v.metadata.base_claw_color))
+ const selection = colorExport(product,{...emptyEtsyDraft(),listing_id:'123',colors:choices.map(v=>({variant_id:v.id,quantity:5,image_url:''}))})
+ expect(selection.order_options).toMatchObject({offer_name:'Size / Finish',color_changes_sku:false})
+ expect(selection.order_options.offers).toHaveLength(2)
+ const inventory = {products:selection.order_options.offers.map(o=>({sku:o.sku,property_values:[{property_id:513,property_name:'Size / Finish',values:[o.value],value_ids:[]}],offerings:[{price:{amount:o.sku==='CLAW-2'?800:1600,divisor:100,currency_code:'USD'},quantity:5,is_enabled:true,readiness_state_id:42}]})),sku_on_property:[513],price_on_property:[513],quantity_on_property:[513]}
+ const plan = planColorSharing(inventory,selection,'')
+ expect(plan.body.products).toHaveLength(4)
+ expect(new Set(plan.body.products.map(p=>p.sku))).toEqual(new Set(['CLAW-2','CLAW-4-CATE']))
+ expect(plan.body.sku_on_property).toEqual([513])
+ expect(plan.body.products.every(p=>p.property_values.some(v=>v.property_name==='Color'))).toBe(true)
+ await createAdminProduct(scope,data)
+ expect(create).toHaveBeenCalledTimes(1)
+ expect(product.variants).toHaveLength(2)
+})

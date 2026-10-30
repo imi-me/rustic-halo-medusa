@@ -6,6 +6,7 @@ import type { colorExport } from '../product-admin'
 type Export = ReturnType<typeof colorExport>
 type Access = Awaited<ReturnType<typeof etsyWorkspaceAccess>>
 const canonical = (name: string) =>
+  /size/i.test(name) && /finish/i.test(name) ? 'offer' :
   /colou?r/i.test(name)
     ? 'color'
     : /size/i.test(name)
@@ -14,6 +15,7 @@ const canonical = (name: string) =>
         ? 'finish'
         : name.toLowerCase()
 const normalized = (key: string, value: string) =>
+  key === 'offer' ? value.toLowerCase().replace(/inch(?:es)?|[“”"]/g, '').replace(/[^a-z0-9]+/g, '') :
   key === 'size'
     ? (String(value).match(/\d+(?:\.\d+)?/)?.[0] ?? value.toLowerCase())
     : value.toLowerCase().trim()
@@ -53,15 +55,35 @@ export function inventoryBody(inventory: any) {
 // Etsy keeps Color as a buyer choice, but it no longer changes SKU, price or allocation.
 function planOrderColorSharing(inventory: any, selection: Export) {
   const body = inventoryBody(inventory)
+  const selectedOptions = (selected: Export['variants'][number]) => {
+    const options = Object.fromEntries(Object.entries(selected.options).map(([name,value]) => [canonical(name), String(value)]))
+    if (options.size && options.finish) options.offer = `${options.size} / ${options.finish}`
+    return options
+  }
   if (!body.products.length || body.products.some((row: any) => row.offerings.length !== 1)) throw Error('Review existing Etsy inventory before simplifying colors.')
   const schema = body.products[0].property_values
-  const colorProperty = schema.find((p: any) => canonical(p.property_name) === 'color')
-  if (!colorProperty) throw Error('Set up the existing Etsy Color choice before sharing.')
+  let colorProperty = schema.find((p: any) => canonical(p.property_name) === 'color')
+  if (!colorProperty) {
+    // A new listing can start with only its real size/finish inventory. Add a
+    // buyer color choice using Etsy's available custom property slots.
+    const used = new Set(schema.map((p: any) => p.property_id))
+    const id = [513, 514, 516].find(id => !used.has(id))
+    if (schema.length >= 3 || !id) throw Error('Etsy needs an available variation slot for the order color.')
+    colorProperty = { property_id: id, property_name: 'Color', scale_id: null, value_ids: [], values: [] }
+    for (const row of body.products) {
+      const selected = selection.variants.find(selected => (selected.etsy_sku || selected.sku) === row.sku && row.property_values.every((p: any) => {
+        const option = selectedOptions(selected)[canonical(p.property_name)]
+        return option && normalized(canonical(p.property_name), String(option)) === normalized(canonical(p.property_name), p.values[0])
+      }))
+      if (!selected) throw Error('Map every original Etsy size/finish SKU before adding its order colors.')
+      row.property_values.push({ ...colorProperty, values: [selected.color] })
+    }
+  }
   const combination = (values: any[], includeColor = true) => JSON.stringify(values.filter(p => includeColor || p.property_id !== colorProperty.property_id).map(p => [p.property_id, normalized(canonical(p.property_name), p.values[0])]).sort())
   const changes: any[] = [], groups = new Map<string, any>()
   for (const selected of selection.variants) {
     if (selected.color_mode !== 'order' || selected.inventory_mode !== 'made_to_order_color_option') throw Error('Review mixed stock/color policies before sharing.')
-    const options = Object.fromEntries(Object.entries(selected.options).map(([name,value]) => [canonical(name), String(value)]))
+    const options = selectedOptions(selected)
     const values = schema.map((property: any) => {
       const desired = options[canonical(property.property_name)]
       if (!desired) throw Error(`Map ${property.property_name} before sharing.`)
@@ -88,9 +110,23 @@ function planOrderColorSharing(inventory: any, selection: Export) {
   const combinations = body.products.map((row: any) => combination(row.property_values))
   if (new Set(combinations).size !== combinations.length) throw Error('Etsy has duplicate color combinations.')
   const ids = schema.filter((p: any) => p.property_id !== colorProperty.property_id).map((p: any) => p.property_id)
-  body.sku_on_property = ids
-  body.price_on_property = ids
-  body.quantity_on_property = ids
+  // Etsy's third-variation API accepts zero, one or three dependency IDs.
+  // Use a single size/finish property if it uniquely identifies every real offer.
+  const identifiesOffers = (candidate: number[]) => {
+    const seen = new Map<string,string>()
+    for (const row of body.products) {
+      const key = JSON.stringify(row.property_values.filter((p: any) => candidate.includes(p.property_id)).map((p: any) => [p.property_id,p.values]))
+      const offer = JSON.stringify([row.sku,row.offerings[0].price,row.offerings[0].quantity])
+      if (seen.has(key) && seen.get(key) !== offer) return false
+      seen.set(key,offer)
+    }
+    return true
+  }
+  const dependencies = schema.length === 3 ? (identifiesOffers([]) ? [] : ids.map(id => [id]).find(identifiesOffers)) : ids
+  if (!dependencies) throw Error('Use one Size / Finish option in Etsy for the actual offer pairs, plus Color. Each pair keeps its existing SKU.')
+  body.sku_on_property = dependencies
+  body.price_on_property = dependencies
+  body.quantity_on_property = dependencies
   if (body.products.length > 400) throw Error('Review this listing’s combination limit before sharing.')
   return { body, changes, preserved: body.products.length - changes.length, note: 'Color is an order choice. Original design SKUs are shared across colors; only actual size/finish offers remain. No Copper Mill inventory is copied.' }
 }

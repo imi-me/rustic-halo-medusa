@@ -1,4 +1,5 @@
 import { clawSize } from './hair-claw-colors'
+import { newProductIsHairClaw, validateNewClawOffers } from './new-hair-claw'
 import { planClawOrderChoices } from './hair-claw-order-choices'
 import { PRODUCT_SEO_KEY } from './product-seo-values'
 import { productSeoSchema } from './product-seo'
@@ -11,7 +12,7 @@ import { z } from 'zod'
 import { Modules } from '@medusajs/framework/utils'
 import { createProductsWorkflow, createInventoryLevelsWorkflow } from '@medusajs/medusa/core-flows'
 import { ADMIN_OPERATIONS } from '../modules/admin-operations'
-import { etsyDraftSchema, ETSY_DRAFT_KEY, isHairClaw } from './product-admin'
+import { etsyDraftSchema, ETSY_DRAFT_KEY } from './product-admin'
 
 const identifier = z.string().regex(/^[a-z]+_[A-Za-z0-9]+$/)
 export const creationSchema = z
@@ -115,12 +116,8 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
     'rh-admin-product-identifiers',
     async () => {
       const type = input.type_id ? await products.retrieveProductType(input.type_id) : null
-      const hairClaw = isHairClaw({ type })
-      if (hairClaw && input.options.some(option=>/^(?:(?:base|claw) )?colou?r$/i.test(option.title))) throw new Error('Color is recorded on orders. Create only actual size and finish variants for hair claws.')
-      if (hairClaw) {
-        const described=[...input.description.matchAll(/\b([24])(?:-|\s*)inch/gi)].map(match=>match[1])
-        for (const variant of input.variants) if (!clawSize(Object.entries(variant.options).find(([name])=>/size/i.test(name))?.[1]) && new Set(described).size!==1) throw new Error('Choose the actual physical size for each hair-claw offer before creating it.')
-      }
+      const hairClaw = newProductIsHairClaw(type, input.title)
+      if (hairClaw) validateNewClawOffers(input)
       const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex')
       const key = `product-create:${input.request_id}`
       let [operation] = await ops.listAdminOperations({ operation_key: key })
@@ -214,15 +211,8 @@ export async function createAdminProduct(scope: any, input: z.infer<typeof creat
                     ...(hairClaw
                       ? {
                           color_mode: 'order',
-                          physical_size:
-                            String(
-                              Object.entries(variant.options).find(([key]) =>
-                                /size/i.test(key),
-                              )?.[1] ?? '',
-                            ).match(/^(2|4)(?:\s*(?:inch|in|[”"]))?$/i)?.[1] ?? null,
-                          claw_finish: Object.values(variant.options).includes('Colors by Cate')
-                            ? 'cbc'
-                            : 'natural',
+                          physical_size: clawSize(Object.entries(variant.options).find(([key]) => /size/i.test(key))?.[1]),
+                          claw_finish: (() => { const finish = Object.entries(variant.options).find(([key]) => /finish/i.test(key))?.[1]; return finish === 'Colors by Cate' ? 'cbc' : !finish || finish === 'Natural' ? 'natural' : finish })(),
                         }
                       : {}),
                   },
