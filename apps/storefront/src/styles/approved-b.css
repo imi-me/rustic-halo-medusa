@@ -464,7 +464,7 @@ body.rh-approved-b {
 .rh-approved-b .rh-product-card-media {
   position: relative;
   display: block;
-  aspect-ratio: 1.18;
+  aspect-ratio: 1;
   width: 100%;
   overflow: hidden;
   border-radius: 13px;
