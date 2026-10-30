@@ -54,6 +54,7 @@ export default defineMiddlewares({
     matcher: '/admin/shipping-packages', method: ['POST'], policies: [{ resource: 'shipping_option', operation: PolicyOperation.update }], middlewares: [],
   }, {
     matcher: '/admin/assistant/product-copy', method: ['POST'],
+    policies: [{ resource: 'product', operation: PolicyOperation.read }],
     bodyParser: { sizeLimit: '5mb' }, middlewares: [],
   }, {
     matcher: '/admin/product-seo', method: ['GET'], policies: [{ resource: 'product', operation: PolicyOperation.read }], middlewares: [],

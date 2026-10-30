@@ -4,7 +4,7 @@ import { ProductSection } from './product-section'
 import { ProductCopyHelper } from './product-copy-helper'
 import { PRODUCT_SEO_KEY, emptyProductSeo, hasProductSeo, productSeoValues, seoText, type ProductSeo } from '../../lib/product-seo-values'
 import './product-seo.css'
-export const ProductSeoEditor = ({ value, change, title, description, material = '', handle = '' }: { value?: ProductSeo; change: (value: ProductSeo) => void; title: string; description: string; material?: string; handle?: string }) => {
+export const ProductSeoEditor = ({ value, change, title, description, material = '', handle = '', productId, draftOptions }: { value?: ProductSeo; change: (value: ProductSeo) => void; title: string; description: string; material?: string; handle?: string; productId?:string; draftOptions?:Array<Record<string,string>> }) => {
   const id = useId(), current = value || emptyProductSeo(), automatic = productSeoValues({ title, description }), preview = productSeoValues({ title, description, metadata: { [PRODUCT_SEO_KEY]: current } })
   return <ProductSection title="Search engine preview" className="rh-product-seo">
     <p>These fields are optional. Leave them blank to use the product name and a short summary of its description.</p>
@@ -14,6 +14,7 @@ export const ProductSeoEditor = ({ value, change, title, description, material =
     <div className="rh-product-search-preview" aria-label="Product search result preview"><small>rustichalo.com/us/products/{handle || 'product-name'}</small><strong>{preview.title}</strong><p>{preview.description}</p></div>
     <small>Preview only. Search engines may display different wording. Changes save with the product.</small>
     <p><Link to="/product-seo">Let Rusty help with your whole catalog ↗</Link></p>
-    <ProductCopyHelper label="Ask Rusty · Help with search wording" actions={['product-seo']} title={title} description={seoText(description)} material={material} contextRevision={JSON.stringify({ title, description, material, seo: current })} apply={(_, suggestion) => change({ title: suggestion.title, description: suggestion.description })}/>
+    <p>{productId?'Rusty uses the current saved size, finish and color choices. Save option changes before generating.':'Rusty uses the options in this new product draft.'} Descriptions are checked against other products.</p>
+    <ProductCopyHelper productId={productId} draftOptions={draftOptions} label="Ask Rusty · Help with search wording" actions={['product-seo']} title={title} description={seoText(description)} material={material} contextRevision={JSON.stringify({ title, description, material, seo: current })} apply={(_, suggestion) => change({ title: suggestion.title, description: suggestion.description })}/>
   </ProductSection>
 }

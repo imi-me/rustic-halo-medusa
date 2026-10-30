@@ -20,6 +20,8 @@ export function ProductCopyHelper({
   apply,
   label = 'Ask Rusty · AI writing help',
   contextRevision,
+  productId,
+  draftOptions,
 }: {
   title: string
   description: string
@@ -30,6 +32,8 @@ export function ProductCopyHelper({
   photos?: CopyPhotoSelection
   label?: string
   contextRevision?: string
+  productId?:string
+  draftOptions?:Array<Record<string,string>>
   actions?: string[]
   apply: (action: string, value: CopySuggestion) => void
 }) {
@@ -37,7 +41,7 @@ export function ProductCopyHelper({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [proposal, setProposal] = useState<{ action: string; value: CopySuggestion; snapshot: string } | null>(null)
-  const snapshot = JSON.stringify({contextRevision,facts})
+  const snapshot = JSON.stringify({contextRevision,facts,productId,draftOptions})
   const stale = contextRevision !== undefined && !!proposal && proposal.snapshot !== snapshot
   const invalidSeo = !!proposal && proposal.action === 'product-seo' && (!proposal.value.title.trim() || !proposal.value.description.trim() || proposal.value.title.length>100 || proposal.value.description.length>320)
   const labels: Record<string, string> = {
@@ -57,6 +61,7 @@ export function ProductCopyHelper({
       if (sources.reduce((size, source) => size + new TextEncoder().encode(source).length, 0) > 4_500_000) throw new Error('Selected photo previews are too large together. Use smaller photos or select fewer newly added images.')
       const response = await adminRequest('/admin/assistant/product-copy', {
         action,
+        ...(action==='product-seo' ? (productId?{product_id:productId}:{draft_options:draftOptions||[]}) : {}),
         title,
         description: descriptionText(description),
         material,

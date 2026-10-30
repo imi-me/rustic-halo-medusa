@@ -9,8 +9,8 @@ const mergeJson=(before:any,after:any):any=>{if(!after||Array.isArray(after)||ty
 const fixture=()=>{
  let stored:any=null
  const products:any[]=[1,2,3].map(n=>({id:`prod_${n}`,title:`Wooden flower ${n}`,description:`<p>A wooden flower ${n}.</p>`,material:'Wood',handle:`flower-${n}`,status:'published',updated_at:'2026-10-29T12:00:00.000Z',metadata:{unrelated:{keep:true},...(n===2?{[PRODUCT_SEO_KEY]:{title:'My custom title',description:''}}:n===3?{[PRODUCT_SEO_KEY]:{title:'Complete title',description:'Complete description'}}:{})}}))
- const ops={listAdminOperations:async()=>stored?[structuredClone(stored)]:[],createAdminOperations:async(value:any)=>{stored={id:'op_one',...structuredClone(value)};return stored},updateAdminOperations:async(value:any)=>{stored=mergeJson(stored,value);return stored}}
- const service={listAndCountProducts:async()=>[structuredClone(products),products.length],retrieveProduct:async(id:string)=>{const p=products.find(p=>p.id===id);if(!p)throw Error('deleted');return structuredClone(p)}}
+ const ops={listAdminOperations:async(filter:any)=>filter.operation_key===BULK_SEO_KEY&&stored?[structuredClone(stored)]:[],createAdminOperations:async(value:any)=>{stored={id:'op_one',...structuredClone(value)};return stored},updateAdminOperations:async(value:any)=>{stored=mergeJson(stored,value);return stored}}
+ const service={listProducts:async(filter:any)=>structuredClone(products.filter(p=>filter.id.includes(p.id))),listAndCountProducts:async()=>[structuredClone(products),products.length],retrieveProduct:async(id:string)=>{const p=products.find(p=>p.id===id);if(!p)throw Error('deleted');return structuredClone(p)}}
  const scope:any={resolve:(key:string)=>key==='admin_operations'?ops:key==='product'?service:key==='locking'?{execute:async(_key:string,fn:any)=>fn()}:null}
  workflow.mockImplementation(async({input}:any)=>{const p=products.find(p=>p.id===input.selector.id);p.metadata={...p.metadata,...input.update.metadata};p.updated_at=new Date().toISOString()})
  return{scope,products,ops,stored:()=>stored}

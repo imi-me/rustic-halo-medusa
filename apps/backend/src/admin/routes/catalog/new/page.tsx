@@ -606,7 +606,7 @@ const NewProductPage = () => {
                 </details>
               ))}
             </ProductSection>
-            <ProductSeoEditor value={draft.seo} change={seo=>setDraft(previous=>({...previous,seo}))} title={String(draft.fields.title)} description={String(draft.fields.description)} material={String(draft.fields.material)} handle={String(draft.fields.handle)} />
+            <ProductSeoEditor draftOptions={variants.map(row=>row.options)} value={draft.seo} change={seo=>setDraft(previous=>({...previous,seo}))} title={String(draft.fields.title)} description={String(draft.fields.description)} material={String(draft.fields.material)} handle={String(draft.fields.handle)} />
             <EtsyListingEditor
               photos={photos}
               value={draft.etsy}
