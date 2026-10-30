@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
 import InteractiveLink from "@modules/common/components/interactive-link"
-import CategoryLinks from "@modules/store/components/category-links"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import RefinementList from "@modules/store/components/refinement-list"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -95,7 +94,7 @@ export default function CategoryTemplate({
             />
           )}
         </div>
-        {category.category_children && (
+        {!!category.category_children?.length && (
           <div className="mb-8 text-base-large">
             <ul className="grid grid-cols-1 gap-2">
               {category.category_children?.map((c) => (
@@ -108,21 +107,7 @@ export default function CategoryTemplate({
             </ul>
           </div>
         )}
-        <CategoryLinks activeHandle={category.handle} />
         <div className="rh-catalog-toolbar">
-          <form className="rh-b-category-search" role="search">
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              aria-label="Search this collection"
-              placeholder="Search this collection"
-            />
-            <input type="hidden" name="sortBy" value={sort} />
-            <button type="submit" aria-label="Search this collection">
-              ⌕
-            </button>
-          </form>
           <RefinementList sortBy={sort} hideOptionsPicker />
         </div>
         <Suspense

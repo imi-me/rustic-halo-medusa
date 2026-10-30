@@ -29,7 +29,7 @@ const StoreTemplate = ({
       data-testid="category-container"
     >
       <div className="w-full">
-        <CatalogHeading title={query ? `Search results for “${query}”` : "Explore the collection"} subtitle={query ? undefined : "Find something that feels like you."} sortBy={sort} titleTestId="store-page-title" />
+        <CatalogHeading title={query ? `Search results for “${query}”` : "Shop all"} sortBy={sort} titleTestId="store-page-title" />
         <Suspense key={`${query}-${sort}-${optionValueIds?.join(",")}`} fallback={<SkeletonProductGrid />}>
           <PaginatedProducts
             query={query}

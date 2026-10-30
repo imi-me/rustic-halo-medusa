@@ -2,7 +2,7 @@
 
 import { useId } from "react"
 
-export type SortOptions = "price_asc" | "price_desc" | "created_at"
+export type SortOptions = "title_asc" | "title_desc" | "created_at"
 
 type SortProductsProps = {
   sortBy: SortOptions
@@ -16,12 +16,12 @@ const sortOptions = [
     label: "Latest Arrivals",
   },
   {
-    value: "price_asc",
-    label: "Price: Low to high",
+    value: "title_asc",
+    label: "Name: A–Z",
   },
   {
-    value: "price_desc",
-    label: "Price: High to low",
+    value: "title_desc",
+    label: "Name: Z–A",
   },
 ]
 
@@ -37,7 +37,7 @@ const SortProducts = ({
       <label htmlFor={selectId} className="text-sm whitespace-nowrap">Sort by</label>
       <select
         id={selectId}
-        value={sortBy}
+        value={sortOptions.some((option) => option.value === sortBy) ? sortBy : "created_at"}
         onChange={(event) => setQueryParams("sortBy", event.target.value)}
         data-testid={dataTestId || "product-sort"}
         className="rh-product-sort"
