@@ -9,7 +9,7 @@ export const BULK_SEO_KEY = 'product-seo-bulk-v1'
 const lockKey = 'rh-product-seo-bulk', dailyLimit = 1000, catalogLimit = 1000
 type Status = 'pending' | 'generating' | 'ready' | 'saved' | 'failed' | 'stale' | 'skipped'
 export type SeoRow = { id: string; title: string; handle: string; productStatus: string; status: Status; source: SeoBatchProduct; sourceHash: string; updatedAt: string; before: ProductSeo; automatic: ProductSeo; suggestion?: ProductSeo; error?: string }
-type Run = { id: string; createdAt: string; actor: string; rows: SeoRow[]; lease?: { token: string; expires: number; ids: string[] } }
+type Run = { id: string; createdAt: string; actor: string; rows: SeoRow[]; lease?: { token: string; expires: number; ids: string[] } | null }
 export type BulkSeoState = { revision: string; day: string; used: number; run: Run | null }
 const hash = (p:any) => createHash('sha256').update(JSON.stringify([p.title,p.description,p.material,p.handle,p.status,readProductSeo(p.metadata)])).digest('hex')
 const timestamp = (p:any) => new Date(p.updated_at).toISOString()
@@ -58,7 +58,7 @@ export async function controlBulkSeo(scope:any,revision:string,action:'stop'|'di
   return locked(scope,async()=>{
     const state=await readBulkSeo(scope);expectRevision(state,revision);if(!state.run)throw Error('No review is active.')
     if(action==='discard')state.run=null
-    else if(action==='stop'){delete state.run.lease;for(const row of state.run.rows)if(['pending','generating'].includes(row.status)){row.status='failed';row.error='Generation stopped. Retry when ready.'}}
+    else if(action==='stop'){state.run.lease=null;for(const row of state.run.rows)if(['pending','generating'].includes(row.status)){row.status='failed';row.error='Generation stopped. Retry when ready.'}}
     else{
       if(state.run.lease)throw Error('Wait for the current batch to finish before retrying.')
       const candidates=state.run.rows.filter(r=>r.status==='failed'||r.status==='stale');reserve(state,candidates.length)
@@ -70,7 +70,7 @@ export async function controlBulkSeo(scope:any,revision:string,action:'stop'|'di
 export async function processBulkSeo(scope:any,generate=generateSeoBatch,now=Date.now()) {
   const claim=await locked(scope,async()=>{
     const state=await readBulkSeo(scope),run=state.run;if(!run||!run.lease&&!run.rows.some(r=>r.status==='pending'))return null
-    if(run.lease){if(run.lease.expires>now)return null;for(const row of run.rows)if(run.lease.ids.includes(row.id)&&row.status==='generating'){row.status='failed';row.error='Generation was interrupted. Retry this suggestion.'}delete run.lease}
+    if(run.lease){if(run.lease.expires>now)return null;for(const row of run.rows)if(run.lease.ids.includes(row.id)&&row.status==='generating'){row.status='failed';row.error='Generation was interrupted. Retry this suggestion.'}run.lease=null}
     const rows=run.rows.filter(r=>r.status==='pending').slice(0,50)
     if(!rows.length){await persist(scope,state);return null}
     const lease={token:randomUUID(),expires:now+180000,ids:rows.map(r=>r.id)};run.lease=lease;for(const row of rows)row.status='generating'
@@ -82,7 +82,7 @@ export async function processBulkSeo(scope:any,generate=generateSeoBatch,now=Dat
   await locked(scope,async()=>{
     const state=await readBulkSeo(scope),run=state.run;if(!run||run.id!==claim.runId||run.lease?.token!==claim.lease.token)return
     for(const row of run.rows.filter(r=>claim.lease.ids.includes(r.id))){const value=suggestions.find(p=>p.id===row.id);if(failure||!value){row.status='failed';row.error=failure||'No valid suggestion returned.'}else{row.suggestion={title:row.before.title.trim()?row.before.title:value.title,description:row.before.description.trim()?row.before.description:value.description};row.status='ready';delete row.error}}
-    delete run.lease;await persist(scope,state)
+    run.lease=null;await persist(scope,state)
   })
   return true
 }

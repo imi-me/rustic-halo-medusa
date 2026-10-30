@@ -5,10 +5,11 @@ import { applyBulkSeo, controlBulkSeo, processBulkSeo, readBulkSeo, startBulkSeo
 import { generateSeoBatch } from '../admin-assistant/product-seo-batch'
 import { PRODUCT_SEO_KEY } from '../product-seo-values'
 import { GET,POST } from '../../api/admin/product-seo/route'
+const mergeJson=(before:any,after:any):any=>{if(!after||Array.isArray(after)||typeof after!=='object')return structuredClone(after);const result={...before};for(const key of Object.keys(after))result[key]=mergeJson(before?.[key],after[key]);return result}
 const fixture=()=>{
  let stored:any=null
  const products:any[]=[1,2,3].map(n=>({id:`prod_${n}`,title:`Wooden flower ${n}`,description:`<p>A wooden flower ${n}.</p>`,material:'Wood',handle:`flower-${n}`,status:'published',updated_at:'2026-10-29T12:00:00.000Z',metadata:{unrelated:{keep:true},...(n===2?{[PRODUCT_SEO_KEY]:{title:'My custom title',description:''}}:n===3?{[PRODUCT_SEO_KEY]:{title:'Complete title',description:'Complete description'}}:{})}}))
- const ops={listAdminOperations:async()=>stored?[structuredClone(stored)]:[],createAdminOperations:async(value:any)=>{stored={id:'op_one',...structuredClone(value)};return stored},updateAdminOperations:async(value:any)=>{stored={...stored,...structuredClone(value)};return stored}}
+ const ops={listAdminOperations:async()=>stored?[structuredClone(stored)]:[],createAdminOperations:async(value:any)=>{stored={id:'op_one',...structuredClone(value)};return stored},updateAdminOperations:async(value:any)=>{stored=mergeJson(stored,value);return stored}}
  const service={listAndCountProducts:async()=>[structuredClone(products),products.length],retrieveProduct:async(id:string)=>{const p=products.find(p=>p.id===id);if(!p)throw Error('deleted');return structuredClone(p)}}
  const scope:any={resolve:(key:string)=>key==='admin_operations'?ops:key==='product'?service:key==='locking'?{execute:async(_key:string,fn:any)=>fn()}:null}
  workflow.mockImplementation(async({input}:any)=>{const p=products.find(p=>p.id===input.selector.id);p.metadata={...p.metadata,...input.update.metadata};p.updated_at=new Date().toISOString()})
@@ -18,7 +19,7 @@ const suggestions=async(products:any[])=>products.map(p=>({id:p.id,title:`${p.ti
 beforeEach(()=>workflow.mockReset())
 it('creates durable missing-only drafts, preserves custom fields and saves only approved SEO metadata',async()=>{
  const f=fixture();let s=await startBulkSeo(f.scope,'user_one','empty');expect(s.run!.rows.map(r=>r.id)).toEqual(['prod_1','prod_2']);expect(s.used).toBe(2);expect(workflow).not.toHaveBeenCalled()
- await processBulkSeo(f.scope,suggestions);s=await readBulkSeo(f.scope);expect(s.run!.rows.every(r=>r.status==='ready')).toBe(true);expect(s.run!.rows[1].suggestion!.title).toBe('My custom title');expect(f.products[0].metadata).not.toHaveProperty(PRODUCT_SEO_KEY)
+ await processBulkSeo(f.scope,suggestions);s=await readBulkSeo(f.scope);expect(s.run!.rows.every(r=>r.status==='ready')).toBe(true);expect(s.run!.lease).toBeNull();expect(s.run!.rows[1].suggestion!.title).toBe('My custom title');expect(f.products[0].metadata).not.toHaveProperty(PRODUCT_SEO_KEY)
  const values=s.run!.rows.map(r=>({id:r.id,...r.suggestion!}));s=await applyBulkSeo(f.scope,s.run!.id,values);expect(s.run!.rows.every(r=>r.status==='saved')).toBe(true);expect(workflow).toHaveBeenCalledTimes(2)
  for(const [call]of workflow.mock.calls){expect(Object.keys(call.input.update)).toEqual(['metadata']);expect(Object.keys(call.input.update.metadata)).toEqual([PRODUCT_SEO_KEY])}
  expect(f.products[1].metadata[PRODUCT_SEO_KEY].title).toBe('My custom title');expect(f.products[1].metadata.unrelated).toEqual({keep:true});expect(f.products[2].metadata[PRODUCT_SEO_KEY]).toEqual({title:'Complete title',description:'Complete description'})
@@ -53,4 +54,9 @@ it('requires staff authentication, trusted origin and a strict bounded action be
  const f=fixture(),base:any={scope:f.scope,headers:{},body:{action:'start',revision:'empty'}};let r=response();await GET(base,r);expect(r.sendStatus).toHaveBeenCalledWith(401);r=response();await POST({...base,auth_context:{actor_id:'user',actor_type:'customer'}},r);expect(r.sendStatus).toHaveBeenCalledWith(401)
  r=response();await POST({...base,auth_context:{actor_id:'user',actor_type:'user'},headers:{origin:'https://untrusted.invalid'}},r);expect(r.sendStatus).toHaveBeenCalledWith(403)
  r=response();await POST({...base,auth_context:{actor_id:'user',actor_type:'user'},body:{...base.body,publish:true}},r);expect(r.status).toHaveBeenCalledWith(400);expect(f.stored()).toBe(null)
+})
+
+it('clears completed and stopped leases explicitly under native JSON merge persistence',async()=>{
+ const f=fixture();await startBulkSeo(f.scope,'user_one','empty');let release:any;const pending=processBulkSeo(f.scope,()=>new Promise<any>(resolve=>{release=resolve}));while(!release)await Promise.resolve();let s=await readBulkSeo(f.scope);expect(s.run!.lease).toBeTruthy();s=await controlBulkSeo(f.scope,s.revision,'stop');expect(s.run!.lease).toBeNull();release(await suggestions(f.products.slice(0,2)));await pending;s=await readBulkSeo(f.scope);expect(s.run!.rows.every(r=>r.status==='failed')).toBe(true);expect(s.run!.lease).toBeNull();
+ s=await controlBulkSeo(f.scope,s.revision,'retry');await processBulkSeo(f.scope,suggestions);s=await readBulkSeo(f.scope);expect(s.run!.lease).toBeNull();expect(s.run!.rows.every(r=>r.status==='ready')).toBe(true);expect(workflow).not.toHaveBeenCalled();
 })
