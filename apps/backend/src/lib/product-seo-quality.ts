@@ -25,6 +25,21 @@ export const descriptionFingerprint = (value: string) =>
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .replace(/\s+/g, " ");
+// Catch name-swapped boilerplate without treating a shared material or short
+// product phrase as a duplicate. Longer copy must share most three-word phrases.
+function repeatsDescriptionTemplate(left: string, right: string): boolean {
+  const phrases = (value: string) => {
+    const words = value.split(" ");
+    return words.length < 14
+      ? new Set<string>()
+      : new Set(words.slice(2).map((_, i) => words.slice(i, i + 3).join(" ")));
+  };
+  const a = phrases(left),
+    b = phrases(right);
+  if (!a.size || !b.size) return false;
+  const shared = [...a].filter((phrase) => b.has(phrase)).length;
+  return shared >= 8 && shared / Math.max(a.size, b.size) >= 0.8;
+}
 const generic = new Set(
   "a an and the with for from by of in on at our your to is are rustic halo hair claw claws clip clips earrings earring dangle dangles stud studs coaster coasters wood wooden round sign signs door hanger hangers novelty collection decor simple design designs welcome hello hi".split(
     " ",
@@ -131,6 +146,16 @@ export function seoQualityIssue(
     )
   )
     return "The description repeats another product. Use this product’s specific name and distinguishing details.";
+  const repeatedTemplate = others.find(
+    (other) =>
+      other.id !== product.id &&
+      repeatsDescriptionTemplate(
+        fingerprint,
+        descriptionFingerprint(other.description),
+      ),
+  );
+  if (repeatedTemplate)
+    return `The wording closely repeats another product; changing only its name is not enough. Rewrite the sentence structure and emphasize supported details differently. Avoid this wording: ${repeatedTemplate.description.slice(0, 320)}`;
   const tokens = descriptionFingerprint(product.title)
       .split(" ")
       .filter((t) => t.length > 1 && !generic.has(t)),

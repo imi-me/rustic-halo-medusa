@@ -538,3 +538,67 @@ it("rejects copied option palettes and retries with natural product copy", async
   expect(result.description).not.toContain("Espresso");
   expect(result.error).toBeUndefined();
 });
+
+it("rejects name-swapped boilerplate and retries only the repeated product", async () => {
+  const alpha = {
+    id: "elijah",
+    title: "Elijah Craig Coaster",
+    description: "Laser-engraved natural wood coaster.",
+    material: "",
+  };
+  const beta = { ...alpha, id: "wild", title: "Wild Turkey Coaster" };
+  const copy = (p: typeof alpha) => ({
+    id: p.id,
+    title: p.title,
+    description: `Laser-engraved natural wood ${p.title} for a rustic home bar accent. It helps protect tables and countertops while adding bourbon-inspired style.`,
+  });
+  const first = copy(alpha),
+    repeated = copy(beta),
+    distinct = {
+      id: beta.id,
+      title: beta.title,
+      description:
+        "Wild Turkey Coaster pairs natural wood with laser-engraved detail, adding a bourbon-inspired accent to a home bar.",
+    };
+  expect(seoQualityIssue(beta, repeated, [first])).toContain(
+    "changing only its name",
+  );
+  expect(seoQualityIssue(beta, distinct, [first])).toBeNull();
+  expect(seoQualityIssue(alpha, first, [first])).toBeNull();
+  const request = jest
+    .fn()
+    .mockResolvedValueOnce(response([first, repeated]))
+    .mockResolvedValueOnce(response([distinct]));
+  const result = await generateSeoBatch([alpha, beta], request);
+  expect(request).toHaveBeenCalledTimes(2);
+  const retry = JSON.parse(
+    JSON.parse(request.mock.calls[1][1].body).input[0].content,
+  ).products;
+  expect(retry.map((p: any) => p.id)).toEqual([beta.id]);
+  expect(retry[0].revision_feedback).toContain(first.description);
+  expect(result[0].description).toBe(first.description);
+  expect(result[1].description).toBe(distinct.description);
+});
+it("allows distinct descriptions sharing a short material phrase", () => {
+  const p = {
+    id: "rose",
+    title: "Rose Earrings",
+    description: "Wood earrings",
+    material: "",
+  };
+  expect(
+    seoQualityIssue(
+      p,
+      {
+        title: p.title,
+        description: "Rose earrings in natural wood with a floral design.",
+      },
+      [
+        {
+          id: "sun",
+          description: "Sun earrings in natural wood with a round design.",
+        },
+      ],
+    ),
+  ).toBeNull();
+});
