@@ -287,14 +287,21 @@ body.rh-approved-b {
 }
 .rh-b-hero-copy {
   position: relative;
-  background: #ffffffed;
+  background: rgba(255, 255, 255, var(--rh-hero-box-alpha, .93));
   backdrop-filter: blur(20px);
   border: 1px solid #ffffffb0;
   border-radius: 23px;
   box-shadow: 0 12px 40px #4a426914;
-  padding: 32px;
+  padding: var(--rh-hero-box-padding, 32px);
   margin: 45px;
-  max-width: 380px;
+  width: var(--rh-hero-box-width, 380px);
+  max-width: calc(100% - 90px);
+  overflow-wrap: anywhere;
+}
+.rh-b-hero-copy[data-box-clear="true"] {
+  backdrop-filter: none;
+  border-color: transparent;
+  box-shadow: none;
 }
 .rh-b-hero-copy h1 {
   font-size: 43px;
@@ -1452,6 +1459,7 @@ body.rh-approved-b {
   }
   .rh-b-hero-copy {
     margin: 0;
+    width: auto;
     max-width: none;
     border: 0;
     border-radius: 0;

@@ -45,7 +45,7 @@ const image = z
   .max(2000)
   .refine(
     safeEditorialImage,
-    "Upload an image to this store or use an existing Rustic Halo image."
+    "Upload an image to this store or use an existing Rustic Halo image.",
   );
 const optionalImage = z.union([z.literal(""), image]);
 const link = z
@@ -55,7 +55,7 @@ const link = z
   .max(500)
   .refine(
     safeStorefrontLink,
-    "Use a storefront path such as /collections/fall. External links and scripts are not allowed."
+    "Use a storefront path such as /collections/fall. External links and scripts are not allowed.",
   );
 const copy = {
   enabled: z.boolean(),
@@ -73,6 +73,10 @@ export const homepageSchema = z
     hero: z
       .object({
         ...copy,
+        textBoxOpacity: z.number().int().min(0).max(100).default(93),
+        textBoxSize: z
+          .enum(["compact", "standard", "wide"])
+          .default("standard"),
         desktopImage: image,
         mobileImage: image,
         imageAlt: z.string().trim().min(1).max(300),
@@ -93,14 +97,14 @@ export const homepageSchema = z
                 mobileImage: optionalImage,
                 alt: z.string().trim().min(1).max(300),
               })
-              .strict()
+              .strict(),
           )
           .min(1)
           .max(6)
           .refine(
             (items) =>
               new Set(items.map((item) => item.id)).size === items.length,
-            "Collection sections need unique IDs."
+            "Collection sections need unique IDs.",
           ),
       })
       .strict(),

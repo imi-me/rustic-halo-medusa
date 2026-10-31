@@ -1,4 +1,5 @@
 import { HttpTypes } from "@medusajs/types"
+import type { CSSProperties } from "react"
 import { listProducts } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
 import { brandCategoryHref } from "@lib/brand/category-links"
@@ -16,6 +17,14 @@ export default async function Hero({
 }) {
   const { featured } = storefrontDesign
   const { hero: campaign, explore, seo } = await getHomepageContent()
+  const box = {
+    compact: { width: 320, padding: 24 },
+    standard: { width: 380, padding: 32 },
+    wide: { width: 520, padding: 32 },
+  }[campaign.textBoxSize] || { width: 380, padding: 32 }
+  const boxOpacity = Number.isFinite(campaign.textBoxOpacity)
+    ? Math.max(0, Math.min(100, campaign.textBoxOpacity))
+    : 93
   const productCategories = await listCategories()
   const hrefFor = (href: string) => {
     if (!href.startsWith("/categories/")) return href
@@ -24,7 +33,7 @@ export default async function Hero({
       brandCategoryHref(
         url.pathname.split("/").pop()!,
         productCategories,
-        collections
+        collections,
       ) +
       url.search +
       url.hash
@@ -67,7 +76,17 @@ export default async function Hero({
                   style={{ objectFit: campaign.imageFit }}
                 />
               </picture>
-              <div className="rh-b-hero-copy">
+              <div
+                className="rh-b-hero-copy"
+                data-box-clear={boxOpacity === 0 ? "true" : undefined}
+                style={
+                  {
+                    "--rh-hero-box-alpha": boxOpacity / 100,
+                    "--rh-hero-box-width": `${box.width}px`,
+                    "--rh-hero-box-padding": `${box.padding}px`,
+                  } as CSSProperties
+                }
+              >
                 <span className="rh-b-kicker">{campaign.eyebrow}</span>
                 <h1 id="home-heading" className="rh-b-editable-title">
                   {campaign.title}

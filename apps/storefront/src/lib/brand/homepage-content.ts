@@ -12,6 +12,8 @@ export type EditorialCopy = {
 export type HomepageContent = {
   version: 1
   hero: EditorialCopy & {
+    textBoxOpacity: number
+    textBoxSize: "compact" | "standard" | "wide"
     desktopImage: string
     mobileImage: string
     imageAlt: string

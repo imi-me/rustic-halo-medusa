@@ -6,7 +6,7 @@ function operations() {
   let row: any = null;
   return {
     listAdminOperations: jest.fn(async () =>
-      row ? [structuredClone(row)] : []
+      row ? [structuredClone(row)] : [],
     ),
     createAdminOperations: jest.fn(async (data: any) => {
       row = { id: "op-homepage", ...structuredClone(data) };
@@ -26,11 +26,11 @@ test("draft saves stay private until explicitly published; stale writes cannot o
   draft.hero.showText = false;
   const saved = await saveHomepage(db, draft, initial.revision, "draft");
   expect((await publicHomepage(db)).content.hero.title).toBe(
-    defaultHomepage.hero.title
+    defaultHomepage.hero.title,
   );
   expect(await publicHomepage(db)).not.toHaveProperty("draft");
   await expect(
-    saveHomepage(db, defaultHomepage, initial.revision, "publish")
+    saveHomepage(db, defaultHomepage, initial.revision, "publish"),
   ).rejects.toThrow("another window");
   const published = await saveHomepage(db, draft, saved.revision, "publish");
   expect(published.published_at).toBeTruthy();
@@ -70,17 +70,17 @@ test("does not accept unsupported content keys, duplicate collection IDs or untr
     homepageSchema.safeParse({
       ...defaultHomepage,
       keywords: "stuffed keywords",
-    }).success
+    }).success,
   ).toBe(false);
   const duplicate = structuredClone(defaultHomepage);
   duplicate.explore.items[1].id = duplicate.explore.items[0].id;
   expect(homepageSchema.safeParse(duplicate).success).toBe(false);
   expect(safeEditorialImage("https://cdn.rustichalo.com/editorial.jpg")).toBe(
-    true
+    true,
   );
   expect(safeEditorialImage("https://other.example/editorial.jpg")).toBe(false);
   expect(
-    safeEditorialImage("https://user:pass@cdn.rustichalo.com/editorial.jpg")
+    safeEditorialImage("https://user:pass@cdn.rustichalo.com/editorial.jpg"),
   ).toBe(false);
   expect(safeEditorialImage("/brand/../private.env")).toBe(false);
   const env = process.env.NODE_ENV;
@@ -102,14 +102,57 @@ test("validates real image bytes without modifying the uploaded artwork", async 
   await expect(
     validateEditorialUpload(
       Buffer.from(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"/>'
-      ).toString("base64")
-    )
+        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"/>',
+      ).toString("base64"),
+    ),
   ).rejects.toThrow("still JPG");
   await expect(validateEditorialUpload("not-a-real-image")).rejects.toThrow(
-    "Choose"
+    "Choose",
   );
   await expect(
-    validateEditorialUpload(Buffer.alloc(8_000_001).toString("base64"))
+    validateEditorialUpload(Buffer.alloc(8_000_001).toString("base64")),
   ).rejects.toThrow("under 8 MB");
+});
+test("old saved homepages inherit appearance defaults without a write", async () => {
+  const db = operations(),
+    legacy: any = structuredClone(defaultHomepage);
+  delete legacy.hero.textBoxOpacity;
+  delete legacy.hero.textBoxSize;
+  await db.createAdminOperations({
+    operation_key: "storefront-homepage:v1",
+    payload: {
+      draft: legacy,
+      published: legacy,
+      revision: "legacy",
+      published_at: "2026-10-29T00:00:00Z",
+    },
+  });
+  const state = await readHomepage(db);
+  expect(state.draft.hero.textBoxOpacity).toBe(93);
+  expect(state.published?.hero.textBoxSize).toBe("standard");
+  expect(state.revision).toBe("legacy");
+  expect(db.updateAdminOperations).not.toHaveBeenCalled();
+});
+test("appearance choices save privately, publish explicitly and survive hidden text", async () => {
+  const db = operations(),
+    initial = await readHomepage(db),
+    draft = structuredClone(defaultHomepage);
+  draft.hero.textBoxOpacity = 0;
+  draft.hero.textBoxSize = "wide";
+  draft.hero.showText = false;
+  const saved = await saveHomepage(db, draft, initial.revision, "draft");
+  expect((await readHomepage(db)).draft.hero).toEqual(draft.hero);
+  expect((await publicHomepage(db)).content.hero.textBoxOpacity).toBe(93);
+  await saveHomepage(db, draft, saved.revision, "publish");
+  expect((await publicHomepage(db)).content.hero).toEqual(draft.hero);
+});
+test("rejects invalid hero opacity and unsupported box sizes", () => {
+  for (const value of [-1, 101, 25.5, "50", null]) {
+    const draft: any = structuredClone(defaultHomepage);
+    draft.hero.textBoxOpacity = value;
+    expect(homepageSchema.safeParse(draft).success).toBe(false);
+  }
+  const draft: any = structuredClone(defaultHomepage);
+  draft.hero.textBoxSize = "giant";
+  expect(homepageSchema.safeParse(draft).success).toBe(false);
 });

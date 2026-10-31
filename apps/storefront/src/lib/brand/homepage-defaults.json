@@ -1,6 +1,8 @@
 {
   "version": 1,
   "hero": {
+    "textBoxOpacity": 93,
+    "textBoxSize": "standard",
     "enabled": true,
     "showText": true,
     "eyebrow": "Inspired by the outside",

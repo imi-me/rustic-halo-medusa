@@ -10,7 +10,7 @@ const defaults = require("../src/lib/brand/homepage-defaults.json")
 test("storefront fallback and Admin initial design share the same content contract", () => {
   assert.deepEqual(
     defaults,
-    require("../../backend/src/lib/storefront-content/defaults.json")
+    require("../../backend/src/lib/storefront-content/defaults.json"),
   )
 })
 async function render(content) {
@@ -52,19 +52,19 @@ async function render(content) {
     ts.transpileModule(
       fs.readFileSync(
         path.join(__dirname, "../src/modules/home/components/hero/index.tsx"),
-        "utf8"
+        "utf8",
       ),
       {
         compilerOptions: {
           module: ts.ModuleKind.CommonJS,
           jsx: ts.JsxEmit.ReactJSX,
         },
-      }
+      },
     ).outputText,
-    context
+    context,
   )
   return renderToStaticMarkup(
-    await context.exports.default({ countryCode: "us", collections: [] })
+    await context.exports.default({ countryCode: "us", collections: [] }),
   )
 }
 test("image-only mode removes visible copy panels while retaining meaningful image/link/heading text", async () => {
@@ -92,4 +92,33 @@ test("hidden hero/explore sections do not remove the page heading or other homep
   assert.ok(!html.includes("rh-b-collections"))
   assert.ok(html.includes("featured-heading"))
   assert.ok(html.includes("our-story"))
+})
+test("hero appearance changes only the panel background and box dimensions", async () => {
+  const content = structuredClone(defaults)
+  content.hero.textBoxOpacity = 35
+  content.hero.textBoxSize = "wide"
+  const html = await render(content)
+  assert.match(html, /--rh-hero-box-alpha:0.35/)
+  assert.match(html, /--rh-hero-box-width:520px/)
+  assert.ok(!html.includes('style="opacity:'))
+  assert.ok(html.includes(content.hero.action))
+  content.hero.textBoxOpacity = 0
+  assert.match(await render(content), /data-box-clear="true"/)
+  content.hero.textBoxOpacity = 100
+  content.hero.textBoxSize = "compact"
+  const solid = await render(content)
+  assert.match(solid, /--rh-hero-box-alpha:1/)
+  assert.match(solid, /--rh-hero-box-width:320px/)
+  assert.ok(!solid.includes('data-box-clear="true"'))
+})
+test("legacy or invalid appearance values retain a bounded safe layout", async () => {
+  const content = structuredClone(defaults)
+  delete content.hero.textBoxOpacity
+  delete content.hero.textBoxSize
+  assert.match(await render(content), /--rh-hero-box-alpha:0.93/)
+  content.hero.textBoxOpacity = 1000
+  content.hero.textBoxSize = "invalid"
+  const html = await render(content)
+  assert.match(html, /--rh-hero-box-alpha:1/)
+  assert.match(html, /--rh-hero-box-width:380px/)
 })

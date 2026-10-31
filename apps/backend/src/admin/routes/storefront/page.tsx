@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { useBlocker } from "react-router-dom";
 import { adminRequest } from "../../lib/inline-edit";
 import type { HomepageContent } from "../../../lib/storefront-content/schema";
@@ -11,6 +11,60 @@ type State = HomepageState & { storefront_url: string };
 type Hero = HomepageContent["hero"];
 type Card = HomepageContent["explore"]["items"][number];
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+function HeroBoxControls({
+  value,
+  change,
+}: {
+  value: Hero;
+  change: (patch: Partial<Hero>) => void;
+}) {
+  const opacityId = useId(),
+    helpId = useId();
+  return (
+    <fieldset className="hp-box-controls" disabled={!value.showText}>
+      <legend>Text box appearance</legend>
+      <label className="hp-field" htmlFor={opacityId}>
+        <span>
+          Text box background opacity{" "}
+          <output htmlFor={opacityId}>{value.textBoxOpacity ?? 93}%</output>
+        </span>
+        <input
+          id={opacityId}
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          aria-label="Text box background opacity"
+          aria-describedby={helpId}
+          value={value.textBoxOpacity ?? 93}
+          onChange={(e) => change({ textBoxOpacity: Number(e.target.value) })}
+        />
+        <small id={helpId}>
+          0% is fully clear; 100% is solid white. Only the background fades.
+          Check that the words are easy to read over your photo.
+        </small>
+      </label>
+      <label className="hp-field">
+        <span>Text box size</span>
+        <select
+          aria-label="Text box size"
+          value={value.textBoxSize || "standard"}
+          onChange={(e) =>
+            change({ textBoxSize: e.target.value as Hero["textBoxSize"] })
+          }
+        >
+          <option value="compact">Compact</option>
+          <option value="standard">Standard</option>
+          <option value="wide">Wide</option>
+        </select>
+        <small>
+          The box grows with your text. These settings control the desktop
+          overlay; on phones, text stays full-width below the photo.
+        </small>
+      </label>
+    </fieldset>
+  );
+}
 function publicImage(path: string, origin: string) {
   return path.startsWith("/") ? origin.replace(/\/$/, "") + path : path;
 }
@@ -243,13 +297,28 @@ function Preview({
           <img
             src={publicImage(
               phone ? hero.mobileImage : hero.desktopImage,
-              origin
+              origin,
             )}
             alt={hero.imageAlt}
             style={{ objectFit: hero.imageFit }}
           />
           {hero.showText && (
-            <div>
+            <div
+              data-box-clear={
+                (hero.textBoxOpacity ?? 93) === 0 ? "true" : undefined
+              }
+              style={
+                {
+                  "--hp-box-alpha": (hero.textBoxOpacity ?? 93) / 100,
+                  "--hp-box-width":
+                    { compact: "52%", standard: "62%", wide: "84%" }[
+                      hero.textBoxSize
+                    ] || "62%",
+                  "--hp-box-padding":
+                    hero.textBoxSize === "compact" ? "12px" : "17px",
+                } as CSSProperties
+              }
+            >
               <small>{hero.eyebrow}</small>
               <h3>{hero.title}</h3>
               {hero.description && <p>{hero.description}</p>}
@@ -268,7 +337,7 @@ function Preview({
                 <img
                   src={publicImage(
                     phone && c.mobileImage ? c.mobileImage : c.image,
-                    origin
+                    origin,
                   )}
                   alt={c.alt}
                   style={{ objectFit: c.imageFit }}
@@ -340,10 +409,10 @@ const StorefrontPage = () => {
           explore: {
             ...d.explore,
             items: d.explore.items.map((c, i) =>
-              i === index ? { ...c, ...patch } : c
+              i === index ? { ...c, ...patch } : c,
             ),
           },
-        }
+        },
     );
   }
   async function upload(file: File, change: (url: string) => void) {
@@ -369,7 +438,7 @@ const StorefrontPage = () => {
       });
       change(result.url);
       setNotice(
-        `Image ready: ${result.width} × ${result.height}. Save a draft or publish when you are ready.`
+        `Image ready: ${result.width} × ${result.height}. Save a draft or publish when you are ready.`,
       );
     } catch (e) {
       setError((e as Error).message);
@@ -381,13 +450,13 @@ const StorefrontPage = () => {
     if (!draft || !saved) return;
     if (!form.current?.checkValidity()) {
       const invalid = form.current?.querySelector(
-        "input:invalid, textarea:invalid, select:invalid"
+        "input:invalid, textarea:invalid, select:invalid",
       ) as HTMLInputElement | null;
       const panel = invalid?.closest("[data-editor-tab]") as HTMLElement | null;
       if (panel?.dataset.editorTab)
         setTab(panel.dataset.editorTab as "hero" | "explore" | "seo");
       setError(
-        "Complete the required fields in the selected section before saving."
+        "Complete the required fields in the selected section before saving.",
       );
       requestAnimationFrame(() => {
         const details = invalid?.closest("details");
@@ -410,7 +479,7 @@ const StorefrontPage = () => {
       setNotice(
         action === "publish"
           ? "Homepage published to this store. Refresh the storefront to see your changes."
-          : "Draft saved. The published storefront has not changed."
+          : "Draft saved. The published storefront has not changed.",
       );
     } catch (e) {
       setError((e as Error).message);
@@ -463,8 +532,8 @@ const StorefrontPage = () => {
             {dirty
               ? "Unsaved changes"
               : unpublished
-              ? "Saved draft · not published"
-              : "Published design"}
+                ? "Saved draft · not published"
+                : "Published design"}
           </span>
           {saved?.published_at && (
             <span>
@@ -513,8 +582,8 @@ const StorefrontPage = () => {
                     {t === "hero"
                       ? "Hero"
                       : t === "explore"
-                      ? "Explore collections"
-                      : "Search settings"}
+                        ? "Explore collections"
+                        : "Search settings"}
                   </button>
                 ))}
               </nav>
@@ -593,6 +662,7 @@ const StorefrontPage = () => {
                           ? "Hero text and link"
                           : "Saved text and image link"}
                       </summary>
+                      <HeroBoxControls value={draft.hero} change={hero} />
                       <CopyFields value={draft.hero} change={hero} />
                     </details>
                   </section>
@@ -674,7 +744,7 @@ const StorefrontPage = () => {
                           hint="Optional separate phone crop. Leave empty to use the main image."
                           onUpload={(file) =>
                             void upload(file, (url) =>
-                              card(i, { mobileImage: url })
+                              card(i, { mobileImage: url }),
                             )
                           }
                         />
