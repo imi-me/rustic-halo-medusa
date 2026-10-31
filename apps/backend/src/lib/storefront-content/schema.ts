@@ -77,6 +77,14 @@ export const homepageSchema = z
         textBoxSize: z
           .enum(["compact", "standard", "wide"])
           .default("standard"),
+        textColor: z
+          .enum(["original", "dark", "light", "custom"])
+          .default("original"),
+        customTextColor: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/, "Choose a valid text color.")
+          .default("#292932"),
+        textSize: z.enum(["small", "standard", "large"]).default("standard"),
         desktopImage: image,
         mobileImage: image,
         imageAlt: z.string().trim().min(1).max(300),

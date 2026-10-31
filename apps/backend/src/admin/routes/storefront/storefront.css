@@ -807,3 +807,11 @@
 .hp-box-controls input[type="range"] { padding:0; min-height:28px; border:0; background:transparent; accent-color:#75648d; cursor:pointer; }
 .hp-box-controls:disabled { opacity:.6; }
 .hp-preview-hero > div[data-box-clear="true"] { border-color:transparent; box-shadow:none; }
+
+.hp-box-controls input[type="color"] { width:64px; height:40px; padding:3px; cursor:pointer; }
+.hp-preview-hero h3 { color:var(--hp-hero-text-color,#4e405d); font-size:var(--hp-hero-title-size,19px); }
+.hp-preview-hero p { color:var(--hp-hero-text-color,#8d739b); font-size:var(--hp-hero-body-size,7px); }
+.hp-preview-hero small { color:var(--hp-hero-text-color,#ad8dc0); }
+.hp-preview-stage.phone .hp-preview-hero h3 { color:#292932; font-size:var(--hp-hero-phone-title-size,19px); }
+.hp-preview-stage.phone .hp-preview-hero p { color:#77717e; font-size:var(--hp-hero-phone-body-size,7px); }
+.hp-preview-stage.phone .hp-preview-hero small { color:#777482; }

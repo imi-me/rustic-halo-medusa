@@ -14,6 +14,9 @@ export type HomepageContent = {
   hero: EditorialCopy & {
     textBoxOpacity: number
     textBoxSize: "compact" | "standard" | "wide"
+    textColor: "original" | "dark" | "light" | "custom"
+    customTextColor: string
+    textSize: "small" | "standard" | "large"
     desktopImage: string
     mobileImage: string
     imageAlt: string

@@ -3,6 +3,9 @@
   "hero": {
     "textBoxOpacity": 93,
     "textBoxSize": "standard",
+    "textColor": "original",
+    "customTextColor": "#292932",
+    "textSize": "standard",
     "enabled": true,
     "showText": true,
     "eyebrow": "Inspired by the outside",

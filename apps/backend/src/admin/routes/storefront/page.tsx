@@ -62,6 +62,54 @@ function HeroBoxControls({
           overlay; on phones, text stays full-width below the photo.
         </small>
       </label>
+      <label className="hp-field">
+        <span>Text color</span>
+        <select
+          aria-label="Hero text color"
+          value={value.textColor || "original"}
+          onChange={(e) =>
+            change({ textColor: e.target.value as Hero["textColor"] })
+          }
+        >
+          <option value="original">Original palette</option>
+          <option value="dark">Dark (charcoal)</option>
+          <option value="light">Light (white)</option>
+          <option value="custom">Custom color</option>
+        </select>
+        <small>
+          Light text works well over dark photos with a clear box. Phone text
+          stays dark on its white panel.
+        </small>
+      </label>
+      {value.textColor === "custom" && (
+        <label className="hp-field">
+          <span>Custom text color</span>
+          <input
+            type="color"
+            aria-label="Custom hero text color"
+            value={value.customTextColor || "#292932"}
+            onChange={(e) => change({ customTextColor: e.target.value })}
+          />
+        </label>
+      )}
+      <label className="hp-field">
+        <span>Text size</span>
+        <select
+          aria-label="Hero text size"
+          value={value.textSize || "standard"}
+          onChange={(e) =>
+            change({ textSize: e.target.value as Hero["textSize"] })
+          }
+        >
+          <option value="small">Small</option>
+          <option value="standard">Standard</option>
+          <option value="large">Large</option>
+        </select>
+        <small>
+          Scales the heading and description together. The box grows to fit,
+          with sizes adapted for phones.
+        </small>
+      </label>
     </fieldset>
   );
 }
@@ -289,6 +337,20 @@ function Preview({
   phone: boolean;
 }) {
   const hero = content.hero;
+  const textColor =
+    hero.textColor === "light"
+      ? "#ffffff"
+      : hero.textColor === "dark"
+        ? "#292932"
+        : hero.textColor === "custom" &&
+            /^#[0-9a-fA-F]{6}$/.test(hero.customTextColor)
+          ? hero.customTextColor
+          : undefined;
+  const text = {
+    small: { title: 16, body: 6.5, phoneTitle: 17, phoneBody: 7 },
+    standard: { title: 19, body: 7, phoneTitle: 19, phoneBody: 7 },
+    large: { title: 23, body: 8, phoneTitle: 22, phoneBody: 8 },
+  }[hero.textSize] || { title: 19, body: 7, phoneTitle: 19, phoneBody: 7 };
   return (
     <div className={`hp-preview-stage ${phone ? "phone" : ""}`}>
       <div className="hp-preview-brand">RUSTIC HALO</div>
@@ -309,6 +371,11 @@ function Preview({
               }
               style={
                 {
+                  "--hp-hero-text-color": textColor,
+                  "--hp-hero-title-size": `${text.title}px`,
+                  "--hp-hero-body-size": `${text.body}px`,
+                  "--hp-hero-phone-title-size": `${text.phoneTitle}px`,
+                  "--hp-hero-phone-body-size": `${text.phoneBody}px`,
                   "--hp-box-alpha": (hero.textBoxOpacity ?? 93) / 100,
                   "--hp-box-width":
                     { compact: "52%", standard: "62%", wide: "84%" }[

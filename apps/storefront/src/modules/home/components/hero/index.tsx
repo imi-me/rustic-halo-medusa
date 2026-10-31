@@ -17,6 +17,20 @@ export default async function Hero({
 }) {
   const { featured } = storefrontDesign
   const { hero: campaign, explore, seo } = await getHomepageContent()
+  const textColor =
+    campaign.textColor === "light"
+      ? "#ffffff"
+      : campaign.textColor === "dark"
+        ? "#292932"
+        : campaign.textColor === "custom" &&
+            /^#[0-9a-fA-F]{6}$/.test(campaign.customTextColor)
+          ? campaign.customTextColor
+          : undefined
+  const text = {
+    small: { title: 36, body: 13, phoneTitle: 30, phoneBody: 12 },
+    standard: { title: 43, body: 14, phoneTitle: 34, phoneBody: 12 },
+    large: { title: 52, body: 16, phoneTitle: 40, phoneBody: 14 },
+  }[campaign.textSize] || { title: 43, body: 14, phoneTitle: 34, phoneBody: 12 }
   const box = {
     compact: { width: 320, padding: 24 },
     standard: { width: 380, padding: 32 },
@@ -84,6 +98,11 @@ export default async function Hero({
                     "--rh-hero-box-alpha": boxOpacity / 100,
                     "--rh-hero-box-width": `${box.width}px`,
                     "--rh-hero-box-padding": `${box.padding}px`,
+                    "--rh-hero-text-color": textColor,
+                    "--rh-hero-title-size": `${text.title}px`,
+                    "--rh-hero-body-size": `${text.body}px`,
+                    "--rh-hero-phone-title-size": `${text.phoneTitle}px`,
+                    "--rh-hero-phone-body-size": `${text.phoneBody}px`,
                   } as CSSProperties
                 }
               >

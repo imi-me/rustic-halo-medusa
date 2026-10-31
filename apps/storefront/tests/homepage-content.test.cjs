@@ -122,3 +122,42 @@ test("legacy or invalid appearance values retain a bounded safe layout", async (
   assert.match(html, /--rh-hero-box-alpha:1/)
   assert.match(html, /--rh-hero-box-width:380px/)
 })
+test("hero text styling emits safe, responsive values without changing the button", async () => {
+  const content = structuredClone(defaults)
+  Object.assign(content.hero, {
+    textColor: "light",
+    textSize: "large",
+    textBoxOpacity: 0,
+  })
+  const light = await render(content)
+  assert.match(light, /--rh-hero-text-color:#ffffff/)
+  assert.match(light, /--rh-hero-title-size:52px/)
+  assert.match(light, /--rh-hero-body-size:16px/)
+  assert.match(light, /--rh-hero-phone-title-size:40px/)
+  assert.ok(light.includes('class="rh-b-button"'))
+  Object.assign(content.hero, {
+    textColor: "custom",
+    customTextColor: "#6f2b3f",
+    textSize: "small",
+  })
+  const custom = await render(content)
+  assert.match(custom, /--rh-hero-text-color:#6f2b3f/)
+  assert.match(custom, /--rh-hero-title-size:36px/)
+  assert.match(custom, /--rh-hero-phone-title-size:30px/)
+})
+test("old or invalid text styling safely uses the original palette and sizes", async () => {
+  const content = structuredClone(defaults)
+  for (const key of ["textColor", "customTextColor", "textSize"])
+    delete content.hero[key]
+  const old = await render(content)
+  assert.ok(!old.includes("--rh-hero-text-color:"))
+  assert.match(old, /--rh-hero-title-size:43px/)
+  Object.assign(content.hero, {
+    textColor: "custom",
+    customTextColor: "url(unsafe)",
+    textSize: "huge",
+  })
+  const invalid = await render(content)
+  assert.ok(!invalid.includes("url(unsafe)"))
+  assert.match(invalid, /--rh-hero-title-size:43px/)
+})

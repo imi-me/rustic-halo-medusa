@@ -156,3 +156,62 @@ test("rejects invalid hero opacity and unsupported box sizes", () => {
   draft.hero.textBoxSize = "giant";
   expect(homepageSchema.safeParse(draft).success).toBe(false);
 });
+test("legacy homepages retain original colors and type size without a write", async () => {
+  const db = operations(),
+    legacy: any = structuredClone(defaultHomepage);
+  for (const key of ["textColor", "customTextColor", "textSize"])
+    delete legacy.hero[key];
+  await db.createAdminOperations({
+    operation_key: "storefront-homepage:v1",
+    payload: {
+      draft: legacy,
+      published: legacy,
+      revision: "legacy-text",
+      published_at: "2026-10-30T00:00:00Z",
+    },
+  });
+  const state = await readHomepage(db);
+  expect(state.draft.hero.textColor).toBe("original");
+  expect(state.published?.hero.textSize).toBe("standard");
+  expect(state.draft.hero.customTextColor).toBe("#292932");
+  expect(state.revision).toBe("legacy-text");
+  expect(db.updateAdminOperations).not.toHaveBeenCalled();
+});
+test("text styling persists through hidden copy and remains private until publication", async () => {
+  const db = operations(),
+    initial = await readHomepage(db),
+    draft = structuredClone(defaultHomepage);
+  Object.assign(draft.hero, {
+    textColor: "custom",
+    customTextColor: "#6F2B3F",
+    textSize: "large",
+    showText: false,
+  });
+  const saved = await saveHomepage(db, draft, initial.revision, "draft");
+  expect((await readHomepage(db)).draft.hero).toEqual(draft.hero);
+  expect((await publicHomepage(db)).content.hero.textColor).toBe("original");
+  await saveHomepage(db, draft, saved.revision, "publish");
+  expect((await publicHomepage(db)).content.hero).toEqual(draft.hero);
+});
+test("text styling accepts bounded presets and hexadecimal colors only", () => {
+  for (const patch of [
+    { textColor: "url(javascript:alert(1))" },
+    { textColor: null },
+    { textSize: "72px" },
+    { textSize: 99 },
+    ...["#fff", "#ffffff00", "red", "url(x)", "</style>"].map(
+      (customTextColor) => ({ customTextColor }),
+    ),
+  ]) {
+    const draft = structuredClone(defaultHomepage);
+    Object.assign(draft.hero, patch);
+    expect(homepageSchema.safeParse(draft).success).toBe(false);
+  }
+  const draft = structuredClone(defaultHomepage);
+  Object.assign(draft.hero, {
+    textColor: "custom",
+    customTextColor: "#A1b2C3",
+    textSize: "small",
+  });
+  expect(homepageSchema.safeParse(draft).success).toBe(true);
+});
