@@ -293,7 +293,7 @@ body.rh-approved-b {
   border-radius: 23px;
   box-shadow: 0 12px 40px #4a426914;
   padding: var(--rh-hero-box-padding, 32px);
-  margin: 45px;
+  margin: 45px var(--rh-hero-box-end, auto) 45px var(--rh-hero-box-start, 45px);
   width: var(--rh-hero-box-width, 380px);
   max-width: calc(100% - 90px);
   overflow-wrap: anywhere;

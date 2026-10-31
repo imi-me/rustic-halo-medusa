@@ -161,3 +161,22 @@ test("old or invalid text styling safely uses the original palette and sizes", a
   assert.ok(!invalid.includes("url(unsafe)"))
   assert.match(invalid, /--rh-hero-title-size:43px/)
 })
+
+test("hero positions use safe horizontal margins and legacy left placement", async () => {
+  const content = structuredClone(defaults)
+  for (const position of [undefined, "left", "center", "right", "invalid"]) {
+    content.hero.textBoxPosition = position
+    const html = await render(content)
+    assert.ok(
+      html.includes(
+        `--rh-hero-box-start:${position === "center" || position === "right" ? "auto" : "45px"}`,
+      ),
+    )
+    assert.ok(
+      html.includes(
+        `--rh-hero-box-end:${position === "right" ? "45px" : "auto"}`,
+      ),
+    )
+    assert.ok(html.includes(content.hero.title))
+  }
+})

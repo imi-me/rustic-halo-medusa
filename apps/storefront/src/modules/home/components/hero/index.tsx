@@ -95,6 +95,13 @@ export default async function Hero({
                 data-box-clear={boxOpacity === 0 ? "true" : undefined}
                 style={
                   {
+                    "--rh-hero-box-start":
+                      campaign.textBoxPosition === "center" ||
+                      campaign.textBoxPosition === "right"
+                        ? "auto"
+                        : "45px",
+                    "--rh-hero-box-end":
+                      campaign.textBoxPosition === "right" ? "45px" : "auto",
                     "--rh-hero-box-alpha": boxOpacity / 100,
                     "--rh-hero-box-width": `${box.width}px`,
                     "--rh-hero-box-padding": `${box.padding}px`,

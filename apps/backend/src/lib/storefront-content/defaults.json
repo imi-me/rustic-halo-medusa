@@ -3,6 +3,7 @@
   "hero": {
     "textBoxOpacity": 93,
     "textBoxSize": "standard",
+    "textBoxPosition": "left",
     "textColor": "original",
     "customTextColor": "#292932",
     "textSize": "standard",

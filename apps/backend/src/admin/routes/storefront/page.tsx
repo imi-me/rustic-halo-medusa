@@ -63,6 +63,26 @@ function HeroBoxControls({
         </small>
       </label>
       <label className="hp-field">
+        <span>Text box position</span>
+        <select
+          aria-label="Text box position"
+          value={value.textBoxPosition || "left"}
+          onChange={(e) =>
+            change({
+              textBoxPosition: e.target.value as Hero["textBoxPosition"],
+            })
+          }
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+        <small>
+          Move the box away from important details in your photo. On phones,
+          text stays below the image so it never covers it.
+        </small>
+      </label>
+      <label className="hp-field">
         <span>Text color</span>
         <select
           aria-label="Hero text color"
@@ -371,6 +391,13 @@ function Preview({
               }
               style={
                 {
+                  "--hp-box-start":
+                    hero.textBoxPosition === "center" ||
+                    hero.textBoxPosition === "right"
+                      ? "auto"
+                      : "0px",
+                  "--hp-box-end":
+                    hero.textBoxPosition === "right" ? "0px" : "auto",
                   "--hp-hero-text-color": textColor,
                   "--hp-hero-title-size": `${text.title}px`,
                   "--hp-hero-body-size": `${text.body}px`,

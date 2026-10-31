@@ -410,6 +410,8 @@
   border: 1px solid #fff8;
   border-radius: 13px;
   width: var(--hp-box-width,62%);
+  margin-left: var(--hp-box-start,0px);
+  margin-right: var(--hp-box-end,auto);
   padding: var(--hp-box-padding,17px);
 }
 .hp-preview-hero small,
@@ -513,6 +515,7 @@
 }
 .hp-preview-stage.phone .hp-preview-hero > div {
   background: #fff;
+  margin: 0;
   width: 100%;
   border: 0;
   border-radius: 0;
