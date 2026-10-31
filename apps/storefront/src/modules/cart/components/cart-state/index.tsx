@@ -2,6 +2,7 @@
 
 import { retrieveCart } from "@lib/data/cart"
 import { createCartUpdateQueue } from "@lib/util/cart-update-queue"
+import { connectCartTabs } from "@lib/util/cart-tab-sync"
 import { HttpTypes } from "@medusajs/types"
 import { usePathname, useRouter } from "next/navigation"
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react"
@@ -17,15 +18,35 @@ export function CartStateProvider({ initialCart, children }: {
 }) {
   const [cart, setCart] = useState(initialCart)
   const queue = useRef(createCartUpdateQueue())
+  const tabSync = useRef<ReturnType<typeof connectCartTabs> | null>(null)
   const pathname = usePathname()
   const router = useRouter()
 
   const mutate = useCallback((change: CartChange) => queue.current(async () => {
     const confirmed = await change()
     setCart(confirmed)
+    tabSync.current?.notify()
     router.refresh()
     return confirmed
   }), [router])
+
+  useEffect(() => {
+    let active = true
+    const sync = connectCartTabs(() => {
+      // Remote notifications use the same queue as local mutations. Never trust
+      // another tab's count or let an older read replace a confirmed local add.
+      queue.current(async () => {
+        const confirmed = await retrieveCart()
+        if (active) setCart(confirmed)
+      }).catch(() => {})
+    })
+    tabSync.current = sync
+    return () => {
+      active = false
+      tabSync.current = null
+      sync.dispose()
+    }
+  }, [])
 
   useEffect(() => {
     // Re-read the active cart rather than applying an older layout snapshot.
