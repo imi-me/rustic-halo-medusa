@@ -67,29 +67,30 @@ const copy = {
   action: z.string().trim().min(1).max(80),
   imageFit: z.enum(["cover", "contain"]),
 };
+const appearance = {
+  textAlignment: z.enum(["left", "center", "right"]).default("left"),
+  textBoxVerticalPosition: z
+    .enum(["top", "middle", "bottom"])
+    .default("middle"),
+  textBoxPosition: z.enum(["left", "center", "right"]).default("left"),
+  textBoxOpacity: z.number().int().min(0).max(100).default(93),
+  textBoxSize: z.enum(["compact", "standard", "wide"]).default("standard"),
+  textColor: z
+    .enum(["original", "dark", "light", "custom"])
+    .default("original"),
+  customTextColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Choose a valid text color.")
+    .default("#292932"),
+  textSize: z.enum(["small", "standard", "large"]).default("standard"),
+};
 export const homepageSchema = z
   .object({
     version: z.literal(1),
     hero: z
       .object({
         ...copy,
-        textAlignment: z.enum(["left", "center", "right"]).default("left"),
-        textBoxVerticalPosition: z
-          .enum(["top", "middle", "bottom"])
-          .default("middle"),
-        textBoxPosition: z.enum(["left", "center", "right"]).default("left"),
-        textBoxOpacity: z.number().int().min(0).max(100).default(93),
-        textBoxSize: z
-          .enum(["compact", "standard", "wide"])
-          .default("standard"),
-        textColor: z
-          .enum(["original", "dark", "light", "custom"])
-          .default("original"),
-        customTextColor: z
-          .string()
-          .regex(/^#[0-9a-fA-F]{6}$/, "Choose a valid text color.")
-          .default("#292932"),
-        textSize: z.enum(["small", "standard", "large"]).default("standard"),
+        ...appearance,
         desktopImage: image,
         mobileImage: image,
         imageAlt: z.string().trim().min(1).max(300),
@@ -105,6 +106,9 @@ export const homepageSchema = z
             z
               .object({
                 ...copy,
+                ...appearance,
+                textBoxOpacity: z.number().int().min(0).max(100).default(100),
+                textLayout: z.enum(["beside", "overlay"]).default("beside"),
                 id: z.string().regex(/^[a-z0-9-]{1,60}$/),
                 image,
                 mobileImage: optionalImage,

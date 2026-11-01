@@ -11,103 +11,122 @@ type State = HomepageState & { storefront_url: string };
 type Hero = HomepageContent["hero"];
 type Card = HomepageContent["explore"]["items"][number];
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
-function HeroBoxControls({
+function TextBoxControls({
   value,
   change,
+  collection = false,
+  overlay = true,
 }: {
-  value: Hero;
-  change: (patch: Partial<Hero>) => void;
+  value: Hero | Card;
+  change: (patch: Partial<Hero & Card>) => void;
+  collection?: boolean;
+  overlay?: boolean;
 }) {
   const opacityId = useId(),
     helpId = useId();
   return (
     <fieldset className="hp-box-controls" disabled={!value.showText}>
       <legend>Text box appearance</legend>
-      <label className="hp-field" htmlFor={opacityId}>
-        <span>
-          Text box background opacity{" "}
-          <output htmlFor={opacityId}>{value.textBoxOpacity ?? 93}%</output>
-        </span>
-        <input
-          id={opacityId}
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          aria-label="Text box background opacity"
-          aria-describedby={helpId}
-          value={value.textBoxOpacity ?? 93}
-          onChange={(e) => change({ textBoxOpacity: Number(e.target.value) })}
-        />
-        <small id={helpId}>
-          0% is fully clear; 100% is solid white. Only the background fades.
-          Check that the words are easy to read over your photo.
-        </small>
-      </label>
-      <label className="hp-field">
-        <span>Text box size</span>
-        <select
-          aria-label="Text box size"
-          value={value.textBoxSize || "standard"}
-          onChange={(e) =>
-            change({ textBoxSize: e.target.value as Hero["textBoxSize"] })
-          }
-        >
-          <option value="compact">Compact</option>
-          <option value="standard">Standard</option>
-          <option value="wide">Wide</option>
-        </select>
-        <small>
-          The box grows with your text. These settings control the desktop
-          overlay; on phones, text stays full-width below the photo.
-        </small>
-      </label>
-      <label className="hp-field">
-        <span>Text box position</span>
-        <select
-          aria-label="Text box position"
-          value={value.textBoxPosition || "left"}
-          onChange={(e) =>
-            change({
-              textBoxPosition: e.target.value as Hero["textBoxPosition"],
-            })
-          }
-        >
-          <option value="left">Left</option>
-          <option value="center">Center</option>
-          <option value="right">Right</option>
-        </select>
-        <small>
-          Move the box away from important details in your photo. On phones,
-          text stays below the image so it never covers it.
-        </small>
-      </label>
-      <label className="hp-field">
-        <span>Vertical position</span>
-        <select
-          aria-label="Text box vertical position"
-          value={value.textBoxVerticalPosition || "middle"}
-          onChange={(e) =>
-            change({
-              textBoxVerticalPosition: e.target
-                .value as Hero["textBoxVerticalPosition"],
-            })
-          }
-        >
-          <option value="top">Top</option>
-          <option value="middle">Middle</option>
-          <option value="bottom">Bottom</option>
-        </select>
-        <small>
-          Combine with Left, Center or Right to place the box over your photo.
-          Longer text may fill the available height. Phone text stays below the
-          image.
-        </small>
-      </label>
+      {collection && !overlay && (
+        <p className="hp-footnote">
+          Choose Over image to use box opacity, size and position. Text color,
+          size and alignment work in both layouts.
+        </p>
+      )}
+      <fieldset
+        className="hp-overlay-controls"
+        disabled={collection && !overlay}
+      >
+        <label className="hp-field" htmlFor={opacityId}>
+          <span>
+            Text box background opacity{" "}
+            <output htmlFor={opacityId}>
+              {value.textBoxOpacity ?? (collection ? 100 : 93)}%
+            </output>
+          </span>
+          <input
+            id={opacityId}
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            aria-label="Text box background opacity"
+            aria-describedby={helpId}
+            value={value.textBoxOpacity ?? (collection ? 100 : 93)}
+            onChange={(e) => change({ textBoxOpacity: Number(e.target.value) })}
+          />
+          <small id={helpId}>
+            0% is fully clear; 100% is solid white. Only the background fades.
+            Check that the words are easy to read over your photo.
+          </small>
+        </label>
+        <label className="hp-field">
+          <span>Text box size</span>
+          <select
+            aria-label="Text box size"
+            value={value.textBoxSize || "standard"}
+            onChange={(e) =>
+              change({ textBoxSize: e.target.value as Hero["textBoxSize"] })
+            }
+          >
+            <option value="compact">Compact</option>
+            <option value="standard">Standard</option>
+            <option value="wide">Wide</option>
+          </select>
+          <small>
+            The box grows with your text. These settings control the desktop
+            overlay; on phones, text stays full-width below the photo.
+          </small>
+        </label>
+        <label className="hp-field">
+          <span>Text box position</span>
+          <select
+            aria-label="Text box position"
+            value={value.textBoxPosition || "left"}
+            onChange={(e) =>
+              change({
+                textBoxPosition: e.target.value as Hero["textBoxPosition"],
+              })
+            }
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+          <small>
+            Move the box away from important details in your photo. On phones,
+            text stays below the image so it never covers it.
+          </small>
+        </label>
+        <label className="hp-field">
+          <span>Vertical position</span>
+          <select
+            aria-label="Text box vertical position"
+            value={value.textBoxVerticalPosition || "middle"}
+            onChange={(e) =>
+              change({
+                textBoxVerticalPosition: e.target
+                  .value as Hero["textBoxVerticalPosition"],
+              })
+            }
+          >
+            <option value="top">Top</option>
+            <option value="middle">Middle</option>
+            <option value="bottom">Bottom</option>
+          </select>
+          <small>
+            Combine with Left, Center or Right to place the box over your photo.
+            Longer text may fill the available height. Phone text stays below
+            the image.
+          </small>
+        </label>
+      </fieldset>
       <label className="hp-field">
         <span>Text alignment</span>
         <select
-          aria-label="Hero text alignment"
+          aria-label={
+            collection ? "Collection text alignment" : "Hero text alignment"
+          }
           value={value.textAlignment || "left"}
           onChange={(e) =>
             change({ textAlignment: e.target.value as Hero["textAlignment"] })
@@ -125,7 +144,7 @@ function HeroBoxControls({
       <label className="hp-field">
         <span>Text color</span>
         <select
-          aria-label="Hero text color"
+          aria-label={collection ? "Collection text color" : "Hero text color"}
           value={value.textColor || "original"}
           onChange={(e) =>
             change({ textColor: e.target.value as Hero["textColor"] })
@@ -146,7 +165,11 @@ function HeroBoxControls({
           <span>Custom text color</span>
           <input
             type="color"
-            aria-label="Custom hero text color"
+            aria-label={
+              collection
+                ? "Custom collection text color"
+                : "Custom hero text color"
+            }
             value={value.customTextColor || "#292932"}
             onChange={(e) => change({ customTextColor: e.target.value })}
           />
@@ -155,7 +178,7 @@ function HeroBoxControls({
       <label className="hp-field">
         <span>Text size</span>
         <select
-          aria-label="Hero text size"
+          aria-label={collection ? "Collection text size" : "Hero text size"}
           value={value.textSize || "standard"}
           onChange={(e) =>
             change({ textSize: e.target.value as Hero["textSize"] })
@@ -172,6 +195,52 @@ function HeroBoxControls({
       </label>
     </fieldset>
   );
+}
+function collectionPreviewStyle(c: Card): CSSProperties {
+  const color =
+    c.textColor === "light"
+      ? "#ffffff"
+      : c.textColor === "dark"
+        ? "#292932"
+        : c.textColor === "custom" &&
+            /^#[0-9a-fA-F]{6}$/.test(c.customTextColor)
+          ? c.customTextColor
+          : undefined;
+  const type = { small: [11, 5.5], standard: [13, 6], large: [16, 8] }[
+    c.textSize
+  ] || [13, 6];
+  return {
+    "--hp-c-color": color,
+    "--hp-c-title": `${type[0]}px`,
+    "--hp-c-body": `${type[1]}px`,
+    "--hp-c-text-align":
+      c.textAlignment === "center" || c.textAlignment === "right"
+        ? c.textAlignment
+        : "left",
+    "--hp-c-items":
+      c.textAlignment === "center"
+        ? "center"
+        : c.textAlignment === "right"
+          ? "flex-end"
+          : "flex-start",
+    "--hp-c-alpha": Number.isFinite(c.textBoxOpacity)
+      ? Math.max(0, Math.min(100, c.textBoxOpacity)) / 100
+      : 1,
+    "--hp-c-width":
+      { compact: "52%", standard: "62%", wide: "84%" }[c.textBoxSize] || "62%",
+    "--hp-c-padding": c.textBoxSize === "compact" ? "12px" : "17px",
+    "--hp-c-start":
+      c.textBoxPosition === "center" || c.textBoxPosition === "right"
+        ? "auto"
+        : "0px",
+    "--hp-c-end": c.textBoxPosition === "right" ? "0px" : "auto",
+    "--hp-c-align":
+      c.textBoxVerticalPosition === "top"
+        ? "flex-start"
+        : c.textBoxVerticalPosition === "bottom"
+          ? "flex-end"
+          : "center",
+  } as CSSProperties;
 }
 function publicImage(path: string, origin: string) {
   return path.startsWith("/") ? origin.replace(/\/$/, "") + path : path;
@@ -478,7 +547,18 @@ function Preview({
           {content.explore.items
             .filter((c) => c.enabled)
             .map((c) => (
-              <article className={c.showText ? "" : "image-only"} key={c.id}>
+              <article
+                className={
+                  !c.showText
+                    ? "image-only"
+                    : c.textLayout === "overlay"
+                      ? "collection-overlay"
+                      : ""
+                }
+                key={c.id}
+                style={collectionPreviewStyle(c)}
+                data-collection-id={c.id}
+              >
                 <img
                   src={publicImage(
                     phone && c.mobileImage ? c.mobileImage : c.image,
@@ -488,7 +568,9 @@ function Preview({
                   style={{ objectFit: c.imageFit }}
                 />
                 {c.showText && (
-                  <div>
+                  <div
+                    data-box-clear={c.textBoxOpacity === 0 ? "true" : undefined}
+                  >
                     <small>{c.eyebrow}</small>
                     <h4>{c.title}</h4>
                     <p>{c.description}</p>
@@ -807,7 +889,7 @@ const StorefrontPage = () => {
                           ? "Hero text and link"
                           : "Saved text and image link"}
                       </summary>
-                      <HeroBoxControls value={draft.hero} change={hero} />
+                      <TextBoxControls value={draft.hero} change={hero} />
                       <CopyFields value={draft.hero} change={hero} />
                     </details>
                   </section>
@@ -934,6 +1016,36 @@ const StorefrontPage = () => {
                               ? "Collection text and link"
                               : "Saved text and image link"}
                           </summary>
+                          <label className="hp-field">
+                            <span>Text layout</span>
+                            <select
+                              aria-label="Collection text layout"
+                              disabled={!c.showText}
+                              value={c.textLayout || "beside"}
+                              onChange={(e) =>
+                                card(i, {
+                                  textLayout: e.target
+                                    .value as Card["textLayout"],
+                                })
+                              }
+                            >
+                              <option value="beside">
+                                Beside image (current layout)
+                              </option>
+                              <option value="overlay">Over image</option>
+                            </select>
+                            <small>
+                              Keep text beside the photo, or place an adjustable
+                              text box over it. Phones keep text below the
+                              image.
+                            </small>
+                          </label>
+                          <TextBoxControls
+                            value={c}
+                            change={(patch) => card(i, patch)}
+                            collection
+                            overlay={c.textLayout === "overlay"}
+                          />
                           <CopyFields
                             value={c}
                             change={(patch) => card(i, patch)}

@@ -9,32 +9,37 @@ export type EditorialCopy = {
   action: string
   imageFit: "cover" | "contain"
 }
+export type EditorialAppearance = {
+  textBoxOpacity: number
+  textAlignment: "left" | "center" | "right"
+  textBoxVerticalPosition: "top" | "middle" | "bottom"
+  textBoxPosition: "left" | "center" | "right"
+  textBoxSize: "compact" | "standard" | "wide"
+  textColor: "original" | "dark" | "light" | "custom"
+  customTextColor: string
+  textSize: "small" | "standard" | "large"
+}
 export type HomepageContent = {
   version: 1
-  hero: EditorialCopy & {
-    textBoxOpacity: number
-    textAlignment: "left" | "center" | "right"
-    textBoxVerticalPosition: "top" | "middle" | "bottom"
-    textBoxPosition: "left" | "center" | "right"
-    textBoxSize: "compact" | "standard" | "wide"
-    textColor: "original" | "dark" | "light" | "custom"
-    customTextColor: string
-    textSize: "small" | "standard" | "large"
-    desktopImage: string
-    mobileImage: string
-    imageAlt: string
-  }
+  hero: EditorialCopy &
+    EditorialAppearance & {
+      desktopImage: string
+      mobileImage: string
+      imageAlt: string
+    }
   explore: {
     enabled: boolean
     showHeading: boolean
     heading: string
     items: Array<
-      EditorialCopy & {
-        id: string
-        image: string
-        mobileImage: string
-        alt: string
-      }
+      EditorialCopy &
+        EditorialAppearance & {
+          textLayout: "beside" | "overlay"
+          id: string
+          image: string
+          mobileImage: string
+          alt: string
+        }
     >
   }
   seo: { title: string; description: string }

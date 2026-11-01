@@ -206,3 +206,63 @@ test("hero text alignment defaults left and accepts only safe presets", async ()
     )
   }
 })
+
+test("collection appearance is independent and overlay layout is opt-in", async () => {
+  const content = structuredClone(defaults)
+  Object.assign(content.explore.items[0], {
+    textLayout: "overlay",
+    textBoxOpacity: 0,
+    textColor: "custom",
+    customTextColor: "#6f2b3f",
+    textAlignment: "right",
+    textSize: "large",
+    textBoxPosition: "right",
+    textBoxVerticalPosition: "bottom",
+    textBoxSize: "wide",
+  })
+  const html = await render(content)
+  assert.equal((html.match(/ rh-b-collection-overlay/g) || []).length, 1)
+  assert.match(html, /--rh-c-color:#6f2b3f/)
+  assert.match(html, /--rh-c-title:36px/)
+  assert.match(html, /--rh-c-text-align:right/)
+  assert.match(html, /--rh-c-width:520px/)
+  assert.match(html, /--rh-c-alpha:0/)
+  assert.match(html, /data-box-clear="true"/)
+  assert.ok(html.includes('class="rh-b-collection rh-b-reverse"'))
+  content.explore.items[0].showText = false
+  const hidden = await render(content)
+  assert.ok(!hidden.includes(" rh-b-collection-overlay"))
+  assert.ok(hidden.includes("rh-b-collection-image-only"))
+})
+test("legacy and invalid collection style values retain safe split layout and defaults", async () => {
+  const content = structuredClone(defaults)
+  for (const c of content.explore.items)
+    for (const key of [
+      "textLayout",
+      "textBoxOpacity",
+      "textBoxSize",
+      "textBoxPosition",
+      "textBoxVerticalPosition",
+      "textAlignment",
+      "textColor",
+      "customTextColor",
+      "textSize",
+    ])
+      delete c[key]
+  const old = await render(content)
+  assert.ok(!old.includes(" rh-b-collection-overlay"))
+  assert.match(old, /--rh-c-title:29px/)
+  assert.match(old, /--rh-c-alpha:1/)
+  Object.assign(content.explore.items[0], {
+    textLayout: "invalid",
+    textColor: "custom",
+    customTextColor: "url(unsafe)",
+    textAlignment: "unsafe",
+    textSize: "huge",
+    textBoxOpacity: 1000,
+  })
+  const invalid = await render(content)
+  assert.ok(!invalid.includes("url(unsafe)"))
+  assert.ok(!invalid.includes(" rh-b-collection-overlay"))
+  assert.match(invalid, /--rh-c-text-align:left/)
+})

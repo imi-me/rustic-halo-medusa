@@ -38,7 +38,16 @@
         "alt": "Original Country Skies wooden bird hair claw",
         "href": "/categories/hair-claws",
         "action": "Explore hair claws",
-        "imageFit": "contain"
+        "imageFit": "contain",
+        "textLayout": "beside",
+        "textBoxOpacity": 100,
+        "textBoxSize": "standard",
+        "textBoxPosition": "left",
+        "textBoxVerticalPosition": "middle",
+        "textAlignment": "left",
+        "textColor": "original",
+        "customTextColor": "#292932",
+        "textSize": "standard"
       },
       {
         "id": "home-gifts",
@@ -52,7 +61,16 @@
         "alt": "Original Welcome Succas handpainted door hanger",
         "href": "/categories/home-decor",
         "action": "Explore home & d\u00e9cor",
-        "imageFit": "contain"
+        "imageFit": "contain",
+        "textLayout": "beside",
+        "textBoxOpacity": 100,
+        "textBoxSize": "standard",
+        "textBoxPosition": "left",
+        "textBoxVerticalPosition": "middle",
+        "textAlignment": "left",
+        "textColor": "original",
+        "customTextColor": "#292932",
+        "textSize": "standard"
       }
     ]
   },

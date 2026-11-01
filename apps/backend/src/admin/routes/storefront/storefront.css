@@ -821,3 +821,20 @@
 .hp-preview-stage.phone .hp-preview-hero h3 { color:#292932; font-size:var(--hp-hero-phone-title-size,19px); }
 .hp-preview-stage.phone .hp-preview-hero p { color:#77717e; font-size:var(--hp-hero-phone-body-size,7px); }
 .hp-preview-stage.phone .hp-preview-hero small { color:#777482; }
+
+.hp-overlay-controls { border: 0; padding: 0; margin: 0; min-width: 0; }
+.hp-overlay-controls:disabled { opacity: .6; }
+.hp-preview-explore article > div { align-items: var(--hp-c-items,flex-start); text-align: var(--hp-c-text-align,left); min-width: 0; overflow-wrap: anywhere; }
+.hp-preview-explore article h4 { color: var(--hp-c-color,#a178b8); font-size: var(--hp-c-title,13px); max-width: 100%; white-space: pre-line; }
+.hp-preview-explore article p { color: var(--hp-c-color,#b695c8); font-size: var(--hp-c-body,6px); }
+.hp-preview-explore article small { color: var(--hp-c-color,#ad8dc0); }
+.hp-preview-explore article.collection-overlay { position: relative; display: flex; align-items: center; min-height: 200px; padding: 14px; }
+.hp-preview-explore article.collection-overlay > img { position: absolute; inset: 0; height: 100%; }
+.hp-preview-explore article.collection-overlay > div { display: block; position: relative; z-index: 1; align-self: var(--hp-c-align,center); margin-left: var(--hp-c-start,0px); margin-right: var(--hp-c-end,auto); width: var(--hp-c-width,62%); padding: var(--hp-c-padding,17px); background: rgba(255,255,255,var(--hp-c-alpha,1)); border: 1px solid #fff8; border-radius: 13px; }
+.hp-preview-explore article.collection-overlay > div[data-box-clear="true"] { border-color: transparent; box-shadow: none; }
+.hp-preview-stage.phone .hp-preview-explore article.collection-overlay { display: grid; grid-template-columns: 1fr; min-height: 0; padding: 0; }
+.hp-preview-stage.phone .hp-preview-explore article.collection-overlay > img { position: relative; height: 150px; }
+.hp-preview-stage.phone .hp-preview-explore article.collection-overlay > div { display: flex; align-self: stretch; margin: 0; width: auto; max-width: none; padding: 20px; border: 0; border-radius: 0; background: #fff; }
+.hp-preview-stage.phone .hp-preview-explore article h4 { color: #292932; }
+.hp-preview-stage.phone .hp-preview-explore article p { color: #817486; }
+.hp-preview-stage.phone .hp-preview-explore article small { color: #81798d; }

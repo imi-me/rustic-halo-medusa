@@ -345,3 +345,94 @@ test("only left center and right are accepted as hero text alignment", () => {
     expect(homepageSchema.safeParse(draft).success).toBe(false);
   }
 });
+
+test("legacy collections inherit appearance without changing saved content or layout", async () => {
+  const db = operations(),
+    legacy: any = structuredClone(defaultHomepage);
+  for (const c of legacy.explore.items)
+    for (const key of [
+      "textLayout",
+      "textBoxOpacity",
+      "textBoxSize",
+      "textBoxPosition",
+      "textBoxVerticalPosition",
+      "textAlignment",
+      "textColor",
+      "customTextColor",
+      "textSize",
+    ])
+      delete c[key];
+  await db.createAdminOperations({
+    operation_key: "storefront-homepage:v1",
+    payload: {
+      draft: legacy,
+      published: legacy,
+      revision: "legacy-collections",
+      published_at: "2026-11-01T00:00:00Z",
+    },
+  });
+  const state = await readHomepage(db);
+  for (const c of state.draft.explore.items) {
+    expect(c.textLayout).toBe("beside");
+    expect(c.textBoxOpacity).toBe(100);
+    expect(c.textAlignment).toBe("left");
+    expect(c.textSize).toBe("standard");
+    expect(c.textColor).toBe("original");
+  }
+  expect(state.revision).toBe("legacy-collections");
+  expect(db.updateAdminOperations).not.toHaveBeenCalled();
+});
+test("each collection retains independent hidden appearance, private drafts and explicit publication", async () => {
+  const db = operations(),
+    initial = await readHomepage(db),
+    draft = structuredClone(defaultHomepage);
+  Object.assign(draft.explore.items[0], {
+    textLayout: "overlay",
+    textBoxOpacity: 0,
+    textBoxSize: "wide",
+    textBoxPosition: "right",
+    textBoxVerticalPosition: "bottom",
+    textAlignment: "center",
+    textColor: "custom",
+    customTextColor: "#6F2B3F",
+    textSize: "large",
+    showText: false,
+  });
+  Object.assign(draft.explore.items[1], {
+    textLayout: "beside",
+    textAlignment: "right",
+    textSize: "small",
+  });
+  const saved = await saveHomepage(db, draft, initial.revision, "draft");
+  expect((await readHomepage(db)).draft.explore.items).toEqual(
+    draft.explore.items,
+  );
+  expect((await publicHomepage(db)).content.explore.items).toEqual(
+    defaultHomepage.explore.items,
+  );
+  await saveHomepage(db, draft, saved.revision, "publish");
+  expect((await publicHomepage(db)).content.explore.items).toEqual(
+    draft.explore.items,
+  );
+  expect((await publicHomepage(db)).content.hero).toEqual(defaultHomepage.hero);
+});
+test("collection appearance validates every enum, bounded opacity and custom color", () => {
+  for (const patch of [
+    { textLayout: "floating" },
+    { textAlignment: "justify" },
+    { textBoxOpacity: -1 },
+    { textBoxOpacity: 101 },
+    { textBoxOpacity: 12.5 },
+    { textBoxOpacity: "50" },
+    { textBoxSize: "huge" },
+    { textBoxPosition: "auto" },
+    { textBoxVerticalPosition: "left" },
+    { textColor: "red" },
+    { customTextColor: "url(unsafe)" },
+    { textSize: "72px" },
+  ]) {
+    const draft = structuredClone(defaultHomepage);
+    Object.assign(draft.explore.items[0], patch);
+    expect(homepageSchema.safeParse(draft).success).toBe(false);
+  }
+});

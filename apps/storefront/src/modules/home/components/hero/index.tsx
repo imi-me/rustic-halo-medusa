@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import type { CSSProperties } from "react"
+import type { HomepageContent } from "@lib/brand/homepage-content"
 import { listProducts } from "@lib/data/products"
 import { listCategories } from "@lib/data/categories"
 import { brandCategoryHref } from "@lib/brand/category-links"
@@ -7,6 +8,60 @@ import { getHomepageContent } from "@lib/data/homepage-content"
 import { storefrontDesign } from "@lib/brand/storefront-design"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductCard from "@modules/products/components/product-card"
+
+function collectionStyle(
+  c: HomepageContent["explore"]["items"][number],
+): CSSProperties {
+  const color =
+    c.textColor === "light"
+      ? "#ffffff"
+      : c.textColor === "dark"
+        ? "#292932"
+        : c.textColor === "custom" &&
+            /^#[0-9a-fA-F]{6}$/.test(c.customTextColor)
+          ? c.customTextColor
+          : undefined
+  const type = {
+    small: [25, 13, 22, 12],
+    standard: [29, 14, 26, 12],
+    large: [36, 16, 32, 14],
+  }[c.textSize] || [29, 14, 26, 12]
+  return {
+    "--rh-c-color": color,
+    "--rh-c-title": `${type[0]}px`,
+    "--rh-c-body": `${type[1]}px`,
+    "--rh-c-phone-title": `${type[2]}px`,
+    "--rh-c-phone-body": `${type[3]}px`,
+    "--rh-c-text-align":
+      c.textAlignment === "center" || c.textAlignment === "right"
+        ? c.textAlignment
+        : "left",
+    "--rh-c-items":
+      c.textAlignment === "center"
+        ? "center"
+        : c.textAlignment === "right"
+          ? "flex-end"
+          : "flex-start",
+    "--rh-c-alpha": Number.isFinite(c.textBoxOpacity)
+      ? Math.max(0, Math.min(100, c.textBoxOpacity)) / 100
+      : 1,
+    "--rh-c-width":
+      { compact: "320px", standard: "380px", wide: "520px" }[c.textBoxSize] ||
+      "380px",
+    "--rh-c-padding": c.textBoxSize === "compact" ? "24px" : "32px",
+    "--rh-c-start":
+      c.textBoxPosition === "center" || c.textBoxPosition === "right"
+        ? "auto"
+        : "28px",
+    "--rh-c-end": c.textBoxPosition === "right" ? "28px" : "auto",
+    "--rh-c-align":
+      c.textBoxVerticalPosition === "top"
+        ? "flex-start"
+        : c.textBoxVerticalPosition === "bottom"
+          ? "flex-end"
+          : "center",
+  } as CSSProperties
+}
 
 export default async function Hero({
   countryCode,
@@ -202,9 +257,15 @@ export default async function Hero({
             .map((c, i) => (
               <article
                 className={`rh-b-collection${i % 2 ? " rh-b-reverse" : ""}${
-                  c.showText ? "" : " rh-b-collection-image-only"
+                  c.showText
+                    ? c.textLayout === "overlay"
+                      ? " rh-b-collection-overlay"
+                      : ""
+                    : " rh-b-collection-image-only"
                 }`}
                 key={c.id}
+                style={collectionStyle(c)}
+                data-collection-id={c.id}
               >
                 <LocalizedClientLink
                   href={hrefFor(c.href)}
@@ -232,7 +293,10 @@ export default async function Hero({
                   </picture>
                 </LocalizedClientLink>
                 {c.showText ? (
-                  <div className="rh-b-collection-copy">
+                  <div
+                    className="rh-b-collection-copy"
+                    data-box-clear={c.textBoxOpacity === 0 ? "true" : undefined}
+                  >
                     <span className="rh-b-kicker">{c.eyebrow}</span>
                     <h3>{c.title}</h3>
                     {c.description && <p>{c.description}</p>}
