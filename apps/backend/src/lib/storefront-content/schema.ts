@@ -73,6 +73,9 @@ export const homepageSchema = z
     hero: z
       .object({
         ...copy,
+        textBoxVerticalPosition: z
+          .enum(["top", "middle", "bottom"])
+          .default("middle"),
         textBoxPosition: z.enum(["left", "center", "right"]).default("left"),
         textBoxOpacity: z.number().int().min(0).max(100).default(93),
         textBoxSize: z

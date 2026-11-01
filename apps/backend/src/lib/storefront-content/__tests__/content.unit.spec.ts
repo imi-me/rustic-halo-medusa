@@ -259,3 +259,47 @@ test("only left center and right are accepted as hero positions", () => {
     expect(homepageSchema.safeParse(draft).success).toBe(false);
   }
 });
+
+test("legacy hero vertical positions default middle without changing saved content", async () => {
+  const db = operations(),
+    legacy: any = structuredClone(defaultHomepage);
+  delete legacy.hero.textBoxVerticalPosition;
+  await db.createAdminOperations({
+    operation_key: "storefront-homepage:v1",
+    payload: {
+      draft: legacy,
+      published: legacy,
+      revision: "legacy-position",
+      published_at: "2026-10-31T00:00:00Z",
+    },
+  });
+  const state = await readHomepage(db);
+  expect(state.draft.hero.textBoxVerticalPosition).toBe("middle");
+  expect(state.published?.hero.textBoxVerticalPosition).toBe("middle");
+  expect(state.revision).toBe("legacy-position");
+  expect(db.updateAdminOperations).not.toHaveBeenCalled();
+});
+test("hero vertical positions survive hidden text and publish only explicitly", async () => {
+  for (const textBoxVerticalPosition of ["top", "middle", "bottom"] as const) {
+    const db = operations(),
+      initial = await readHomepage(db),
+      draft = structuredClone(defaultHomepage);
+    Object.assign(draft.hero, { textBoxVerticalPosition, showText: false });
+    const saved = await saveHomepage(db, draft, initial.revision, "draft");
+    expect((await readHomepage(db)).draft.hero.textBoxVerticalPosition).toBe(
+      textBoxVerticalPosition,
+    );
+    expect(
+      (await publicHomepage(db)).content.hero.textBoxVerticalPosition,
+    ).toBe("middle");
+    await saveHomepage(db, draft, saved.revision, "publish");
+    expect((await publicHomepage(db)).content.hero).toEqual(draft.hero);
+  }
+});
+test("only top middle and bottom are accepted as hero vertical positions", () => {
+  for (const textBoxVerticalPosition of ["left", "auto", "", null, 2]) {
+    const draft = structuredClone(defaultHomepage);
+    Object.assign(draft.hero, { textBoxVerticalPosition });
+    expect(homepageSchema.safeParse(draft).success).toBe(false);
+  }
+});

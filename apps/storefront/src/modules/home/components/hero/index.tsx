@@ -95,6 +95,12 @@ export default async function Hero({
                 data-box-clear={boxOpacity === 0 ? "true" : undefined}
                 style={
                   {
+                    "--rh-hero-box-align":
+                      campaign.textBoxVerticalPosition === "top"
+                        ? "flex-start"
+                        : campaign.textBoxVerticalPosition === "bottom"
+                          ? "flex-end"
+                          : "center",
                     "--rh-hero-box-start":
                       campaign.textBoxPosition === "center" ||
                       campaign.textBoxPosition === "right"

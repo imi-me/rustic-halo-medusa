@@ -83,6 +83,28 @@ function HeroBoxControls({
         </small>
       </label>
       <label className="hp-field">
+        <span>Vertical position</span>
+        <select
+          aria-label="Text box vertical position"
+          value={value.textBoxVerticalPosition || "middle"}
+          onChange={(e) =>
+            change({
+              textBoxVerticalPosition: e.target
+                .value as Hero["textBoxVerticalPosition"],
+            })
+          }
+        >
+          <option value="top">Top</option>
+          <option value="middle">Middle</option>
+          <option value="bottom">Bottom</option>
+        </select>
+        <small>
+          Combine with Left, Center or Right to place the box over your photo.
+          Longer text may fill the available height. Phone text stays below the
+          image.
+        </small>
+      </label>
+      <label className="hp-field">
         <span>Text color</span>
         <select
           aria-label="Hero text color"
@@ -391,6 +413,12 @@ function Preview({
               }
               style={
                 {
+                  "--hp-box-align":
+                    hero.textBoxVerticalPosition === "top"
+                      ? "flex-start"
+                      : hero.textBoxVerticalPosition === "bottom"
+                        ? "flex-end"
+                        : "center",
                   "--hp-box-start":
                     hero.textBoxPosition === "center" ||
                     hero.textBoxPosition === "right"

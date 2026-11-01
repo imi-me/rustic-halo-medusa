@@ -180,3 +180,16 @@ test("hero positions use safe horizontal margins and legacy left placement", asy
     assert.ok(html.includes(content.hero.title))
   }
 })
+
+test("vertical hero positions default to middle and reject unsafe styling", async () => {
+  const content = structuredClone(defaults)
+  for (const position of [undefined, "top", "middle", "bottom", "unsafe"]) {
+    content.hero.textBoxVerticalPosition = position
+    const html = await render(content)
+    assert.ok(
+      html.includes(
+        `--rh-hero-box-align:${position === "top" ? "flex-start" : position === "bottom" ? "flex-end" : "center"}`,
+      ),
+    )
+  }
+})
