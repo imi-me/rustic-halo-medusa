@@ -4,6 +4,7 @@
     "textBoxOpacity": 93,
     "textBoxSize": "standard",
     "textBoxPosition": "left",
+    "textAlignment": "left",
     "textBoxVerticalPosition": "middle",
     "textColor": "original",
     "customTextColor": "#292932",

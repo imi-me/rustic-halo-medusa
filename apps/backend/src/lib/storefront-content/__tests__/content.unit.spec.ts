@@ -303,3 +303,45 @@ test("only top middle and bottom are accepted as hero vertical positions", () =>
     expect(homepageSchema.safeParse(draft).success).toBe(false);
   }
 });
+
+test("legacy hero text alignment default left without changing saved content", async () => {
+  const db = operations(),
+    legacy: any = structuredClone(defaultHomepage);
+  delete legacy.hero.textAlignment;
+  await db.createAdminOperations({
+    operation_key: "storefront-homepage:v1",
+    payload: {
+      draft: legacy,
+      published: legacy,
+      revision: "legacy-position",
+      published_at: "2026-10-31T00:00:00Z",
+    },
+  });
+  const state = await readHomepage(db);
+  expect(state.draft.hero.textAlignment).toBe("left");
+  expect(state.published?.hero.textAlignment).toBe("left");
+  expect(state.revision).toBe("legacy-position");
+  expect(db.updateAdminOperations).not.toHaveBeenCalled();
+});
+test("hero text alignment survive hidden text and publish only explicitly", async () => {
+  for (const textAlignment of ["left", "center", "right"] as const) {
+    const db = operations(),
+      initial = await readHomepage(db),
+      draft = structuredClone(defaultHomepage);
+    Object.assign(draft.hero, { textAlignment, showText: false });
+    const saved = await saveHomepage(db, draft, initial.revision, "draft");
+    expect((await readHomepage(db)).draft.hero.textAlignment).toBe(
+      textAlignment,
+    );
+    expect((await publicHomepage(db)).content.hero.textAlignment).toBe("left");
+    await saveHomepage(db, draft, saved.revision, "publish");
+    expect((await publicHomepage(db)).content.hero).toEqual(draft.hero);
+  }
+});
+test("only left center and right are accepted as hero text alignment", () => {
+  for (const textAlignment of ["top", "auto", "", null, 2]) {
+    const draft = structuredClone(defaultHomepage);
+    Object.assign(draft.hero, { textAlignment });
+    expect(homepageSchema.safeParse(draft).success).toBe(false);
+  }
+});

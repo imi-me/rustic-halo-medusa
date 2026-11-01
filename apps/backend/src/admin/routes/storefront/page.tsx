@@ -105,6 +105,24 @@ function HeroBoxControls({
         </small>
       </label>
       <label className="hp-field">
+        <span>Text alignment</span>
+        <select
+          aria-label="Hero text alignment"
+          value={value.textAlignment || "left"}
+          onChange={(e) =>
+            change({ textAlignment: e.target.value as Hero["textAlignment"] })
+          }
+        >
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+        <small>
+          Aligns the heading, description, label and button inside the box on
+          desktop and phones. The box stays in its chosen position.
+        </small>
+      </label>
+      <label className="hp-field">
         <span>Text color</span>
         <select
           aria-label="Hero text color"
@@ -413,6 +431,11 @@ function Preview({
               }
               style={
                 {
+                  "--hp-text-alignment":
+                    hero.textAlignment === "center" ||
+                    hero.textAlignment === "right"
+                      ? hero.textAlignment
+                      : "left",
                   "--hp-box-align":
                     hero.textBoxVerticalPosition === "top"
                       ? "flex-start"

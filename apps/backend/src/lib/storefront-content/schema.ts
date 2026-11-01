@@ -73,6 +73,7 @@ export const homepageSchema = z
     hero: z
       .object({
         ...copy,
+        textAlignment: z.enum(["left", "center", "right"]).default("left"),
         textBoxVerticalPosition: z
           .enum(["top", "middle", "bottom"])
           .default("middle"),

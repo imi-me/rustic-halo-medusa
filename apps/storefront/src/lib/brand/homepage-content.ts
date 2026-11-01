@@ -13,6 +13,7 @@ export type HomepageContent = {
   version: 1
   hero: EditorialCopy & {
     textBoxOpacity: number
+    textAlignment: "left" | "center" | "right"
     textBoxVerticalPosition: "top" | "middle" | "bottom"
     textBoxPosition: "left" | "center" | "right"
     textBoxSize: "compact" | "standard" | "wide"

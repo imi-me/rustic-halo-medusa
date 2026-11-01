@@ -288,6 +288,7 @@ body.rh-approved-b {
 .rh-b-hero-copy {
   position: relative;
   align-self: var(--rh-hero-box-align, center);
+  text-align: var(--rh-hero-text-alignment, left);
   background: rgba(255, 255, 255, var(--rh-hero-box-alpha, .93));
   backdrop-filter: blur(20px);
   border: 1px solid #ffffffb0;

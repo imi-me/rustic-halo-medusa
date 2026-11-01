@@ -193,3 +193,16 @@ test("vertical hero positions default to middle and reject unsafe styling", asyn
     )
   }
 })
+
+test("hero text alignment defaults left and accepts only safe presets", async () => {
+  const content = structuredClone(defaults)
+  for (const alignment of [undefined, "left", "center", "right", "unsafe"]) {
+    content.hero.textAlignment = alignment
+    const html = await render(content)
+    assert.ok(
+      html.includes(
+        `--rh-hero-text-alignment:${alignment === "center" || alignment === "right" ? alignment : "left"}`,
+      ),
+    )
+  }
+})
